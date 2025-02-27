@@ -26,7 +26,13 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 4,
+    id:4,
+    title: "flight",
+    path: "/flight",
+    newTab: false,
+  },
+  {
+    id: 5,
     title: "Pages",
     newTab: false,
     submenu: [

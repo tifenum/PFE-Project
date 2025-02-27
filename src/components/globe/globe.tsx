@@ -169,7 +169,7 @@ const Global = () => {
             handleSearchSelect(filteredCountries[0]);
           }
         }}
-        className="w-full p-2 rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full p-2 rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-white-500"
       />
       
       {filteredCountries.length > 0 && (
