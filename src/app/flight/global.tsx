@@ -28,7 +28,7 @@ const texture = "/globe/land4.png";
 //   };
 // });
 
-const global = () => {
+const Global = () => {
   const [hoveredCountry, setHoveredCountry] = React.useState(null);
   const [fromCountry, setFromCountry] = React.useState(null);
   const [destinationCountry, setDestinationCountry] = React.useState(null);
@@ -232,6 +232,8 @@ const global = () => {
 
       <div className='cursor-pointer'>
         <Globe
+          width={window.innerWidth}
+          height={window.innerHeight}
           ref={globeRef}
           onGlobeReady={globeReady}
           backgroundColor='#1e232e'
@@ -325,4 +327,4 @@ const global = () => {
   );
 };
 
-export default global;
+export default Global;
