@@ -1,6 +1,7 @@
 "use client"; // Add this at the very top
 
 import Link from "next/link";
+  import { GoogleLogin } from "@/services/userService";
 
 // import { Metadata } from "next";
 
@@ -9,6 +10,17 @@ import Link from "next/link";
 //   description: "This is Sign In Page for Startup Nextjs Template",
 //   // other metadata
 // };
+
+const handleGoogleLogin = async () => {
+  try {
+    const response = await GoogleLogin(); // Call the GoogleLogin function
+    console.log('Google Login Response:', response);
+    // Handle the response (e.g., store user data, redirect, etc.)
+  } catch (error) {
+    console.error('Error during Google login:', error);
+    // Handle the error (e.g., show an error message)
+  }
+};
 
 const SigninPage = () => {
   return (
@@ -25,7 +37,7 @@ const SigninPage = () => {
                   Login to your account for a faster checkout.
                 </p>
                 <button 
-                  onClick={() => window.location.href = "http://localhost:8090/api/v1/users/google"}
+                  onClick={handleGoogleLogin}
                 className="border-stroke dark:text-body-color-dark dark:shadow-two mb-6 flex w-full items-center justify-center rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 hover:border-primary hover:bg-primary/5 hover:text-primary dark:border-transparent dark:bg-[#2C303B] dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary dark:hover:shadow-none">
                   <span className="mr-3">
                     <svg

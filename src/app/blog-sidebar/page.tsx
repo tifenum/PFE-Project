@@ -11,7 +11,7 @@
   import aireports from './airports_by_country.json';
   import AutocompleteCountry from "@/components/globe/countries";
   import CityAutocomplete from "@/components/globe/city";
-
+  import Blog from "@/components/Blog";
   const BlogSidebarPage = () => {
     const [origin, setOrigin] = React.useState('');
     const [destination, setDestination] = React.useState('');
@@ -25,7 +25,7 @@
         setDestination(countryName);
       }
     };
-  
+
     return (
       <section className="overflow-hidden pb-[120px] pt-[180px]">
         <div className="container">
@@ -141,6 +141,8 @@
               </div>
             </div>
           </div>
+          <Blog/>
+          
             </div>
           </div>
         </section>
