@@ -97,19 +97,7 @@ const Global = () => {
     React.useEffect(() => {
       const fetchData = async () => {
         setLoading(true);
-        try {
-          // Fetch the corrected data
-          fetch("./correctedData.json")
-            .then((response) => response.json())
-            .then((data) => {
-              const sortedData = data.sort((a, b) =>
-                a.countryName.localeCompare(b.countryName)
-              );
-              console.log(sortedData);
-              setData(sortedData);
-            });
-  
-          // Fetch the GeoJSON for the globe
+        try {  
           fetch(
             "https://raw.githubusercontent.com/iamanas20/geojson/main/map11.geojson"
           )
