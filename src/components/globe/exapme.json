@@ -1,0 +1,361 @@
+[
+  {
+      "type": "flight-offer",
+      "id": "1",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "lastTicketingDate": "2025-03-20",
+      "numberOfBookableSeats": 9,
+      "itineraries": [
+          {
+              "duration": "PT16H15M",
+              "segments": [
+                  {
+                      "departure": {
+                          "iataCode": "MAD",
+                          "terminal": "1",
+                          "at": "2025-03-20T15:25:00"
+                      },
+                      "arrival": {
+                          "iataCode": "JED",
+                          "terminal": "1",
+                          "at": "2025-03-20T23:15:00"
+                      },
+                      "carrierCode": "SV",
+                      "number": "226",
+                      "aircraft": {
+                          "code": "789"
+                      },
+                      "duration": "PT5H50M",
+                      "id": "1",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  },
+                  {
+                      "departure": {
+                          "iataCode": "JED",
+                          "terminal": "1",
+                          "at": "2025-03-21T02:00:00"
+                      },
+                      "arrival": {
+                          "iataCode": "BKK",
+                          "at": "2025-03-21T13:40:00"
+                      },
+                      "carrierCode": "SV",
+                      "number": "844",
+                      "aircraft": {
+                          "code": "789"
+                      },
+                      "duration": "PT7H40M",
+                      "id": "2",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  }
+              ]
+          }
+      ],
+      "price": {
+          "currency": "EUR",
+          "total": 337.27,
+          "base": 243.0,
+          "fees": [
+              {
+                  "amount": 0.0,
+                  "type": "SUPPLIER"
+              },
+              {
+                  "amount": 0.0,
+                  "type": "TICKETING"
+              }
+          ],
+          "grandTotal": 337.27
+      },
+      "pricingOptions": {
+          "includedCheckedBagsOnly": true,
+          "fareType": [
+              "PUBLISHED"
+          ],
+          "refundableFare": false,
+          "noRestrictionFare": false,
+          "noPenaltyFare": false
+      },
+      "validatingAirlineCodes": [
+          "SV"
+      ],
+      "travelerPricings": [
+          {
+              "travelerId": "1",
+              "fareOption": "STANDARD",
+              "travelerType": "ADULT",
+              "price": {
+                  "currency": "EUR",
+                  "total": 337.27,
+                  "base": 243.0,
+                  "grandTotal": 0.0
+              },
+              "fareDetailsBySegment": [
+                  {
+                      "segmentId": "1",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "TPOXESB4",
+                      "class": "T",
+                      "includedCheckedBags": {
+                          "weight": 0
+                      }
+                  },
+                  {
+                      "segmentId": "2",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "TPOXESB4",
+                      "class": "T",
+                      "includedCheckedBags": {
+                          "weight": 0
+                      }
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "type": "flight-offer",
+      "id": "2",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "lastTicketingDate": "2025-03-20",
+      "numberOfBookableSeats": 9,
+      "itineraries": [
+          {
+              "duration": "PT17H15M",
+              "segments": [
+                  {
+                      "departure": {
+                          "iataCode": "MAD",
+                          "terminal": "4S",
+                          "at": "2025-03-20T11:25:00"
+                      },
+                      "arrival": {
+                          "iataCode": "HKG",
+                          "terminal": "1",
+                          "at": "2025-03-21T07:05:00"
+                      },
+                      "carrierCode": "CX",
+                      "number": "372",
+                      "aircraft": {
+                          "code": "359"
+                      },
+                      "duration": "PT12H40M",
+                      "id": "3",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  },
+                  {
+                      "departure": {
+                          "iataCode": "HKG",
+                          "terminal": "1",
+                          "at": "2025-03-21T08:30:00"
+                      },
+                      "arrival": {
+                          "iataCode": "BKK",
+                          "at": "2025-03-21T10:40:00"
+                      },
+                      "carrierCode": "CX",
+                      "number": "705",
+                      "aircraft": {
+                          "code": "333"
+                      },
+                      "duration": "PT3H10M",
+                      "id": "4",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  }
+              ]
+          }
+      ],
+      "price": {
+          "currency": "EUR",
+          "total": 396.02,
+          "base": 250.0,
+          "fees": [
+              {
+                  "amount": 0.0,
+                  "type": "SUPPLIER"
+              },
+              {
+                  "amount": 0.0,
+                  "type": "TICKETING"
+              }
+          ],
+          "grandTotal": 396.02
+      },
+      "pricingOptions": {
+          "includedCheckedBagsOnly": true,
+          "fareType": [
+              "PUBLISHED"
+          ],
+          "refundableFare": false,
+          "noRestrictionFare": false,
+          "noPenaltyFare": false
+      },
+      "validatingAirlineCodes": [
+          "CX"
+      ],
+      "travelerPricings": [
+          {
+              "travelerId": "1",
+              "fareOption": "STANDARD",
+              "travelerType": "ADULT",
+              "price": {
+                  "currency": "EUR",
+                  "total": 396.02,
+                  "base": 250.0,
+                  "grandTotal": 0.0
+              },
+              "fareDetailsBySegment": [
+                  {
+                      "segmentId": "3",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "VR21ESHO",
+                      "class": "V",
+                      "includedCheckedBags": {
+                          "weight": 0
+                      }
+                  },
+                  {
+                      "segmentId": "4",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "VR21ESHO",
+                      "class": "V",
+                      "includedCheckedBags": {
+                          "weight": 0
+                      }
+                  }
+              ]
+          }
+      ]
+  },
+  {
+      "type": "flight-offer",
+      "id": "3",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "lastTicketingDate": "2025-03-20",
+      "numberOfBookableSeats": 9,
+      "itineraries": [
+          {
+              "duration": "PT15H35M",
+              "segments": [
+                  {
+                      "departure": {
+                          "iataCode": "MAD",
+                          "terminal": "4",
+                          "at": "2025-03-20T21:00:00"
+                      },
+                      "arrival": {
+                          "iataCode": "AUH",
+                          "terminal": "A",
+                          "at": "2025-03-21T06:40:00"
+                      },
+                      "carrierCode": "EY",
+                      "number": "104",
+                      "aircraft": {
+                          "code": "789"
+                      },
+                      "duration": "PT6H40M",
+                      "id": "5",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  },
+                  {
+                      "departure": {
+                          "iataCode": "AUH",
+                          "terminal": "A",
+                          "at": "2025-03-21T09:35:00"
+                      },
+                      "arrival": {
+                          "iataCode": "BKK",
+                          "at": "2025-03-21T18:35:00"
+                      },
+                      "carrierCode": "EY",
+                      "number": "406",
+                      "aircraft": {
+                          "code": "77W"
+                      },
+                      "duration": "PT6H",
+                      "id": "6",
+                      "numberOfStops": 0,
+                      "blacklistedInEU": false
+                  }
+              ]
+          }
+      ],
+      "price": {
+          "currency": "EUR",
+          "total": 396.97,
+          "base": 220.0,
+          "fees": [
+              {
+                  "amount": 0.0,
+                  "type": "SUPPLIER"
+              },
+              {
+                  "amount": 0.0,
+                  "type": "TICKETING"
+              }
+          ],
+          "grandTotal": 396.97
+      },
+      "pricingOptions": {
+          "includedCheckedBagsOnly": false,
+          "fareType": [
+              "PUBLISHED"
+          ],
+          "refundableFare": false,
+          "noRestrictionFare": false,
+          "noPenaltyFare": false
+      },
+      "validatingAirlineCodes": [
+          "EY"
+      ],
+      "travelerPricings": [
+          {
+              "travelerId": "1",
+              "fareOption": "STANDARD",
+              "travelerType": "ADULT",
+              "price": {
+                  "currency": "EUR",
+                  "total": 396.97,
+                  "base": 220.0,
+                  "grandTotal": 0.0
+              },
+              "fareDetailsBySegment": [
+                  {
+                      "segmentId": "5",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "ENN00H2T",
+                      "class": "E",
+                      "includedCheckedBags": {
+                          "weight": 0,
+                          "weightUnit": "KG"
+                      }
+                  },
+                  {
+                      "segmentId": "6",
+                      "cabin": "ECONOMY",
+                      "fareBasis": "ENN00H2T",
+                      "class": "E",
+                      "includedCheckedBags": {
+                          "weight": 0,
+                          "weightUnit": "KG"
+                      }
+                  }
+              ]
+          }
+      ]
+  }
+]

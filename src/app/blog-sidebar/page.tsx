@@ -12,11 +12,23 @@
   import AutocompleteCountry from "@/components/globe/countries";
   import CityAutocomplete from "@/components/globe/city";
   import Blog from "@/components/Blog";
+  import { searchFlights } from "@/services/flightService";
+  import FlightBlog from "@/components/Blog/flightBlog"; // Updated import path
+  interface CityOption {
+    name: string;
+    code: string;
+  }
   const BlogSidebarPage = () => {
     const [origin, setOrigin] = React.useState('');
     const [destination, setDestination] = React.useState('');
-    const [departureCity, setDepartureCity] = React.useState('');
-    const [destinationCity, setDestinationCity] = React.useState('');
+    const [departureCity, setDepartureCity] = React.useState<CityOption | null>(null);
+    const [destinationCity, setDestinationCity] = React.useState<CityOption | null>(null);
+    const [departureDate, setDepartureDate] = React.useState("");
+    const [returnDate, setReturnDate] = React.useState(""); // if needed in future
+    const [adults, setAdults] = React.useState(1);
+    const [flightResults, setFlightResults] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState("");
     const handleCountrySelect = (type: 'origin' | 'destination', countryName: string) => {
       // console.log('Selected country:', countryName);
       if (type === 'origin') {
@@ -25,7 +37,29 @@
         setDestination(countryName);
       }
     };
-
+    const handleSearchFlights = async () => {
+      // Ensure required fields are filled
+      if (!departureCity || !destinationCity || !departureDate) {
+        setError("Please fill in the departure airport, destination airport, and departure date.");
+        return;
+      }
+      setError("");
+      setLoading(true);
+      try {
+        const data = await searchFlights(
+          departureCity.code,
+          destinationCity.code,
+          departureDate,
+          adults
+        );
+        setFlightResults(data);
+      } catch (err: any) {
+        console.error(err);
+        setError("An error occurred while searching for flights.");
+      } finally {
+        setLoading(false);
+      }
+    };
     return (
       <section className="overflow-hidden pb-[120px] pt-[180px]">
         <div className="container">
@@ -108,6 +142,8 @@
                     </label>
                     <input
                       type="date"
+                      value={departureDate}
+                      onChange={(e) => setDepartureDate(e.target.value)}
                       className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
                     />
                   </div>
@@ -117,6 +153,8 @@
                     </label>
                     <input
                       type="date"
+                      value={returnDate}
+                      onChange={(e) => setReturnDate(e.target.value)}
                       className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
                     />
                   </div>
@@ -135,15 +173,19 @@
                   </select>
                 </div>
                 {/* Search Button */}
-                <button className="flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 text-white transition hover:bg-opacity-90">
-                  Search Flights
+                <button
+                  onClick={handleSearchFlights}
+                  className="flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 text-white transition hover:bg-opacity-90"
+                >
+                  {loading ? "Searching..." : "Search Flights"}
                 </button>
               </div>
             </div>
           </div>
-          <Blog/>
           
             </div>
+            <FlightBlog flights={flightResults} />
+
           </div>
         </section>
     );

@@ -14,7 +14,6 @@ const Blog = () => {
             <div key={blog.id} className="w-full">
               <SingleBlog blog={blog} />
             </div>
-            
           ))}
         </div>
         <div className="-mx-4 flex flex-wrap" data-wow-delay=".15s">
