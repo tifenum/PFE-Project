@@ -2,7 +2,6 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-
 const FlightBlog = ({ flights }: { flights: any[] }) => {
   if (!flights || flights.length === 0) return null;
 

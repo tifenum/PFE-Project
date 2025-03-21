@@ -1,0 +1,91 @@
+{
+  width: 400,                               // width of seatmap, height will be dynamic and depends on amount of decks/rows in decks
+                                            // if `horizontal` flag is set to true - height and width will swap around (height being static)
+  lang: 'EN',                                            
+  horizontal: true,                         // should seatmap be rendered horizontally or vertically
+  rightToLeft: false,                       // changes tooltip text alignment (and decks placement) for RTL languages support
+  visibleFuselage: true,                    // should nose and tail graphics be rendered
+  visibleWings: false,                      // should position of wings be shown (helps to see how far/close they are from/to certain seats)
+  visibleCabinTitles: true,                 // should cabin titles be rendered
+  customCabinTitles: { F: 'First', B: 'Business', P: 'Premium', E: 'Economy' }, // optional, to override default cabin titles, defaults: F: 'First class', B: 'Business class', P: 'Premium class', E: 'Economy class',
+
+  builtInDeckSelector: false,               // if there's only one deck on the flight it doesn't do anything
+                                            // if there's more it's possible to render all decks at once or only one with ability to switch them
+  singleDeckMode: true,                     // if false, double-deck mode enabled - to show 2 decks at a time, without deck switcher
+
+  builtInTooltip: true,                     // see `onTooltipRequested` section
+  externalPassengerManagement: false,       // see `onTooltipRequested` section
+  tooltipOnHover: false,                    // see `onTooltipRequested` section
+
+  visibleSeatPriceLabels: false,             // should seat price labels be rendered
+  currencySign: '$',                        // сurrency sign that will be displayed in the seat price label. It will also be displayed in the price in the tooltip. Only 1 character is allowed, if the length of the passed value is longer it will be truncated
+
+  scaleType: 'zoom',                        // type of scaling applied to adjust to the desired width of the rendered seat map: `zoom` | `scale`, FF supports `scale` only
+
+  apiUrl: 'PROVIDED_API_URL',               
+  apiAppId: 'PROVIDED_APP_ID',
+  apiKey: 'PROVIDED_API_KEY',
+  apiAuthorizationScheme: 'Bearer',            // authorization scheme to be sent in API client requests 'Authorization' header (default: 'Bearer', e.g. 'Authorization: Bearer {apiKey}')
+  apiMetadata: {                            // any proprietary data to be passed in the POST request to /flight/features/plane/seatmap (e.g. for custom monitoring)
+    'PROPRIETARY_KEY': 'PROPRIETARY_VALUE',
+    ...
+  }
+  
+  hiddenSeatFeatures: ['limitedRecline', 'getColdByExit', 'doNotRecline', 'wingInWindow', 'nearLavatory', 'nearGalley'], // to exclude some seat features from the built-in tooltip, all seat features are still available within the `onTooltipRequested` event
+
+  colorTheme: {                             // most values are CSS-compatible
+    seatMapBackgroundColor: 'white',        
+
+    deckLabelTitleColor: 'white',
+    deckHeightSpacing: 100,                 // additional space on both ends of a deck (for aesthetics only)
+
+    wingsWidth: 50,                          
+    deckSeparation: 0,
+
+    floorColor: 'rgb(30,60,90)',            // color of decks floor
+    seatLabelColor: 'white',
+    seatStrokeColor: 'rgb(237, 237, 237)',
+    seatStrokeWidth: 1,
+    seatArmrestColor: '#cccccc',
+    notAvailableSeatsColor: 'lightgray',    // fill color for seats that are not available, applied when seat `availability` has been set
+
+    bulkBaseColor : 'dimgrey',              // colors for bulks 
+    bulkCutColor : 'lightgrey',
+    bulkIconColor: 'darkslategray',
+    bulkFloorIconColor: 'lightgrey',
+
+    defaultPassengerBadgeColor: 'darkred',
+    fontFamily: 'Montserrat, sans-serif',
+
+    tooltipBackgroundColor: 'rgb(255,255,255)',
+    tooltipHeaderColor: '#4f6f8f',
+    tooltipBorderColor: 'rgb(255,255,255)',
+    tooltipFontColor: '#4f6f8f',
+    tooltipIconColor: '#4f6f8f',            // applied to measurements icons, feature icons have set colors
+    tooltipIconBorderColor: '#4f6f8f',
+    tooltipIconBackgroundColor: '#fff',
+    tooltipSelectButtonTextColor: '#fff',
+    tooltipSelectButtonBackgroundColor: 'rgb(42, 85, 128)',
+    tooltipCancelButtonTextColor: '#fff',
+    tooltipCancelButtonBackgroundColor: 'rgb(55, 55, 55)',
+
+    deckSelectorStrokeColor: '#fff',
+    deckSelectorFillColor: 'rgba(55, 55, 55, 0.5)',
+    deckSelectorSize: 25,
+
+    fuselageStrokeWidth: 16,                // surrounds the whole plane including tail\nose if enabled (min = 10, max = 18)
+
+    fuselageFillColor: 'lightgrey',
+    fuselageStrokeColor: 'darkgrey',
+
+    fuselageWindowsColor: 'darkgrey',
+    fuselageWingsColor: 'rgba(55, 55, 55, 0.5)',
+
+    exitIconUrlLeft: 'https://panorama.quicket.io/icons/exit-left.svg', // URL to override built-in left exit icon, optional
+    exitIconUrlRight: 'https://panorama.quicket.io/icons/exit-right.svg', // URL to override built-in right exit icon, optional
+
+    cabinTitlesWidth: 80,
+    cabinTitlesHighlightColors: { F: '#BDB76B', B: '#FF8C00', P: '#8FBC8F', E: '#1E90FF' },
+    cabinTitlesLabelColor: '#00BFFF',
+  },
+};

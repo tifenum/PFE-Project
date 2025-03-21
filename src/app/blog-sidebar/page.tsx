@@ -13,7 +13,7 @@
   import CityAutocomplete from "@/components/globe/city";
   import Blog from "@/components/Blog";
   import { searchFlights } from "@/services/flightService";
-  import FlightBlog from "@/components/Blog/flightBlog"; // Updated import path
+  import FlightBlog from "@/components/Blog/flightBlog"; // Updated import clipPath
   interface CityOption {
     name: string;
     code: string;
@@ -50,6 +50,7 @@
           departureCity.code,
           destinationCity.code,
           departureDate,
+          returnDate,
           adults
         );
         setFlightResults(data);
@@ -78,7 +79,6 @@
                 />
               </div>
             </div>
-  
             <div className="w-full px-4 lg:w-4/12">
               <div className="shadow-three dark:bg-gray-dark mb-10 mt-12 rounded-sm bg-white p-6 dark:shadow-none lg:mt-0">
                 <h2 className="mb-6 text-2xl font-bold text-dark dark:text-white">
@@ -93,23 +93,12 @@
                       handleCountrySelect('origin', value);
                     }}
                   />
-  
-                  {/* <div>
-                    <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                      Department City
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter Department city"
-                      className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
-                    />
-                  </div> */}
-        <CityAutocomplete
-        label="Departure Airport"
-        value={departureCity}
-        onChange={setDepartureCity}
-        country={origin}
-      />
+                    <CityAutocomplete
+                    label="Departure Airport"
+                    value={departureCity}
+                    onChange={setDepartureCity}
+                    country={origin}
+                  />
                   <AutocompleteCountry
                     label="Destination Country"
                     value={destination}
@@ -118,23 +107,12 @@
                       handleCountrySelect('destination', value);
                     }}
                   />
-        <CityAutocomplete
-        label="Destination Airport"
-        value={destinationCity}
-        onChange={setDestinationCity}
-        country={destination}
-      />
-                   {/* <div>
-                   <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                      Destination City
-                   </label>
-                     <input
-                      type="text"
-                      placeholder="Enter Destination city"
-                      className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
-                    />
-                  </div> */}
-                {/* Dates */}
+                  <CityAutocomplete
+                  label="Destination Airport"
+                  value={destinationCity}
+                  onChange={setDestinationCity}
+                  country={destination}
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
@@ -159,7 +137,6 @@
                     />
                   </div>
                 </div>
-                {/* Passengers */}
                 <div>
                   <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
                     Adults
@@ -172,7 +149,34 @@
                     ))}
                   </select>
                 </div>
-                {/* Search Button */}
+                <div className="col-md-6">
+                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                Class</label>
+            <select
+                    className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
+                    >
+              <option value="economy">Economy</option>
+              <option value="business">Business</option>
+              <option value="first">First Class</option>
+            </select>
+
+            </div>
+
+
+            <div className="col-md-6">
+            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+            Flight</label>
+            <select
+                    className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
+                    >
+              <option value="economy">One-way</option>
+              <option value="business">Round-trip</option>
+            </select>
+
+
+
+
+          </div>
                 <button
                   onClick={handleSearchFlights}
                   className="flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 text-white transition hover:bg-opacity-90"
@@ -182,7 +186,6 @@
               </div>
             </div>
           </div>
-          
             </div>
             <FlightBlog flights={flightResults} />
 
