@@ -4,6 +4,8 @@ import { Metadata } from "next";
 import React, { useEffect, useRef, useState } from "react";
 import OfferList from "@/components/Pricing/OfferList";
 import PricingBox from "@/components/Pricing/PricingBox";
+import { useRouter, useParams } from "next/navigation"; // For Next.js App Router (use "next/router" for Pages Router)
+import { useSearchParams } from "next/navigation";
 
 declare global {
   interface Window {
@@ -13,13 +15,17 @@ declare global {
     boeingData: any;
   }
 }
-const BlogSidebarPage = () => {
+const FlightDetails = () => {
   const chartRef = useRef<any>(null);
-
-
+  const router = useRouter();
+  const { id } = useParams(); // Get flight ID from URL
+  const searchParams = useSearchParams();
+  const data = searchParams.get("data");
+  const flight = data ? JSON.parse(data) : null;
 
 
   useEffect(() => {
+    console.log(flight);
     const loadScript = (src: string) => {
       return new Promise((resolve, reject) => {
         const script = document.createElement("script");
@@ -111,4 +117,4 @@ const BlogSidebarPage = () => {
   );
 };
 
-export default BlogSidebarPage;
+export default FlightDetails;

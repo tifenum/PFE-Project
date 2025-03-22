@@ -12,7 +12,7 @@ import Video from "@/components/Video";
 import { Metadata } from "next";
 import Global from "@/components/globe/globe";
 export const metadata: Metadata = {
-  title: "Free Next.js Template for Startup and SaaS",
+  title: "Booking Platform",
   description: "This is Home for Startup Nextjs Template",
   // other metadata
 };
@@ -24,7 +24,6 @@ export default function Home() {
       <Hero />
       <Features />
       <Video />
-      <Global />
       <Brands />
       <AboutSectionOne />
       <AboutSectionTwo />
