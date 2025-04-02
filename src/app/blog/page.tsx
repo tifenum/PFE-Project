@@ -7,7 +7,8 @@ import L from "leaflet";
 import { FiArrowRight, FiMapPin, FiPaperclip } from "react-icons/fi";
 import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeyword } from "@/services/hotelService";
 import AutocompleteCountry from "@/components/globe/countries";
-
+import { useRouter } from "next/navigation"; // For Next.js routing
+import Link from "next/link"; // Import Link for navigation
 delete L.Icon.Default.prototype._getIconUrl;
 
 interface Country {
@@ -46,6 +47,7 @@ const MapClickHandler = ({ isDrawing, onCircleSet }) => {
 };
 
 const BookingPage = () => {
+  const router = useRouter(); // Add router for navigation
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [hotelImage, setHotelImage] = useState(null);
   const [bookingCountry, setBookingCountry] = useState<Country>({ name: "", code: "" });
@@ -66,7 +68,12 @@ const BookingPage = () => {
     const randomNumber = Math.floor(Math.random() * 63) + 1;
     return `/images/hotel-images/hotel${randomNumber}.jpg`;
   };
-
+  const handleBookNow = (hotel) => {
+    const stateName = typeof destination === "object" ? destination.name || "" : destination || "";
+    const url = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&country=${encodeURIComponent(bookingCountry.name)}&state=${encodeURIComponent(stateName)}`;
+    console.log("Navigating to:", url); // Debug
+    router.push(url);
+  };
   useEffect(() => {
     console.log("Hotels:", hotels);
   }, [hotels]);
@@ -203,34 +210,45 @@ const BookingPage = () => {
                     pathOptions={{ color: "blue", fillColor: "blue", fillOpacity: 0.2 }}
                   />
                 )}
-                {hotels.length > 0
-                  ? hotels.map((hotel, index) =>
-                      hotel.geoCode && hotel.geoCode.latitude && hotel.geoCode.longitude ? (
-                        <Marker
-                          key={hotel.hotelId || index}
-                          position={[hotel.geoCode.latitude, hotel.geoCode.longitude]}
-                          icon={hotelIcon}
-                          eventHandlers={{ click: () => handleMarkerClick(hotel) }}
-                        >
-                          <Popup maxWidth={300} minWidth={200}>
-                            {selectedHotel && selectedHotel.hotelId === hotel.hotelId && hotelImage ? (
-                              <div className="text-center">
-                                <h3 className="font-bold text-lg mb-2">{hotel.name}</h3>
-                                <img
-                                  src={hotelImage}
-                                  alt={hotel.name}
-                                  style={{ width: "100%", height: "auto" }}
-                                  onError={(e) => (e.target.src = "/images/hotel-images/fallback.jpg")}
-                                />
-                              </div>
-                            ) : (
-                              <p>Loading image...</p>
-                            )}
-                          </Popup>
-                        </Marker>
-                      ) : null
-                    )
-                  : null}
+{hotels.length > 0 &&
+                  hotels.map((hotel, index) =>
+                    hotel.geoCode && hotel.geoCode.latitude && hotel.geoCode.longitude ? (
+                      <Marker
+                        key={hotel.hotelId || index}
+                        position={[hotel.geoCode.latitude, hotel.geoCode.longitude]}
+                        icon={hotelIcon}
+                        eventHandlers={{ click: () => handleMarkerClick(hotel) }}
+                      >
+                        <Popup maxWidth={300} minWidth={200}>
+                          {selectedHotel && selectedHotel.hotelId === hotel.hotelId && hotelImage ? (
+                            <div className="text-center">
+                              <h3 className="font-bold text-lg mb-2">{hotel.name}</h3>
+                              <img
+                                src={hotelImage}
+                                alt={hotel.name}
+                                style={{ width: "100%", height: "auto" }}
+                                onError={(e) => (e.target.src = "/images/hotel-images/fallback.jpg")}
+                              />
+<Link
+                                href={{
+                                  pathname: "/hotel-details",
+                                  query: {
+                                    lat: hotel.geoCode.latitude,
+                                    lng: hotel.geoCode.longitude,
+                                    hotelName: hotel.name, // Added hotelName for the endpoint
+                                  },
+                                }}
+                              >
+                                <button>Book Now</button>
+                              </Link>
+                            </div>
+                          ) : (
+                            <p>Loading image...</p>
+                          )}
+                        </Popup>
+                      </Marker>
+                    ) : null
+                  )}
               </MapContainer>
             </div>
           </div>
