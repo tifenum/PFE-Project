@@ -1,6 +1,5 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import Global from "@/components/globe/globe2";
 import countries from '@/components/globe/contries.json'; // Import your JSON file
 
 interface Country {
@@ -15,7 +14,7 @@ const AutocompleteCountry = ({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (country: Country) => void; // Changed to pass the full country object
 }) => {
   const [suggestions, setSuggestions] = useState<Country[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -36,8 +35,8 @@ const AutocompleteCountry = ({
     }
   }, [value]);
 
-  const handleCountrySelect = (countryName: string) => {
-    onChange(countryName);
+  const handleCountrySelect = (country: Country) => {
+    onChange(country); // Pass the full country object
     setShowSuggestions(false); // Immediately hide the dropdown
   };
 
@@ -50,7 +49,7 @@ const AutocompleteCountry = ({
         type="text"
         placeholder={`Enter ${label}`}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange({ name: e.target.value, code: '' })} // Update with partial country object
         className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
       />
       {showSuggestions && (
@@ -59,7 +58,7 @@ const AutocompleteCountry = ({
             <div
               key={country.code}
               className="cursor-pointer px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => handleCountrySelect(country.name)}
+              onClick={() => handleCountrySelect(country)}
             >
               {country.name}
             </div>

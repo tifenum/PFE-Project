@@ -77,10 +77,10 @@ const BlogSidebarPage = () => {
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           {/* Flight Information Card */}
           <div className="w-full lg:w-1/2 px-4">
-            <PricingBox
+            {/* <PricingBox
               packageName="Flight Information"
               price="780"
-              duration="" // No duration text for flight price
+              duration=""
               subtitle="Experience a world-class journey with Air France."
             >
               <OfferList text="Trajectory: New York (JFK) → Paris (CDG)" status="active" />
@@ -92,8 +92,7 @@ const BlogSidebarPage = () => {
               <OfferList text="Departure: 7:30 PM" status="active" />
               <OfferList text="Arrival: 10:15 AM (Next Day)" status="active" />
               <OfferList text="Seat Class: Economy" status="active" />
-              {/* <OfferList text="Baggage: 1 Checked Bag, 1 Carry-on" status="active" /> */}
-            </PricingBox>
+            </PricingBox> */}
           </div>
 
 

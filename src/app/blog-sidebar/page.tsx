@@ -89,8 +89,8 @@
                     label="Origin Country"
                     value={origin}
                     onChange={(value) => {
-                      setOrigin(value);
-                      handleCountrySelect('origin', value);
+                      setOrigin(value.name);
+                      handleCountrySelect('origin', value.name);
                     }}
                   />
                     <CityAutocomplete
@@ -103,8 +103,8 @@
                     label="Destination Country"
                     value={destination}
                     onChange={(value) => {
-                      setDestination(value);
-                      handleCountrySelect('destination', value);
+                      setDestination(value.name);
+                      handleCountrySelect('destination', value.name);
                     }}
                   />
                   <CityAutocomplete

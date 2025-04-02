@@ -15,7 +15,7 @@ const menuData: Menu[] = [
   },
   {
     id: 33,
-    title: "Blog",
+    title: "Hotels",
     path: "/blog",
     newTab: false,
   },
@@ -27,7 +27,7 @@ const menuData: Menu[] = [
   },
   {
     id:4,
-    title: "flight",
+    title: "Flights",
     path: "/blog-sidebar",
     newTab: false,
   },

@@ -15,7 +15,7 @@ export const login = async (email: string, password: string) => {
 
     if (response.status === 200) {
       const token = response.data;
-      localStorage.setItem("jwt_token", token);
+      localStorage.setItem("jwt_token", token.access_token);
       return { success: true, token };
     } else {
       return { success: false, error: "Invalid credentials" };
