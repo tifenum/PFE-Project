@@ -41,3 +41,40 @@ export const searchHotelsByKeyword = async ({ keyword }) => {
     return [];
   }
 };
+export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
+  try {
+    const queryParams = new URLSearchParams({
+      latitude,
+      longitude,
+      hotelName: encodeURIComponent(hotelName), // Make sure hotelName is URL-safe
+    });
+    const res = await fetch(`http://localhost:8222/api/hotels/fake?${queryParams.toString()}`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch fake hotel data");
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching fake hotel:", error);
+    return null;
+  }
+};
+export const createBooking = async (bookingData) => {
+  try {
+    const res = await fetch("http://localhost:8222/api/hotels/book", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookingData),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to create booking");
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    throw error;
+  }
+};
