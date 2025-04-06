@@ -47,7 +47,7 @@ const FlightDetails = () => {
       const bookingData = {
         userId,
         flightDetails: flightData,
-        bookingStatus: 'Booked',
+        bookingStatus: 'Pending',
       };
       console.log("Booking Data:", bookingData); // logging the entire object
       await bookFlight(bookingData); // passing the entire object

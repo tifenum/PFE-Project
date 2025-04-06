@@ -111,3 +111,35 @@ export const fetchHotelReservations = async () => {
   }
 };
 
+// services/flightService.ts
+
+export const fetchFlightReservations = async () => {
+  try {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) throw new Error("No token found");
+
+    interface DecodedToken {
+      sub: string;
+    }
+    const decoded: DecodedToken = jwtDecode(token);
+    const userId = decoded.sub;
+
+    const res = await fetch(
+      `http://localhost:8222/api/flights/bookings?userId=${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch flight reservations");
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching flight reservations:", error);
+    return [];
+  }
+};
