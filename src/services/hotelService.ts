@@ -1,5 +1,7 @@
 // services/hotelService.js
 
+import { jwtDecode } from "jwt-decode";
+
 export async function searchCities({ countryCode, keyword, max = 10 }) {
   try {
     const queryParams = new URLSearchParams({ countryCode, keyword, max: max.toString() });
@@ -78,3 +80,34 @@ export const createBooking = async (bookingData) => {
     throw error;
   }
 };
+
+
+export const fetchHotelReservations = async () => {
+  try {
+    const token = localStorage.getItem("jwt_token");
+
+    if (!token) throw new Error("No token found");
+
+    interface DecodedToken {
+      sub: string; // Adjust the type of 'sub' based on your JWT structure
+    }
+    const decoded: DecodedToken = jwtDecode(token);
+    const userId = decoded.sub;
+
+    const res = await fetch(`http://localhost:8222/api/hotels/reservations?userId=${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`, // optional, remove if your API doesn't expect it
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch hotel reservations");
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching hotel reservations:", error);
+    return [];
+  }
+};
+
