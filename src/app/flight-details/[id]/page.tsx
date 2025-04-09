@@ -21,7 +21,6 @@ const FlightDetails = () => {
   const searchParams = useSearchParams();
   const data = searchParams.get("data");
   const initialFlight = data ? JSON.parse(data) : null;
-
   const [flightData, setFlightData] = useState(initialFlight);
 
   // Extract userId from localStorage (or sessionStorage)
@@ -89,12 +88,12 @@ const FlightDetails = () => {
             type: "GET",
             url: "https://cdn.anychart.com/svg-data/seat-map/boeing_737.svg",
             success: (svgData) => {
-              if (!flightData || !flightData.travelerPricings || !flightData.travelerPricings[0]?.seatMap) {
+              if (!flightData || !flightData.seatMap[0]) {
                 console.error("No seat map data found in flight data");
                 return;
               }
 
-              const seatData = flightData.travelerPricings[0].seatMap.map((seat: { id: string; isReserved: boolean; class: string }) => {
+              const seatData = flightData.seatMap[0].map((seat: { id: string; isReserved: boolean; class: string }) => {
                 let fillColor = "#4CAF50";
                 if (seat.isReserved) {
                   fillColor = "red";
@@ -110,7 +109,6 @@ const FlightDetails = () => {
                   isReserved: seat.isReserved,
                 };
               });
-
               const chart = window.anychart.seatMap(seatData);
               chart.geoData(svgData);
               chart.padding([10, 0, 15, 0]).unboundRegions("as-is");
@@ -155,28 +153,26 @@ const FlightDetails = () => {
                 const seatId = e.point.get("id");
                 const seatClass = e.point.get("class");
                 if (e.point.get("isReserved")) return;
-
+              
                 let extraCost = 0;
                 if (seatClass === "Business") extraCost = 150;
                 else if (seatClass === "Econom-Plus") extraCost = 80;
                 else extraCost = 30;
-
-                const currentPrice = parseFloat(flightData.price.total);
-                const newPrice = (currentPrice + extraCost).toFixed(2);
-
+              
+                const currentPrice = parseFloat(flightData.price.replace(',', '.'));
+                const newPriceValue = currentPrice + extraCost;
+                const newPrice = newPriceValue.toFixed(2).replace('.', ',');
+              
                 const updatedFlight = {
                   ...flightData,
-                  price: {
-                    ...flightData.price,
-                    total: newPrice,
-                  },
+                  price: newPrice,
                   selectedSeat: {
                     id: seatId,
                     class: seatClass,
                     extraCost: extraCost,
                   },
                 };
-
+              
                 setFlightData(updatedFlight);
               });
             },
@@ -193,9 +189,9 @@ const FlightDetails = () => {
           <div className="w-full lg:w-1/2 px-4">
             <PricingBox
               packageName="Flight Information"
-              price={flightData?.price?.total || "N/A"}
+              price={flightData?.price || "N/A"}
               duration=""
-              subtitle={`Experience a world-class journey with ${flightData?.validatingAirlineCodes?.[0] || "Unknown Airline"}.`}
+              subtitle={`Experience a world-class journey with ${flightData?.AirlineCodes || "Unknown Airline"}.`}
               handleBook={handleBook} // Pass the handleBook function to PricingBox
             >
               <OfferList
@@ -211,7 +207,7 @@ const FlightDetails = () => {
                 status="active"
               />
               <OfferList
-                text={`Type of Plane: ${flightData?.itineraries?.[0]?.segments?.[0]?.aircraft?.code || "Unknown"}`}
+                text={`Type of Plane: Boeing 737`}
                 status="active"
               />
               <OfferList
@@ -219,7 +215,7 @@ const FlightDetails = () => {
                 status="active"
               />
               <OfferList
-                text={`Airline: ${flightData?.validatingAirlineCodes?.[0] || "Unknown Airline"}`}
+                text={`Airline: ${flightData?.AirlineCodes || "Unknown Airline"}`}
                 status="active"
               />
               <OfferList
@@ -236,7 +232,7 @@ const FlightDetails = () => {
               />
               {flightData?.selectedSeat && (
                 <OfferList
-                  text={`Selected Seat: ${flightData.selectedSeat.id} (${flightData.selectedSeat.class}) - Extra Cost: +${flightData.selectedSeat.extraCost} $`}
+                  text={`Selected Seat: ${flightData.selectedSeat.id} (${flightData.selectedSeat.class} +$ ${flightData.selectedSeat.extraCost} $)`}
                   status="active"
                 />
               )}

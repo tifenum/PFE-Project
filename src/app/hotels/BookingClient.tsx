@@ -9,6 +9,7 @@ import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeywor
 import AutocompleteCountry from "@/components/globe/countries";
 import { useRouter } from "next/navigation"; // For Next.js routing
 import Link from "next/link"; // Import Link for navigation
+
 delete L.Icon.Default.prototype._getIconUrl;
 
 interface Country {
@@ -33,6 +34,14 @@ const MapUpdater = ({ center }) => {
   }, [center, map]);
   return null;
 };
+const resetMapContainer = (id) => {
+  const container = L.DomUtil.get(id);
+  if (container && container._leaflet_id) {
+    container._leaflet_id = null;
+  }
+};
+
+
 
 const MapClickHandler = ({ isDrawing, onCircleSet }) => {
   useMapEvents({
@@ -77,7 +86,9 @@ const ClientBookingPage = () => {
   useEffect(() => {
     console.log("Hotels:", hotels);
   }, [hotels]);
-
+  useEffect(() => {
+    resetMapContainer("map"); // Ensure the container is reset before mount
+  }, []);
   useEffect(() => {
     if (
       typeof destination !== "string" ||
@@ -196,7 +207,7 @@ const ClientBookingPage = () => {
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           <div className="w-full lg:w-8/12 px-4">
             <div style={{ height: "calc(105vh - 8rem)", overflow: "hidden" }}>
-              <MapContainer center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
+            <MapContainer id="map" center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
                 <MapUpdater center={mapCenter} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -16,6 +16,7 @@ export const login = async (email: string, password: string) => {
     if (response.status === 200) {
       const token = response.data;
       localStorage.setItem("jwt_token", token.access_token);
+      console.log("Login successful:", token);
       return { success: true, token };
     } else {
       return { success: false, error: "Invalid credentials" };
@@ -72,5 +73,23 @@ export const signup = async (username: string, email: string, password: string) 
       return { success: false, error: 'Email already in use' };
     }
     return { success: false, error: 'Signup failed. Please try again.' };
+  }
+};
+export const fetchAllClients = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/clients`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
+      },
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error('Failed to fetch clients');
+    }
+  } catch (error) {
+    console.error('Error fetching clients:', error.response?.data || error.message);
+    return []; // Returning empty array in case of error
   }
 };

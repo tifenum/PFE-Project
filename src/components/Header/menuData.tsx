@@ -9,26 +9,20 @@ const menuData: Menu[] = [
   },
   {
     id: 2,
-    title: "About",
-    path: "/about",
+    title: "My-Bookings",
+    path: "/mybookings",
     newTab: false,
   },
   {
     id: 33,
     title: "Hotels",
-    path: "/blog",
-    newTab: false,
-  },
-  {
-    id: 3,
-    title: "Support",
-    path: "/contact",
+    path: "/hotels",
     newTab: false,
   },
   {
     id:4,
     title: "Flights",
-    path: "/blog-sidebar",
+    path: "/flights",
     newTab: false,
   },
   {

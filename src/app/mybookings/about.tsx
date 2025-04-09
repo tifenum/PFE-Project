@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from "react";
-import { fetchHotelReservations ,fetchFlightReservations } from "@/services/hotelService";
+import { fetchHotelReservations } from "@/services/hotelService";
+import { fetchFlightReservations } from "@/services/flightService"; // Adjust this import based on your file structure
 
 const ReservationsPage = () => {
   const [activeTab, setActiveTab] = useState<"flight" | "hotel">("flight");
@@ -18,6 +19,8 @@ const ReservationsPage = () => {
         ]);
         setHotelReservations(hotels);
         setFlightReservations(flights);
+        console.log("Flight Reservations:", flights);
+        console.log("hotel reservations:", hotels);
       } catch (error) {
         console.error("Error fetching reservations:", error);
       } finally {

@@ -1,3 +1,6 @@
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+
 export async function searchFlights(
   origin: string,
   destination: string,
@@ -35,3 +38,62 @@ export async function bookFlight(bookingData) {
     throw error;
   }
 }
+export const fetchFlightReservations = async () => {
+  try {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) throw new Error("No token found");
+
+    interface DecodedToken {
+      sub: string;
+    }
+    const decoded: DecodedToken = jwtDecode(token);
+    const userId = decoded.sub;
+
+    const res = await fetch(
+      `http://localhost:8222/api/flights/bookings?userId=${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch flight reservations");
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching flight reservations:", error);
+    return [];
+  }
+};
+export async function getPendingBookings() {
+  const url = "http://localhost:8222/api/flights/all-bookings";
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch pending bookings.");
+  }
+
+  return response.json();
+}
+
+export const updateBookingStatus = async (bookingId: string, status: "Accepted" | "Refused") => {
+  try {
+    const response = await axios.put(
+      `http://localhost:8222/api/flights/bookings/${bookingId}/status`,
+      { status },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data; // Assuming it returns the updated booking
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    throw error;
+  }
+};

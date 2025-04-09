@@ -1,5 +1,6 @@
 // services/hotelService.js
 
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
 export async function searchCities({ countryCode, keyword, max = 10 }) {
@@ -113,33 +114,37 @@ export const fetchHotelReservations = async () => {
 
 // services/flightService.ts
 
-export const fetchFlightReservations = async () => {
+
+export const fetchAllPendingHotelReservations = async () => {
   try {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) throw new Error("No token found");
+    const response = await fetch("http://localhost:8222/api/hotels/all-reservations");
 
-    interface DecodedToken {
-      sub: string;
-    }
-    const decoded: DecodedToken = jwtDecode(token);
-    const userId = decoded.sub;
-
-    const res = await fetch(
-      `http://localhost:8222/api/flights/bookings?userId=${userId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch flight reservations");
+    if (!response.ok) {
+      throw new Error("Failed to fetch all pending hotel reservations");
     }
 
-    return await res.json();
+    return await response.json();
   } catch (error) {
-    console.error("Error fetching flight reservations:", error);
+    console.error("Error fetching all pending hotel reservations:", error);
     return [];
   }
 };
+
+export const updateHotelReservationStatus = async (reservationId: string, status: "Accepted" | "Refused") => {
+  try {
+    const response = await axios.put(
+      `http://localhost:8222/api/hotels/reservations/${reservationId}/status`,
+      { status },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data; // Assuming it returns the updated reservation
+  } catch (error) {
+    console.error("Error updating reservation status:", error);
+    throw error;
+  }
+}
