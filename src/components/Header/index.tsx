@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -6,6 +7,7 @@ import { useEffect, useState } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import adminMenuData from "./adminMenuData";
+import { logout } from "@/services/userService";
 
 const Header = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
@@ -16,56 +18,46 @@ const Header = () => {
 
   const pathname = usePathname();
 
-  // Sticky Navbar
-  useEffect(() => {
-    const handleStickyNavbar = () => {
-      setSticky(window.scrollY >= 80);
-    };
-
-    window.addEventListener("scroll", handleStickyNavbar);
-    return () => window.removeEventListener("scroll", handleStickyNavbar);
-  }, []);
-
-  // Detect login & admin status on mount and whenever localStorage changes
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("jwt_token");
-      if (token) {
-        setIsLoggedIn(true);
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          const roles = payload?.realm_access?.roles || [];
-          setIsAdmin(roles.includes("admin"));
-        } catch (error) {
-          console.error("Error decoding token:", error);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsLoggedIn(false);
+  const checkAuth = () => {
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+      setIsLoggedIn(true);
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const roles = payload?.realm_access?.roles || [];
+        setIsAdmin(roles.includes("admin"));
+      } catch (error) {
+        console.error("Error decoding token:", error);
         setIsAdmin(false);
       }
-    };
+    } else {
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+    }
+  };
 
+  useEffect(() => {
     checkAuth();
 
-    // Listen for changes from other tabs or login/logout updates
-    const handleStorageChange = () => {
+    const handleAuthChange = () => {
       checkAuth();
     };
 
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("authChange", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("jwt_token");
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await logout();
     setIsLoggedIn(false);
     setIsAdmin(false);
-    window.dispatchEvent(new Event("storage")); // Trigger auth check in other tabs
+    window.dispatchEvent(new Event("authChange"));
+    window.location.href = "/";
   };
 
   const navbarToggleHandler = () => setNavbarOpen(!navbarOpen);
@@ -139,7 +131,11 @@ const Header = () => {
                     <li key={menuItem.id} className="group relative">
                       {menuItem.path ? (
                         <Link
-                          href={menuItem.path}
+                          href={
+                            menuItem.path === "/mybookings" && !isLoggedIn
+                              ? `/signin?redirect=${encodeURIComponent("/mybookings")}`
+                              : menuItem.path
+                          }
                           className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
                             pathname === menuItem.path
                               ? "text-primary dark:text-white"

@@ -3,7 +3,7 @@ import { Menu } from "@/types/menu";
 const adminMenuData: Menu[] = [
   {
     id: 100,
-    title: "Users",
+    title: "List of Users",
     path: "/admin/users-list",
     newTab: false,
   },

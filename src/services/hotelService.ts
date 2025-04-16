@@ -51,7 +51,11 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
       longitude,
       hotelName: encodeURIComponent(hotelName), // Make sure hotelName is URL-safe
     });
-    const res = await fetch(`http://localhost:8222/api/hotels/fake?${queryParams.toString()}`);
+    const res = await fetch(`http://localhost:8222/api/hotels/fake?${queryParams.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+      },
+    });
     if (!res.ok) {
       throw new Error("Failed to fetch fake hotel data");
     }
@@ -67,6 +71,8 @@ export const createBooking = async (bookingData) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+
       },
       body: JSON.stringify(bookingData),
     });
@@ -117,7 +123,11 @@ export const fetchHotelReservations = async () => {
 
 export const fetchAllPendingHotelReservations = async () => {
   try {
-    const response = await fetch("http://localhost:8222/api/hotels/all-reservations");
+    const response = await fetch("http://localhost:8222/api/hotels/all-reservations", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+      },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch all pending hotel reservations");
@@ -129,6 +139,7 @@ export const fetchAllPendingHotelReservations = async () => {
     return [];
   }
 };
+
 
 export const updateHotelReservationStatus = async (reservationId: string, status: "Accepted" | "Refused") => {
   try {

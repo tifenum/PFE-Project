@@ -51,7 +51,6 @@ const UsersListPage = () => {
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">ID</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Username</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Role</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Registered Date</th>
               </tr>
             </thead>
@@ -62,7 +61,6 @@ const UsersListPage = () => {
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{user.id || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{user.username || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{user.email || "-"}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{user.role || "client"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
                     </td>

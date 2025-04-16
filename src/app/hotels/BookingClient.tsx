@@ -7,8 +7,8 @@ import L from "leaflet";
 import { FiArrowRight, FiMapPin, FiPaperclip } from "react-icons/fi";
 import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeyword } from "@/services/hotelService";
 import AutocompleteCountry from "@/components/globe/countries";
-import { useRouter } from "next/navigation"; // For Next.js routing
-import Link from "next/link"; // Import Link for navigation
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -221,7 +221,7 @@ const ClientBookingPage = () => {
                     pathOptions={{ color: "blue", fillColor: "blue", fillOpacity: 0.2 }}
                   />
                 )}
-{hotels.length > 0 &&
+                {hotels.length > 0 &&
                   hotels.map((hotel, index) =>
                     hotel.geoCode && hotel.geoCode.latitude && hotel.geoCode.longitude ? (
                       <Marker
@@ -240,18 +240,29 @@ const ClientBookingPage = () => {
                                 style={{ width: "100%", height: "auto" }}
                                 onError={(e) => (e.target.src = "/images/hotel-images/fallback.jpg")}
                               />
-<Link
-                                href={{
-                                  pathname: "/hotel-details",
-                                  query: {
-                                    lat: hotel.geoCode.latitude,
-                                    lng: hotel.geoCode.longitude,
-                                    hotelName: hotel.name, // Added hotelName for the endpoint
-                                  },
-                                }}
-                              >
-                                <button>Book Now</button>
-                              </Link>
+                              { typeof window !== "undefined" && localStorage.getItem("jwt_token") ? (
+                                <Link
+                                  href={{
+                                    pathname: "/hotel-details",
+                                    query: {
+                                      lat: hotel.geoCode.latitude,
+                                      lng: hotel.geoCode.longitude,
+                                      hotelName: hotel.name, // Added hotelName for the endpoint
+                                    },
+                                  }}
+                                >
+                                  <button>Book Now</button>
+                                </Link>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    const redirectUrl = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&hotelName=${encodeURIComponent(hotel.name)}`;
+                                    router.push(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
+                                  }}
+                                >
+                                  Book Now
+                                </button>
+                              )}
                             </div>
                           ) : (
                             <p>Loading image...</p>

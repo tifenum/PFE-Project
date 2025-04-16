@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GoogleLogin, login } from "@/services/userService";
+import {  login } from "@/services/userService";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,25 +12,29 @@ const SigninPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const result = await login(email, password);
     if (result.success) {
-      // Force a full page reload to update the nav bar
-      window.location.href = "/";
+      // Notify Header of login
+      window.dispatchEvent(new Event("authChange"));
+      const params = new URLSearchParams(window.location.search);
+      let redirectPath = params.get("redirect") || "/";
+      // Validate redirect
+      try {
+        const url = new URL(redirectPath, window.location.origin);
+        if (url.origin !== window.location.origin) {
+          redirectPath = "/";
+        }
+      } catch {
+        redirectPath = "/";
+      }
+      router.push(redirectPath);
     } else {
-      alert(result.error);
+      alert(result.error || "Login failed. Please try again.");
     }
   };
+  
 
-  const handleGoogleLogin = async () => {
-    try {
-      await GoogleLogin();
-      // Note: The actual redirect and token handling happens via the backend.
-      // After Google auth, the backend redirects back to your app (e.g., "/").
-      // We'll handle the callback separately if needed.
-    } catch (error) {
-      console.error("Error during Google login:", error);
-    }
-  };
 
   return (
     <>
@@ -46,7 +50,6 @@ const SigninPage = () => {
                   Login to your account for a faster checkout.
                 </p>
                 <button
-                  onClick={handleGoogleLogin}
                   className="border-stroke dark:text-body-color-dark dark:shadow-two mb-6 flex w-full items-center justify-center rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 hover:border-primary hover:bg-primary/5 hover:text-primary dark:border-transparent dark:bg-[#2C303B] dark:hover:border-primary dark:hover:bg-primary/5 dark:hover:text-primary dark:hover:shadow-none"
                 >
                   <span className="mr-3">

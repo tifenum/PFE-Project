@@ -10,7 +10,7 @@ export async function searchFlights(
 ) {
   const url = `http://localhost:8222/api/flights/fake?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&adults=${adults}`;
   const response = await fetch(url);
-  console.log(response);
+   console.log(response);
   if (!response.ok) {
     throw new Error('Flight search failed');
   }
@@ -19,13 +19,14 @@ export async function searchFlights(
 
 export async function bookFlight(bookingData) {
   try {
-    console.log("Booking Data:", bookingData); // logging the entire object
+    console.log("Booking Data:", bookingData);
     const response = await fetch("http://localhost:8222/api/flights/book-flight", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
       },
-      body: JSON.stringify(bookingData), // sending the full object
+      body: JSON.stringify(bookingData),
     });
 
     if (!response.ok) {
@@ -70,8 +71,15 @@ export const fetchFlightReservations = async () => {
 };
 export async function getPendingBookings() {
   const url = "http://localhost:8222/api/flights/all-bookings";
-  const response = await fetch(url);
-
+  const token = localStorage.getItem("jwt_token");
+  if (!token) {
+    throw new Error("No token found");
+  }
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   if (!response.ok) {
     throw new Error("Failed to fetch pending bookings.");
   }
