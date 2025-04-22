@@ -1,12 +1,12 @@
-
 "use client";
-import { Metadata } from "next";
-import React, { useEffect, useRef, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import OfferList from "@/components/Pricing/OfferList";
 import PricingBox from "@/components/Pricing/PricingBox";
-import { useSearchParams } from "next/navigation";
-import {bookFlight} from "@/services/flightService"; // Import flightService
+import { bookFlight } from "@/services/flightService";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -16,177 +16,182 @@ declare global {
   }
 }
 
-const FlightDetails = () => {
+export default function FlightDetails() {
   const chartRef = useRef<any>(null);
-  const searchParams = useSearchParams();
-  const data = searchParams.get("data");
-  const initialFlight = data ? JSON.parse(data) : null;
-  const [flightData, setFlightData] = useState(initialFlight);
-
-  // Extract userId from localStorage (or sessionStorage)
-
-  const getUserIdFromToken = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
-    if (token) {
-      try {
-        const decodedToken = jwtDecode(token);
-        return decodedToken.sub; // Assuming 'sub' contains the user ID
-      } catch (error) {
-        console.error("Error decoding token", error);
-        return null;
-      }
-    }
-    return null;
-  };
-
-  const userId = getUserIdFromToken();
-
-  const handleBook = async () => {
-    if (userId && flightData) {
-      const bookingData = {
-        userId,
-        flightDetails: flightData,
-        bookingStatus: 'Pending',
-      };
-      console.log("Booking Data:", bookingData); // logging the entire object
-      await bookFlight(bookingData); // passing the entire object
-    }
-  };
-  
+  const params = useSearchParams();
+  const [flightData, setFlightData] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    // Load external scripts for seat map rendering
-    const loadScript = (src: string) => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-      });
-    };
+    if (typeof window === "undefined") return;
+    const raw = sessionStorage.getItem("pendingFlight");
+    if (raw) {
+      const flight = JSON.parse(raw);
+      console.log("Flight data loaded from sessionStorage:", flight);
+      setFlightData(flight);
+    } else {
+      console.log("No pendingFlight in sessionStorage");
+    }
+  }, []);
 
-    const loadScripts = async () => {
+  useEffect(() => {
+    if (params.get("login") === "success") {
+      toast.success("Login successful! 🎉", { id: "login-success" });
+      const qs = new URLSearchParams(window.location.search);
+      qs.delete("login");
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + (qs.toString() ? "?" + qs.toString() : "")
+      );
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (!flightData || !flightData.seatMap?.length) return;
+
+    const loadScript = (src: string) =>
+      new Promise<void>((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject();
+        document.body.appendChild(s);
+      });
+
+    (async () => {
       try {
         await loadScript("https://cdn.anychart.com/releases/v8/js/anychart-base.min.js");
         await loadScript("https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js");
-        await loadScript("https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js");
         await loadScript("https://cdn.anychart.com/releases/v8/js/anychart-map.min.js");
         await loadScript("https://code.jquery.com/jquery-latest.min.js");
-      } catch (error) {
-        console.error("Error loading scripts", error);
-      }
-    };
 
-    loadScripts().then(() => {
-      if (typeof window !== "undefined" && window.anychart) {
         window.anychart.onDocumentReady(() => {
           const stage = window.acgraph.create("container");
 
           window.$.ajax({
             type: "GET",
             url: "https://cdn.anychart.com/svg-data/seat-map/boeing_737.svg",
-            success: (svgData) => {
-              if (!flightData || !flightData.seatMap[0]) {
-                console.error("No seat map data found in flight data");
-                return;
-              }
-
-              const seatData = flightData.seatMap[0].map((seat: { id: string; isReserved: boolean; class: string }) => {
-                let fillColor = "#4CAF50";
-                if (seat.isReserved) {
-                  fillColor = "red";
-                } else {
-                  if (seat.class === "Business") fillColor = "#00BFFF";
-                  else if (seat.class === "Econom-Plus") fillColor = "#FFA500";
-                  else if (seat.class === "Economy") fillColor = "#4CAF50";
-                }
+            success: (svgData: string) => {
+              const seatData = flightData.seatMap[0].map((seat: any) => {
+                let fill = "#4CAF50";
+                if (seat.isReserved) fill = "red";
+                else if (seat.class === "Business") fill = "#00BFFF";
+                else if (seat.class === "Econom-Plus") fill = "#FFA500";
                 return {
                   id: seat.id,
-                  fill: fillColor,
+                  fill,
                   class: seat.class,
                   isReserved: seat.isReserved,
                 };
               });
+
               const chart = window.anychart.seatMap(seatData);
               chart.geoData(svgData);
               chart.padding([10, 0, 15, 0]).unboundRegions("as-is");
               chart.background().fill("#1E232E");
               chart.container(stage);
               chart.draw();
-              chartRef.current = chart;
 
               const series = chart.getSeries(0);
-
               series
                 .fill(function () {
-                  var attrs = this.attributes;
-                  return attrs ? attrs.fill : this.sourceColor;
+                  return this.attributes?.fill || this.sourceColor;
                 })
                 .stroke(function () {
-                  var attrs = this.attributes;
-                  return attrs ? attrs.stroke : this.sourceColor;
+                  return this.attributes?.fill || this.sourceColor;
                 });
 
               series.tooltip().useHtml(true);
               series.tooltip().format(function () {
-                const seatId = this.getData("id");
+                const id = this.getData("id");
                 const fill = this.getData("fill");
                 const reserved = fill === "red";
-                const seatClass = this.getData("class");
-
-                let extraCost = 0;
-                if (seatClass === "Business") extraCost = 150;
-                else if (seatClass === "Econom-Plus") extraCost = 80;
-                else extraCost = 30;
-
+                const cls = this.getData("class");
+                let extra = 0;
+                if (cls === "Business") extra = 150;
+                else if (cls === "Econom-Plus") extra = 80;
+                else extra = 30;
                 return (
-                  "Seat: " + seatId +
-                  "<br>" + (reserved ? "Reserved" : "Available") +
-                  "<br>Extra Cost: +" + extraCost + " $"
+                  `Seat: ${id}<br>${reserved ? "Reserved" : "Available"}<br>Extra Cost: +$${extra}`
                 );
               });
-              series.tooltip().titleFormat("Seat Details");
 
-              series.listen("pointClick", function (e) {
-                const seatId = e.point.get("id");
-                const seatClass = e.point.get("class");
+              series.listen("pointClick", (e: any) => {
                 if (e.point.get("isReserved")) return;
-              
-                let extraCost = 0;
-                if (seatClass === "Business") extraCost = 150;
-                else if (seatClass === "Econom-Plus") extraCost = 80;
-                else extraCost = 30;
-              
-                const currentPrice = parseFloat(flightData.price.replace(',', '.'));
-                const newPriceValue = currentPrice + extraCost;
-                const newPrice = newPriceValue.toFixed(2).replace('.', ',');
-              
-                const updatedFlight = {
+                const id = e.point.get("id");
+                const cls = e.point.get("class");
+                let extra = cls === "Business" ? 150 : cls === "Econom-Plus" ? 80 : 30;
+                const current = parseFloat(flightData.price.replace(",", "."));
+                const newPrice = (current + extra).toFixed(2).replace(".", ",");
+                setFlightData({
                   ...flightData,
                   price: newPrice,
-                  selectedSeat: {
-                    id: seatId,
-                    class: seatClass,
-                    extraCost: extraCost,
-                  },
-                };
-              
-                setFlightData(updatedFlight);
+                  selectedSeat: { id, class: cls, extraCost: extra },
+                });
               });
             },
           });
         });
+      } catch (err) {
+        console.error("Error loading chart scripts", err);
       }
-    });
+    })();
   }, [flightData]);
+
+  // Extract user ID from JWT
+  const getUserId = () => {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("jwt_token");
+    if (!token) return null;
+    try {
+      const decoded: any = jwtDecode(token);
+      return decoded.sub;
+    } catch {
+      return null;
+    }
+  };
+  const userId = getUserId();
+
+  // Handle booking
+  const handleBook = async () => {
+    if (!userId || !flightData) {
+      toast.error("You must be logged in and have a flight selected.");
+      return;
+    }
+  
+    try {
+      // attempt the booking
+      await bookFlight({
+        userId,
+        flightDetails: flightData,
+        bookingStatus: "Pending",
+      });
+  
+      // only clear the session if we got here without throwing
+      sessionStorage.removeItem("pendingFlight");
+  
+      toast.success("Your flight has been booked 🎉");
+  
+      // give the toast a moment (optional) then redirect
+      setTimeout(() => {
+        router.push("/");
+      }, 800);
+    } catch (err) {
+      console.error("Booking error:", err);
+      toast.error("Booking failed. Please try again.");
+    }
+  };
 
   return (
     <section className="overflow-hidden pb-[120px] pt-[180px]">
       <div className="container">
-        <div className="flex flex-wrap lg:flex-nowrap -mx-4">
-          <div className="w-full lg:w-1/2 px-4">
+        {!flightData ? (
+          <p>Loading flight…</p>
+        ) : (
+          <div className="flex flex-wrap lg:flex-nowrap -mx-4">
+            <div className="w-full lg:w-1/2 px-4">
             <PricingBox
               packageName="Flight Information"
               price={flightData?.price || "N/A"}
@@ -236,9 +241,8 @@ const FlightDetails = () => {
                   status="active"
                 />
               )}
-            </PricingBox>
-          </div>
-          <div className="w-full lg:w-1/2 px-4 flex flex-col justify-center">
+            </PricingBox>            </div>
+            <div className="w-full lg:w-1/2 px-4 flex flex-col justify-center">
             <div className="w-full h-full">
               <section className="relative z-10 overflow-hidden h-full flex items-center">
                 <div id="container" className="w-full h-[610px]"></div>
@@ -246,9 +250,8 @@ const FlightDetails = () => {
             </div>
           </div>
         </div>
+        )}
       </div>
     </section>
   );
-};
-
-export default FlightDetails;
+}

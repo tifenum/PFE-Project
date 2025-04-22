@@ -2,13 +2,21 @@
 import { useState, useEffect } from "react";
 import { fetchHotelReservations } from "@/services/hotelService";
 import { fetchFlightReservations } from "@/services/flightService"; // Adjust this import based on your file structure
-
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner"; 
 const ReservationsPage = () => {
   const [activeTab, setActiveTab] = useState<"flight" | "hotel">("flight");
   const [hotelReservations, setHotelReservations] = useState<any[]>([]);
   const [flightReservations, setFlightReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
+  useEffect(() => {
+    if (searchParams.get("login") === "success") {
+      toast.success("Login successful! 🎉", { id: "login-success" });
+      window.history.replaceState(null, "", "/");
+    }
+  }, [searchParams]);
   useEffect(() => {
     const fetchReservations = async () => {
       try {
@@ -37,7 +45,7 @@ const ReservationsPage = () => {
         return "text-green-600 font-semibold";
       case "Pending":
         return "text-yellow-500 font-semibold";
-      case "Rejected":
+      case "Refused":
         return "text-red-500 font-semibold";
       default:
         return "";
@@ -185,7 +193,7 @@ const ReservationsPage = () => {
                         {res.guests ?? "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={getStatusStyle(res.status)}>{res.reservationStatus}</span>
+                        <span className={getStatusStyle(res.reservationStatus)}>{res.reservationStatus}</span>
                       </td>
                     </tr>
                   ))

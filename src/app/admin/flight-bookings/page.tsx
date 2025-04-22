@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getPendingBookings, updateBookingStatus } from "@/services/flightService"; // Adjust import, added updateBookingStatus
+import { toast,Toaster } from "sonner";
 
 const FlightBookingsPage = () => {
   const [flightBookings, setFlightBookings] = useState<any[]>([]);
@@ -41,11 +42,14 @@ const FlightBookingsPage = () => {
           booking.id === bookingId ? { ...booking, bookingStatus: newStatus } : booking
         )
       );
-      // Option 2: Force a reload instead (comment out the above and uncomment this)
-      // window.location.reload();
+      if (newStatus === "Accepted") {
+        toast.success("Booking accepted! ✈️");
+      } else {
+        toast.error("Booking refused ❌");
+      }
     } catch (error) {
       console.error(`Error updating booking ${bookingId} to ${newStatus}:`, error);
-      alert("Failed to update booking status. Try again.");
+      toast.error("Failed to update booking status. Try again 😓");
     }
   };
 
@@ -61,7 +65,7 @@ const FlightBookingsPage = () => {
 
   return (
     <section className="py-16 md:py-20 lg:py-28">
-      <div className="container">
+          <div className="container">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-black dark:text-white">
             Flight Bookings

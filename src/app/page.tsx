@@ -1,3 +1,4 @@
+"use client"
 import AboutSectionOne from "@/components/About/AboutSectionOne";
 import AboutSectionTwo from "@/components/About/AboutSectionTwo";
 import Blog from "@/components/Blog";
@@ -10,14 +11,25 @@ import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import { Metadata } from "next";
-import Global from "@/components/globe/globe";
-export const metadata: Metadata = {
-  title: "Booking Platform",
-  description: "This is Home for Startup Nextjs Template",
-  // other metadata
-};
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+// export const metadata: Metadata = {
+//   title: "Booking Platform",
+//   description: "This is Home for Startup Nextjs Template",
+// };
+
 
 export default function Home() {
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("login") === "success") {
+      toast.success("Login successful! 🎉", { id: "login-success" });
+      window.history.replaceState(null, "", "/");
+    }
+  }, [searchParams]);
   return (
     <>
       <ScrollUp />

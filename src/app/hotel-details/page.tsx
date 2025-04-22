@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { fetchFakeHotel, createBooking } from "@/services/hotelService";
 import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
 
 const BookHotelPage = () => {
   const searchParams = useSearchParams();
@@ -11,6 +12,8 @@ const BookHotelPage = () => {
   const [error, setError] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
+
 const parseHotelName = (name) => {
   if (!name) return "";
   // Replace '%20' with a space and make the entire string lowercase
@@ -20,11 +23,10 @@ const parseHotelName = (name) => {
 };
 
 // Decode the hotelName to remove % signs from spaces
-const rawHotelName = searchParams.get("hotelName");
+const initialRawName = searchParams.get("hotelName") || "";
+console.log("Initial raw hotel name:", initialRawName);
+const [rawHotelName, setRawHotelName] = useState(initialRawName);
 
-const hotelName = parseHotelName(rawHotelName);
-const latitude = searchParams.get("lat");
-  const longitude = searchParams.get("lng");
 
   const getUserIdFromToken = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
@@ -46,7 +48,25 @@ const latitude = searchParams.get("lat");
     const imageNumber = (index % 63) + 1;
     return `/images/hotel-images/hotel${imageNumber}.jpg`;
   };
+  useEffect(() => {
+    const suffix = "?login=success";
+    if (rawHotelName.endsWith(suffix)) {
+      // show success toast once
+      toast.success("Login successful! 🎉" ,{ id: "login-success" });;
+      // strip suffix
+      const cleaned = rawHotelName.slice(0, -suffix.length);
+      console.log("Cleaned hotel name:", cleaned);
+      setRawHotelName(cleaned);
+      // update URL without reloading
+      const qs = new URLSearchParams(window.location.search);
+      qs.set("hotelName", cleaned);
+      window.history.replaceState(null, "", window.location.pathname + "?" + qs.toString());
+    }
+  }, [rawHotelName]);
+  const hotelName = parseHotelName(rawHotelName);
 
+const latitude = searchParams.get("lat");
+  const longitude = searchParams.get("lng");
   useEffect(() => {
     const getHotelData = async () => {
       if (!latitude || !longitude || !hotelName) {
@@ -110,14 +130,14 @@ const latitude = searchParams.get("lat");
                   alt={`${room.type} Image`}
                   className="w-full h-48 object-cover rounded-md mb-4"
                   onError={(e) => {
-                    e.target.src = "/images/hotel-images/hotel1.jpg";
+                    (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
                   }}
                 />
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{room.type}</h3>
                 <p className="text-gray-700 dark:text-gray-300">Price: ${room.price.toFixed(2)}</p>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 mb-4">
                   {[...new Set(room.features)].map((feature, idx) => (
-                    <li key={idx}>{feature}</li>
+                    <li key={idx}>{String(feature)}</li>
                   ))}
                 </ul>
                 <button
@@ -146,6 +166,7 @@ const latitude = searchParams.get("lat");
 
 // Define BookingModal inside the same file
 const BookingModal = ({ room, hotelData, userId, onClose }) => {
+  const router = useRouter();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [note, setNote] = useState("");
@@ -155,44 +176,27 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
   const today = new Date().toISOString().split("T")[0];
   const parseHotelName = (name) => {
     if (!name) return "";
-    // Replace '%20' with a space and make the entire string lowercase
     const cleanedName = name.replace(/%20/g, " ").toLowerCase();
-    // Capitalize the first letter of each word
     return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
   };
   
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      const checkInDate = new Date(checkIn);
-      const checkOutDate = new Date(checkOut);
-      if (checkOutDate > checkInDate) {
-        const timeDiff = checkOutDate - checkInDate;
-        const nights = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        setTotalPrice(nights * room.price);
-      } else {
-        setTotalPrice(0);
-      }
-    } else {
-      setTotalPrice(0);
-    }
-  }, [checkIn, checkOut, room.price]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!checkIn || !checkOut) {
-      alert("Yo, pick your check-in and check-out dates!");
+      toast.warning("Yo, pick your check-in and check-out dates!");
       return;
     }
     if (checkIn < today) {
-      alert("Check-in can’t be in the past, bro!");
+      toast.error("Check-in can’t be in the past, bro!");
       return;
     }
     if (checkOut <= checkIn) {
-      alert("Check-out’s gotta be after check-in, fam!");
+      toast.warning("Check-out’s gotta be after check-in, fam!");
       return;
     }
-
+  
     const bookingData = {
       userId,
       hotelName: hotelData.name,
@@ -203,16 +207,20 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
       checkInDate: checkIn,
       checkOutDate: checkOut,
       totalPrice,
-      notes: note, // use the correct key here
+      notes: note,
     };
+  
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
       console.log("Booking successful:", savedBooking);
-      alert("Booking confirmed, dude!");
+      toast.success("Booking confirmed, dude! Redirecting...");
+      setTimeout(() => {
+        router.push('/'); // send them home, bro 🏄‍♂️
+      }, 1000); // give them 2 secs to enjoy that toast
       onClose();
     } catch (error) {
-      alert("Failed to book the room. Try again, man!");
+      toast.error("Failed to book the room. Try again, man!");
       console.error("Booking error:", error);
     } finally {
       setIsSubmitting(false);
@@ -263,7 +271,7 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
               onChange={(e) => setNote(e.target.value)}
               placeholder="Enter any additional notes..."
               className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-              rows="3"
+              rows={3}
             />
           </div>
           <p className="mb-4 text-gray-700 dark:text-gray-300">

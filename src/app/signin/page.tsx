@@ -4,12 +4,36 @@ import Link from "next/link";
 import {  login } from "@/services/userService";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Toaster, toast } from 'sonner';
 
 const SigninPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   const result = await login(email, password);
+  //   if (result.success) {
+  //     toast.success("Login successful! 🎉");
+
+  //     window.dispatchEvent(new Event("authChange"));
+  //     const params = new URLSearchParams(window.location.search);
+  //     let redirectPath = params.get("redirect") || "/";
+  //     try {
+  //       const url = new URL(redirectPath, window.location.origin);
+  //       if (url.origin !== window.location.origin) {
+  //         redirectPath = "/";
+  //       }
+  //     } catch {
+  //       redirectPath = "/";
+  //     }
+  //     router.push(redirectPath);
+  //   } else {
+  //     toast.error(result.error || "Login failed. Please try again.");
+  //   }
+  // };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -19,7 +43,6 @@ const SigninPage = () => {
       window.dispatchEvent(new Event("authChange"));
       const params = new URLSearchParams(window.location.search);
       let redirectPath = params.get("redirect") || "/";
-      // Validate redirect
       try {
         const url = new URL(redirectPath, window.location.origin);
         if (url.origin !== window.location.origin) {
@@ -28,17 +51,20 @@ const SigninPage = () => {
       } catch {
         redirectPath = "/";
       }
+      // Add query parameter to indicate successful login
+      redirectPath = `${redirectPath}?login=success`;
       router.push(redirectPath);
     } else {
-      alert(result.error || "Login failed. Please try again.");
+      toast.error(result.error || "Login failed. Please try again.");
     }
   };
-  
 
 
   return (
     <>
       <section className="relative z-10 overflow-hidden pb-16 pt-36 md:pb-20 lg:pb-28 lg:pt-[180px]">
+      <div>
+    </div>
         <div className="container">
           <div className="-mx-4 flex flex-wrap">
             <div className="w-full px-4">

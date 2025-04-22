@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 // Assuming a service to fetch hotel reservations exists
 import { fetchAllPendingHotelReservations, updateHotelReservationStatus } from "@/services/hotelService"; // Adjust imports
+import { toast } from "sonner";
 const HotelReservationsPage = () => {
   const [hotelReservations, setHotelReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,14 @@ const HotelReservationsPage = () => {
           res.id === reservationId ? { ...res, reservationStatus: newStatus } : res
         )
       );
-      // Option 2: Force a reload instead (comment out the above and uncomment this)
-      // window.location.reload();
+      if (newStatus === "Accepted") {
+        toast.success("Reservation accepted! 🏨");
+      } else {
+        toast.error("Reservation refused ❌");
+      }
     } catch (error) {
       console.error(`Error updating reservation ${reservationId} to ${newStatus}:`, error);
-      alert("Failed to update reservation status. Try again.");
+      toast.error("Failed to update reservation status. Try again 😓");
     }
   };
   if (loading) {

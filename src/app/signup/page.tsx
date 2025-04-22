@@ -1,14 +1,10 @@
-"use client"; // Required for client-side interactivity
+"use client"; 
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // For navigation after signup
-import { signup } from "@/services/userService"; // Import the signup function
-
-// export const metadata = {
-//   title: "Sign Up Page | Free Next.js Template for Startup and SaaS",
-//   description: "This is Sign Up Page for Startup Nextjs Template",
-// };
+import { useRouter } from "next/navigation"; 
+import { signup } from "@/services/userService"; 
+import { toast } from "sonner";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
@@ -18,9 +14,8 @@ const SignupPage = () => {
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault(); 
 
-    // Validate inputs
     if (!username || !email || !password) {
       setError("All fields are required.");
       return;
@@ -30,10 +25,11 @@ const SignupPage = () => {
     const result = await signup(username, email, password);
 
     if (result.success) {
-      alert(result.message); // Show success message
-      router.push("/signin"); // Redirect to the sign-in page
+      toast.success(result.message); 
+      router.push("/signin"); 
     } else {
-      setError(result.error); // Show error message
+      setError(result.error);
+      toast.error(result.error); 
     }
   };
 

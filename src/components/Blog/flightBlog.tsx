@@ -16,17 +16,20 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
   if (!flights || flights.length === 0) return null;
 
   const handleFlightClick = (flight: any) => {
-    const destinationUrl = `/flight-details/${flight.id}?data=${encodeURIComponent(
-      JSON.stringify(flight)
-    )}`;
-    console.log(token);
+    // stash the flight for later
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("pendingFlight", JSON.stringify(flight));
+    }
+  
+    const destinationPath = `/flight-details/${flight.id}`;
     if (token) {
-      router.push(destinationUrl);
+      router.push(destinationPath);
     } else {
-      router.push(`/signin?redirect=${encodeURIComponent(destinationUrl)}`);
+      // just pass the path to return to—no big JSON blob in the URL
+      router.push(`/signin?redirect=${encodeURIComponent(destinationPath)}`);
     }
   };
-
+  
   return (
     <section
       id="blog"

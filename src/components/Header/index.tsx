@@ -8,6 +8,7 @@ import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import adminMenuData from "./adminMenuData";
 import { logout } from "@/services/userService";
+import { toast } from "sonner";
 
 const Header = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
@@ -53,12 +54,18 @@ const Header = () => {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    setIsLoggedIn(false);
-    setIsAdmin(false);
-    window.dispatchEvent(new Event("authChange"));
-    window.location.href = "/";
+    try {
+      await logout();
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      window.dispatchEvent(new Event("authChange"));
+      toast.success("Logged out successfully!");
+      window.location.href = "/";
+    } catch (err) {
+      toast.error("Something went wrong while logging out.");
+    }
   };
+  
 
   const navbarToggleHandler = () => setNavbarOpen(!navbarOpen);
   const handleSubmenuId = (id: number) => setOpenSubmenuId(openSubmenuId === id ? null : id);
