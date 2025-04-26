@@ -26,7 +26,13 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 5,
+    id:5,
+    title: "Chat Bot",
+    path: "/chatbot",
+    newTab: false,
+  },
+  {
+    id: 6,
     title: "Pages",
     newTab: false,
     submenu: [
