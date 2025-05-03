@@ -1,6 +1,5 @@
 // frontend/app/flights/page.tsx
 import { Suspense } from "react";
-import FlightBlog from "@/components/Blog/flightBlog";
 import FlightSearchClient from "./FlightSearchClient";
 
 const BlogSidebarPage = () => {
