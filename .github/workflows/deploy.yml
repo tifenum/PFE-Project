@@ -34,7 +34,7 @@ jobs:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
-        source: "frontend/out/"  # Corrected to match Next.js output
+        source: ".next/"  # Correct path for Next.js build output
         target: "/home/ubuntu/PFE-Project/frontend"
 
     - name: Restart frontend
