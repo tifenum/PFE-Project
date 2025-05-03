@@ -1,11 +1,12 @@
 // frontend/app/flights/FlightSearchClient.tsx
 "use client";
 import React, { useState } from "react";
-import Global from "@/components/globe/globe2";
+// import Global from "@/components/globe/globe2";
 import AutocompleteCountry from "@/components/globe/countries";
 import CityAutocomplete from "@/components/globe/city";
-import FlightBlog from "@/components/Blog/flightBlog";
+// import FlightBlog from "@/components/Blog/flightBlog";
 import { searchFlights } from "@/services/flightService";
+import dynamic from "next/dynamic";
 
 interface CityOption {
   name: string;
@@ -15,7 +16,14 @@ interface CityOption {
 interface CountryOption {
   name: string;
 }
+const Global = dynamic(() => import("@/components/globe/globe2"), {
+  ssr: false,
+});
 
+// Dynamically import FlightBlog
+const FlightBlog = dynamic(() => import("@/components/Blog/flightBlog"), {
+  ssr: false,
+});
 const FlightSearchClient: React.FC = () => {
   const [origin, setOrigin] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
