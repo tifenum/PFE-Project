@@ -1,5 +1,3 @@
-"use client"
-export const dynamic = 'force-dynamic';
 import AboutSectionOne from "@/components/About/AboutSectionOne";
 import AboutSectionTwo from "@/components/About/AboutSectionTwo";
 import Blog from "@/components/Blog";
@@ -11,28 +9,14 @@ import Hero from "@/components/Hero";
 import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
-import { Metadata } from "next";
-import { useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-// export const metadata: Metadata = {
-//   title: "Booking Platform",
-//   description: "This is Home for Startup Nextjs Template",
-// };
+import LoginNotifier from "@/components/Loginotf/LoginNotifier";
 
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
-
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (searchParams.get("login") === "success") {
-      toast.success("Login successful! 🎉", { id: "login-success" });
-      window.history.replaceState(null, "", "/");
-    }
-  }, [searchParams]);
   return (
     <>
+      <LoginNotifier />
       <ScrollUp />
       <Hero />
       <Features />
