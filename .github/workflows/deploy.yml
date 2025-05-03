@@ -8,35 +8,41 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15  # Increase timeout to 15 minutes
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4  # Updated to latest version
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
 
-    - name: Install and Build
-      run: |
-        npm install --no-audit    
-        npm run build              
+    - name: Install dependencies
+      run: npm install --no-audit
+
+    - name: Build the project
+      id: build
+      run: npm run build || exit 1  # Force failure on build error
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096  # Increase Node.js memory limit
+
     - name: Deploy to VM
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
-        source: "out/"
-        target: "/home/ubuntu/PFE-Project"
+        source: "frontend/out/"  # Corrected to match Next.js output
+        target: "/home/ubuntu/PFE-Project/frontend"
 
-    - name: Restart PFE-Project
+    - name: Restart frontend
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
         script: |
-          cd /home/ubuntu/PFE-Project
-          pm2 restart PFE-Project || (npm install && pm2 start npm --name "PFE-Project" -- start)
+          cd /home/ubuntu/PFE-Project/frontend
+          pm2 restart frontend || (npm install && pm2 start npm --name "frontend" -- start)
