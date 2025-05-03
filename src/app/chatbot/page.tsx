@@ -51,7 +51,7 @@ export default function ChatPage() {
       if (rawBot.startsWith('[FLIGHT_RESULTS]')) {
         let cleanBotMessage = rawBot
           .replace(/\[FLIGHT_RESULTS\]/g, '')
-          .replace(/\[PARAMETERS:.*?]/s, '')
+          .replace(/\[PARAMETERS:.*?]/g, '')
           .trim();
 
         if (cleanBotMessage) {
