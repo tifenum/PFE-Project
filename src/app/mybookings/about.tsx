@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
 import { fetchHotelReservations } from "@/services/hotelService";
 import { fetchFlightReservations } from "@/services/flightService"; // Adjust this import based on your file structure
