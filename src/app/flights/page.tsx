@@ -1,4 +1,5 @@
   "use client"
+  export const dynamic = 'force-dynamic';
   import RelatedPost from "@/components/Blog/RelatedPost";
   import SharePost from "@/components/Blog/SharePost";
   import TagButton from "@/components/Blog/TagButton";

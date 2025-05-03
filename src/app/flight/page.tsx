@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import GlobalComponent from "./global";
 import { FiArrowRight, FiMapPin, FiPaperclip } from "react-icons/fi";
 import Breadcrumb from "@/components/Common/Breadcrumb";
