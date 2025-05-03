@@ -1,4 +1,6 @@
 // app/blog/page.tsx
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from 'next'
 import ClientBookingPage from './BookingClient'
 
