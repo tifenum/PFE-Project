@@ -71,7 +71,7 @@ export const fetchFlightReservations = async () => {
   }
 };
 export async function getPendingBookings() {
-  const url = `${API_BASE_URL}:/api/flights/all-bookings`;
+  const url = `${API_BASE_URL}/api/flights/all-bookings`;
   const token = localStorage.getItem("jwt_token");
   if (!token) {
     throw new Error("No token found");
