@@ -21,7 +21,7 @@ export async function searchFlights(
 export async function bookFlight(bookingData) {
   try {
     console.log("Booking Data:", bookingData);
-    const response = await fetch(`${API_BASE_URL}:8222/api/flights/book-flight`, {
+    const response = await fetch(`${API_BASE_URL}/api/flights/book-flight`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -71,7 +71,7 @@ export const fetchFlightReservations = async () => {
   }
 };
 export async function getPendingBookings() {
-  const url = `${API_BASE_URL}:8222/api/flights/all-bookings`;
+  const url = `${API_BASE_URL}:/api/flights/all-bookings`;
   const token = localStorage.getItem("jwt_token");
   if (!token) {
     throw new Error("No token found");
@@ -91,7 +91,7 @@ export async function getPendingBookings() {
 export const updateBookingStatus = async (bookingId: string, status: "Accepted" | "Refused") => {
   try {
     const response = await axios.put(
-      `${API_BASE_URL}:8222/api/flights/bookings/${bookingId}/status`,
+      `${API_BASE_URL}:/api/flights/bookings/${bookingId}/status`,
       { status },
       {
         headers: {
