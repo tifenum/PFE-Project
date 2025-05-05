@@ -1,5 +1,6 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { API_BASE_URL } from "./config";
 
 export async function searchFlights(
   origin: string,
@@ -8,7 +9,7 @@ export async function searchFlights(
   returnDate: string,
   adults: number
 ) {
-  const url = `http://localhost:8222/api/flights/fake?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&adults=${adults}`;
+  const url = `${API_BASE_URL}/api/flights/fake?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&adults=${adults}`;
   const response = await fetch(url);
    console.log(response);
   if (!response.ok) {
@@ -20,7 +21,7 @@ export async function searchFlights(
 export async function bookFlight(bookingData) {
   try {
     console.log("Booking Data:", bookingData);
-    const response = await fetch("http://localhost:8222/api/flights/book-flight", {
+    const response = await fetch(`${API_BASE_URL}:8222/api/flights/book-flight`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,7 +52,7 @@ export const fetchFlightReservations = async () => {
     const userId = decoded.sub;
 
     const res = await fetch(
-      `http://localhost:8222/api/flights/bookings?userId=${userId}`,
+      `${API_BASE_URL}/api/flights/bookings?userId=${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -70,7 +71,7 @@ export const fetchFlightReservations = async () => {
   }
 };
 export async function getPendingBookings() {
-  const url = "http://localhost:8222/api/flights/all-bookings";
+  const url = `${API_BASE_URL}:8222/api/flights/all-bookings`;
   const token = localStorage.getItem("jwt_token");
   if (!token) {
     throw new Error("No token found");
@@ -90,7 +91,7 @@ export async function getPendingBookings() {
 export const updateBookingStatus = async (bookingId: string, status: "Accepted" | "Refused") => {
   try {
     const response = await axios.put(
-      `http://localhost:8222/api/flights/bookings/${bookingId}/status`,
+      `${API_BASE_URL}:8222/api/flights/bookings/${bookingId}/status`,
       { status },
       {
         headers: {

@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { API_BASE_URL } from "./config";
 
-const API_BASE_URL = 'http://localhost:8222/auth';
+const API_BASE_URL1 = `${API_BASE_URL}/auth`;
 
 export const login = async (email: string, password: string) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/login`, { email, password }, {
+    const response = await axios.post(`${API_BASE_URL1}/login`, { email, password }, {
       headers: { "Content-Type": "application/json" },
     });
 
@@ -24,7 +25,7 @@ export const login = async (email: string, password: string) => {
 export const signup = async (username: string, email: string, password: string) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/signup`,
+      `${API_BASE_URL1}/signup`,
       { username, email, password },
       {
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +47,7 @@ export const signup = async (username: string, email: string, password: string) 
 
 export const fetchAllClients = async () => {
   try {
-    const response = await axios.get(`http://localhost:8222/users/clients`, {
+    const response = await axios.get(`h${API_BASE_URL1}/users/clients`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
       },
@@ -67,7 +68,7 @@ export const logout = async () => {
   const token = localStorage.getItem("jwt_token");
   if (token) {
     try {
-      await axios.post(`${API_BASE_URL}/logout`, {}, {
+      await axios.post(`${API_BASE_URL1}/logout`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
