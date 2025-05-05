@@ -91,7 +91,7 @@ export async function getPendingBookings() {
 export const updateBookingStatus = async (bookingId: string, status: "Accepted" | "Refused") => {
   try {
     const response = await axios.put(
-      `${API_BASE_URL}:/api/flights/bookings/${bookingId}/status`,
+      `${API_BASE_URL}/api/flights/bookings/${bookingId}/status`,
       { status },
       {
         headers: {
