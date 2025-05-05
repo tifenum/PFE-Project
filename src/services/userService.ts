@@ -47,7 +47,7 @@ export const signup = async (username: string, email: string, password: string) 
 
 export const fetchAllClients = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL1}/users/clients`, {
+    const response = await axios.get(`${API_BASE_URL1}/clients`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
       },
