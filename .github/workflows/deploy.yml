@@ -36,5 +36,6 @@ jobs:
           cd ~/PFE-Project/frontend
           git pull origin main
           npm install --production
+          npm ci
           npm run build
           pm2 restart frontend || pm2 start npm --name "frontend" -- start
