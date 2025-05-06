@@ -8,11 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15  # Increase timeout to 15 minutes
+    timeout-minutes: 15  
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Updated to latest version
+      uses: actions/checkout@v4  
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -24,9 +24,18 @@ jobs:
 
     - name: Build the project
       id: build
-      run: npm run build || exit 1  # Force failure on build error
+      run: npm run build || exit 1  
       env:
-        NODE_OPTIONS: --max_old_space_size=4096  # Increase Node.js memory limit
+        NODE_OPTIONS: --max_old_space_size=4096  
+    - name: Test SSH connectivity
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        port: 22              # make sure you include this if non-standard
+        script: |
+          echo "👋 Hello from GitHub Actions on $(hostname)"
 
     - name: Deploy to VM
       uses: appleboy/scp-action@master
@@ -34,7 +43,7 @@ jobs:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
-        source: ".next/"  # Correct path for Next.js build output
+        source: ".next/"  
         target: "/home/ubuntu/PFE-Project/frontend"
 
     - name: Restart frontend
