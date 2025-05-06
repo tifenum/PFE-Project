@@ -7,7 +7,7 @@ import { API_BASE_URL } from "./config";
 export async function searchCities({ countryCode, keyword, max = 10 }) {
   try {
     const queryParams = new URLSearchParams({ countryCode, keyword, max: max.toString() });
-    const res = await fetch(`${API_BASE_URL}/api/hotels/cities?${queryParams.toString()}`);
+    const res = await fetch(`${API_BASE_URL}/hotels/cities?${queryParams.toString()}`);
     if (!res.ok) {
       throw new Error("Failed to fetch cities");
     }
@@ -19,14 +19,14 @@ export async function searchCities({ countryCode, keyword, max = 10 }) {
   }
 }
 export const searchHotels = async ({ cityCode }) => {
-  const response = await fetch(`${API_BASE_URL}/api/hotels/search?cityCode=${cityCode}`);
+  const response = await fetch(`${API_BASE_URL}/hotels/search?cityCode=${cityCode}`);
   if (!response.ok) {
     throw new Error("Failed to fetch hotels");
   }
   return response.json();
 };
 export const searchHotelsByGeocode = async ({ latitude, longitude, radius }) => {
-  const response = await fetch(`${API_BASE_URL}:8222/api/hotels/by-geocode?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
+  const response = await fetch(`${API_BASE_URL}:8222/hotels/by-geocode?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
   if (!response.ok) {
     throw new Error("Failed to fetch hotels by geocode");
   }
@@ -35,7 +35,7 @@ export const searchHotelsByGeocode = async ({ latitude, longitude, radius }) => 
 export const searchHotelsByKeyword = async ({ keyword }) => {
   try {
     const queryParams = new URLSearchParams({ keyword });
-    const res = await fetch(`${API_BASE_URL}/api/hotels/by-keyword?${queryParams.toString()}`);
+    const res = await fetch(`${API_BASE_URL}/hotels/by-keyword?${queryParams.toString()}`);
     if (!res.ok) {
       throw new Error("Failed to fetch hotels by keyword");
     }
@@ -52,7 +52,7 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
       longitude,
       hotelName: encodeURIComponent(hotelName), // Make sure hotelName is URL-safe
     });
-    const res = await fetch(`${API_BASE_URL}/api/hotels/fake?${queryParams.toString()}`, {
+    const res = await fetch(`${API_BASE_URL}/hotels/fake?${queryParams.toString()}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
       },
@@ -68,7 +68,7 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
 };
 export const createBooking = async (bookingData) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/hotels/book`, {
+    const res = await fetch(`${API_BASE_URL}/hotels/book`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -102,7 +102,7 @@ export const fetchHotelReservations = async () => {
     const decoded: DecodedToken = jwtDecode(token);
     const userId = decoded.sub;
 
-    const res = await fetch(`${API_BASE_URL}/api/hotels/reservations?userId=${userId}`, {
+    const res = await fetch(`${API_BASE_URL}/hotels/reservations?userId=${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`, // optional, remove if your API doesn't expect it
       },
@@ -124,7 +124,7 @@ export const fetchHotelReservations = async () => {
 
 export const fetchAllPendingHotelReservations = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/hotels/all-reservations`, {
+    const response = await fetch(`${API_BASE_URL}/hotels/all-reservations`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
       },
@@ -145,7 +145,7 @@ export const fetchAllPendingHotelReservations = async () => {
 export const updateHotelReservationStatus = async (reservationId: string, status: "Accepted" | "Refused") => {
   try {
     const response = await axios.put(
-      `${API_BASE_URL}/api/hotels/reservations/${reservationId}/status`,
+      `${API_BASE_URL}/hotels/reservations/${reservationId}/status`,
       { status },
       {
         headers: {
