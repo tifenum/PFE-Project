@@ -26,7 +26,7 @@ export const searchHotels = async ({ cityCode }) => {
   return response.json();
 };
 export const searchHotelsByGeocode = async ({ latitude, longitude, radius }) => {
-  const response = await fetch(`${API_BASE_URL}:8222/hotels/by-geocode?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
+  const response = await fetch(`${API_BASE_URL}/hotels/by-geocode?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
   if (!response.ok) {
     throw new Error("Failed to fetch hotels by geocode");
   }
