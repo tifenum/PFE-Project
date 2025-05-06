@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from "./config";
 
-const API_BASE_URL1 = `/api/auth`;
+const API_BASE_URL1 = `${API_BASE_URL}/auth`;
 
 export const login = async (email: string, password: string) => {
   try {
