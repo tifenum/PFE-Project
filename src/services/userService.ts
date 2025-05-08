@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from "./config";
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL1 = `${API_BASE_URL}/auth`;
 
@@ -21,7 +22,28 @@ export const login = async (email: string, password: string) => {
     return { success: false, error: "Login failed. Please try again." };
   }
 };
-
+  const getUserId = () => {
+    if (typeof window === "undefined") return null;
+    const token = localStorage.getItem("jwt_token");
+    if (!token) return null;
+    try {
+      const decoded: any = jwtDecode(token);
+      return decoded.sub;
+    } catch {
+      return null;
+    }
+  };
+// Updated Frontend JavaScript
+export const askAssistant = async (
+  message: string,
+  sessionId: string,
+) => {
+  const userId = getUserId();
+  const response = await axios.get(`${API_BASE_URL}/users/ask`, {
+    params: { message, sessionId, userId },
+  });
+  return response.data;
+};
 export const signup = async (username: string, email: string, password: string) => {
   try {
     const response = await axios.post(

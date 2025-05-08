@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import { v4 as uuidv4 } from 'uuid';
+import { askAssistant } from '@/services/userService';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,18 +34,10 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
-      const res = await axios.get('api/users/ask', {
-        params: { message: input, sessionId },
-      });
-      setIsTyping(false);
 
-      const rawBot = res.data.message as string;
-      const offers = res.data.flightOffers as Array<{
-        id: number;
-        AirlineCodes: string;
-        price: number;
-      }>;
-      setFlightOffers(offers); // Save flight offers to state
+      const { message: rawBot, flightOffers: offers = [] } = await askAssistant(input, sessionId);
+      setIsTyping(false);
+      setFlightOffers(offers);
 
       const assistantMessages: Message[] = [];
 
