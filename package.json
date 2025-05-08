@@ -19,7 +19,7 @@
     "eslint-config-next": "15.1.6",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
-    "next": "15.1.6",
+    "next": "^15.1.6",
     "next-auth": "^4.24.11",
     "next-themes": "^0.2.1",
     "numeral": "^2.0.6",
@@ -36,6 +36,7 @@
     "topojson-client": "^3.1.0"
   },
   "devDependencies": {
+    "@types/next": "^8.0.7",
     "@types/next-auth": "^3.13.0",
     "@types/node": "^20.8.9",
     "@types/react": "^19.0.8",

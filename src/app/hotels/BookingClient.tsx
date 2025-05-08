@@ -34,14 +34,12 @@ const MapUpdater = ({ center }) => {
   }, [center, map]);
   return null;
 };
-const resetMapContainer = (id) => {
+function resetMapContainer(id) {
   const container = L.DomUtil.get(id);
   if (container && container._leaflet_id) {
     container._leaflet_id = null;
   }
-};
-
-
+}
 
 const MapClickHandler = ({ isDrawing, onCircleSet }) => {
   useMapEvents({
@@ -88,7 +86,7 @@ const ClientBookingPage = () => {
   }, [hotels]);
   useEffect(() => {
     resetMapContainer("map"); // Ensure the container is reset before mount
-  }, []);
+  }, [mapCenter]);
   useEffect(() => {
     if (
       typeof destination !== "string" ||
