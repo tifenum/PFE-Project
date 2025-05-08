@@ -254,6 +254,7 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
           Close
         </button>
       </div>
+      
     </div>
   );
 };

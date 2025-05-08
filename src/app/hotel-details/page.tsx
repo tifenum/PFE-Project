@@ -27,6 +27,7 @@ export default async function BookHotelPage({ searchParams }: HotelDetailsPagePr
           latitude={latitude}
           longitude={longitude}
         />
+        
       </div>
     </section>
   );
