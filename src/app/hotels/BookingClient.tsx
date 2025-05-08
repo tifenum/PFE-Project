@@ -84,9 +84,8 @@ const ClientBookingPage = () => {
   useEffect(() => {
     console.log("Hotels:", hotels);
   }, [hotels]);
-  useEffect(() => {
-    resetMapContainer("map"); // Ensure the container is reset before mount
-  }, [mapCenter]);
+
+  
   useEffect(() => {
     if (
       typeof destination !== "string" ||
@@ -205,8 +204,12 @@ const ClientBookingPage = () => {
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           <div className="w-full lg:w-8/12 px-4">
             <div style={{ height: "calc(105vh - 8rem)", overflow: "hidden" }}>
-            <MapContainer id="map" center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }}>
-                <MapUpdater center={mapCenter} />
+            <MapContainer
+              key={`${mapCenter[0]}-${mapCenter[1]}`}
+              center={mapCenter}
+              zoom={13}
+              style={{ height: "100%", width: "100%" }}
+            >                <MapUpdater center={mapCenter} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='© <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
