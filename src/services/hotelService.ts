@@ -50,13 +50,17 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
     const queryParams = new URLSearchParams({
       latitude,
       longitude,
-      hotelName: encodeURIComponent(hotelName), // Make sure hotelName is URL-safe
+      hotelName: encodeURIComponent(hotelName),
     });
+    const token = localStorage.getItem("jwt_token");
+    if (!token) throw new Error("No token found");
+
     const res = await fetch(`${API_BASE_URL}/hotels/fake?${queryParams.toString()}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+        Authorization: `Bearer ${token}`,
       },
     });
+
     if (!res.ok) {
       throw new Error("Failed to fetch fake hotel data");
     }
@@ -66,6 +70,7 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
     return null;
   }
 };
+
 export const createBooking = async (bookingData) => {
   try {
     const res = await fetch(`${API_BASE_URL}/hotels/book`, {

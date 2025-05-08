@@ -25,6 +25,7 @@ const FlightBlog = dynamic(() => import("@/components/Blog/flightBlog"), {
   ssr: false,
 });
 const FlightSearchClient: React.FC = () => {
+  const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
   const [origin, setOrigin] = useState<string>("");
   const [destination, setDestination] = useState<string>("");
   const [departureCity, setDepartureCity] = useState<CityOption | null>(null);
@@ -124,6 +125,7 @@ const FlightSearchClient: React.FC = () => {
                   </label>
                   <input
                     type="date"
+                    min={today}
                     value={departureDate}
                     onChange={(e) => setDepartureDate(e.target.value)}
                     className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
@@ -135,6 +137,7 @@ const FlightSearchClient: React.FC = () => {
                   </label>
                   <input
                     type="date"
+                    min={today}
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
                     className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"

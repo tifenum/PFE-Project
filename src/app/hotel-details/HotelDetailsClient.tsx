@@ -1,10 +1,12 @@
+
+
 // frontend/app/hotel-details/HotelDetailsClient.tsx
 "use client";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { fetchFakeHotel, createBooking } from "@/services/hotelService";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "sonner";
-import { createBooking } from "@/services/hotelService";
+import { useRouter } from "next/navigation";
 
 interface Room {
   type: string;
@@ -18,33 +20,133 @@ interface HotelData {
   rooms: Room[];
 }
 
-interface BookingModalProps {
-  room: Room;
-  hotelData: HotelData;
-  userId: string | null;
-  onClose: () => void;
+interface HotelDetailsClientProps {
+  rawHotelName: string;
+  latitude:     string;
+  longitude:    string;
 }
 
-// Define BookingModal inside the same file
-const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, onClose }) => {
+export default function HotelDetailsClient({ rawHotelName, latitude, longitude }: HotelDetailsClientProps) {
+  const [hotelData, setHotelData] = useState<HotelData | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [roomToBook, setRoomToBook] = useState<Room | null>(null);
   const router = useRouter();
-  const [checkIn, setCheckIn] = useState<string>("");
-  const [checkOut, setCheckOut] = useState<string>("");
-  const [note, setNote] = useState<string>("");
-  const [totalPrice, setTotalPrice] = useState<number>(0);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  // Parse display name
+  const displayName = rawHotelName.replace(/%20/g, " ");
+  const getRandomHotelImage = (index: number): string => {
+    const imageNumber = (index % 63) + 1;
+    return `/images/hotel-images/hotel${imageNumber}.jpg`;
+  };
+  
+  // Fetch hotel data once browser is ready
+  useEffect(() => {
+    const token = localStorage.getItem("jwt_token");
+    if (!token) {
+      toast.error("No auth token, please login.");
+      setLoading(false);
+      return;
+    }
+    
+    fetchFakeHotel({ latitude, longitude, hotelName: rawHotelName})
+      .then(data => {
+        if (data) setHotelData(data);
+      })
+      .catch(err => {
+        console.error(err);
+        toast.error("Failed to load hotel details.");
+      })
+      .finally(() => setLoading(false));
+  }, [latitude, longitude, rawHotelName]);
+
+  if (loading) return <p className="text-center">Loading Available Rooms...</p>;
+  if (!hotelData) return <p className="text-center text-red-500">No hotel data found.</p>;
+
+  const openBooking = (room: Room) => setRoomToBook(room);
+  const closeBooking = () => setRoomToBook(null);
+  const getUserIdFromToken = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        return decodedToken.sub;
+      } catch (error) {
+        console.error("Error decoding token", error);
+        return null;
+      }
+    }
+    return null;
+  };
+  const userId = getUserIdFromToken();
+
+  return (
+    <>
+      <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">{displayName}</h1>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">{hotelData.address}</p>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-700 dark:text-gray-300">Available Rooms</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {hotelData.rooms.map((room, idx) => (
+          <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition">
+                <img
+                src={getRandomHotelImage(idx)}
+                alt={`${room.type} Image`}
+                className="w-full h-48 object-cover rounded-md mb-4"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
+                }}
+              />
+            <h3 className="text-xl font-semibold mb-2">{room.type}</h3>
+            <p className="mb-2">Price: ${room.price.toFixed(2)}</p>
+            <ul className="list-disc list-inside mb-4">
+              {[...new Set(room.features)].map((f, i) => <li key={i}>{f}</li>)}
+            </ul>
+            <button onClick={() => openBooking(room)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Book Now
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {roomToBook && (
+        <BookingModal room={roomToBook} hotelData={hotelData} onClose={closeBooking} userId={userId} />
+      )}
+    </>
+  );
+}
+
+// BookingModal component
+
+
+const BookingModal = ({ room, hotelData, userId, onClose }) => {
+  const router = useRouter();
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [note, setNote] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-
-  const parseHotelName = (name: string): string => {
+  const parseHotelName = (name) => {
     if (!name) return "";
     const cleanedName = name.replace(/%20/g, " ").toLowerCase();
     return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
   };
+  useEffect(() => {
+    if (checkIn && checkOut && checkOut > checkIn) {
+      const inDate = new Date(checkIn);
+      const outDate = new Date(checkOut);
+      const diffMs = outDate.getTime() - inDate.getTime();
+      const nights = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      setTotalPrice(nights * room.price);
+    } else {
+      setTotalPrice(0);
+    }
+  }, [checkIn, checkOut, room.price]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!checkIn || !checkOut) {
       toast.warning("Yo, pick your check-in and check-out dates!");
       return;
@@ -57,7 +159,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, on
       toast.warning("Check-out’s gotta be after check-in, fam!");
       return;
     }
-
+  
     const bookingData = {
       userId,
       hotelName: hotelData.name,
@@ -70,14 +172,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, on
       totalPrice,
       notes: note,
     };
-
+  
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
       console.log("Booking successful:", savedBooking);
       toast.success("Booking confirmed, dude! Redirecting...");
       setTimeout(() => {
-        router.push("/"); // send them home, bro 🏄‍♂️
+        router.push('/'); // send them home, bro 🏄‍♂️
       }, 1000); // give them 2 secs to enjoy that toast
       onClose();
     } catch (error) {
@@ -101,8 +203,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, on
           Book {room.type}
         </h2>
         <p className="mb-4 text-gray-700 dark:text-gray-300">
-          You are booking the {room.type} room at {parseHotelName(hotelData.name)}. Please select your check-in and
-          check-out dates to proceed.
+          You are booking the {room.type} room at {parseHotelName(hotelData.name)}. Please select your check-in and check-out dates to proceed.
         </p>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -125,6 +226,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, on
               className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
             />
           </div>
+          {/* New Note Field */}
           <div className="mb-4">
             <label className="block text-gray-700 dark:text-gray-300">Do you have a note?</label>
             <textarea
@@ -155,112 +257,3 @@ const BookingModal: React.FC<BookingModalProps> = ({ room, hotelData, userId, on
     </div>
   );
 };
-
-interface HotelDetailsClientProps {
-  hotelData: HotelData;
-  rawHotelName: string;
-}
-
-const HotelDetailsClient: React.FC<HotelDetailsClientProps> = ({ hotelData, rawHotelName }) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-
-  const getUserIdFromToken = (): string | null => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
-    if (token) {
-      try {
-        const decodedToken: { sub: string } = jwtDecode(token);
-        return decodedToken.sub;
-      } catch (error) {
-        console.error("Error decoding token", error);
-        return null;
-      }
-    }
-    return null;
-  };
-
-  const userId = getUserIdFromToken();
-
-  const getRandomHotelImage = (index: number): string => {
-    const imageNumber = (index % 63) + 1;
-    return `/images/hotel-images/hotel${imageNumber}.jpg`;
-  };
-
-  useEffect(() => {
-    const suffix = "?login=success";
-    if (rawHotelName.endsWith(suffix)) {
-      toast.success("Login successful! 🎉", { id: "login-success" });
-      const cleaned = rawHotelName.slice(0, -suffix.length);
-      console.log("Cleaned hotel name:", cleaned);
-      const qs = new URLSearchParams(window.location.search);
-      qs.set("hotelName", cleaned);
-      window.history.replaceState(null, "", window.location.pathname + "?" + qs.toString());
-    }
-  }, [rawHotelName]);
-
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.classList.add("overflow-hidden");
-    } else {
-      document.body.classList.remove("overflow-hidden");
-    }
-    return () => document.body.classList.remove("overflow-hidden");
-  }, [isModalOpen]);
-
-  const openModal = (room: Room) => {
-    setSelectedRoom(room);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedRoom(null);
-  };
-
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 md:gap-x-6 lg:gap-x-8 xl:grid-cols-3">
-        {hotelData.rooms.map((room, index) => (
-          <div key={index} className="w-full">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md transform hover:scale-105 transition">
-              <img
-                src={getRandomHotelImage(index)}
-                alt={`${room.type} Image`}
-                className="w-full h-48 object-cover rounded-md mb-4"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
-                }}
-              />
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">{room.type}</h3>
-              <p className="text-gray-700 dark:text-gray-300">Price: ${room.price.toFixed(2)}</p>
-              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 mt-2 mb-4">
-                {[...new Set(room.features)].map((feature, idx) => (
-                  <li key={idx}>{String(feature)}</li>
-                ))}
-              </ul>
-              <button
-                onClick={() => openModal(room)}
-                className="flex items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 py-2 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-              >
-                Book Now
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {isModalOpen && selectedRoom && (
-        <BookingModal
-          room={selectedRoom}
-          hotelData={hotelData}
-          userId={userId}
-          onClose={closeModal}
-        />
-      )}
-    </>
-  );
-};
-
-export default HotelDetailsClient;
