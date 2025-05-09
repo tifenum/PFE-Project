@@ -8,8 +8,8 @@ const Features = () => {
       <section id="features" className="py-16 md:py-20 lg:py-28">
         <div className="container">
           <SectionTitle
-            title="Main Features"
-            paragraph="There are many variations of passages of Lorem Ipsum available but the majority have suffered alteration in some form."
+            title="Why Choose Our Booking Platform"
+            paragraph="Explore the key features that make booking your next trip seamless, affordable, and stress-free, from flights to car rentals and more."
             center
           />
 

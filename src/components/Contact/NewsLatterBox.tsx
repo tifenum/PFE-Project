@@ -8,32 +8,31 @@ const NewsLatterBox = () => {
   return (
     <div className="relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11">
       <h3 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white">
-        Subscribe to receive future updates
+        Get Exclusive Travel Deals
       </h3>
       <p className="mb-11 border-b border-body-color border-opacity-25 pb-11 text-base leading-relaxed text-body-color dark:border-white dark:border-opacity-25">
-        Lorem ipsum dolor sited Sed ullam corper consectur adipiscing Mae ornare
-        massa quis lectus.
+        Sign up for our newsletter to receive exclusive discounts on flights, hotels, and car rentals, plus destination inspiration for your next adventure.
       </p>
       <div>
         <input
           type="text"
           name="name"
-          placeholder="Enter your name"
+          placeholder="Your name for trip updates"
           className="border-stroke mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
         />
         <input
           type="email"
           name="email"
-          placeholder="Enter your email"
+          placeholder="Your email for deals"
           className="border-stroke mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
         />
         <input
           type="submit"
-          value="Subscribe"
+          value="Discover Deals"
           className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark"
         />
         <p className="text-center text-base leading-relaxed text-body-color dark:text-body-color-dark">
-          No spam guaranteed, So please don’t send any spam mail.
+          We only send the best travel deals, no spam guaranteed!
         </p>
       </div>
 
@@ -125,7 +124,7 @@ const NewsLatterBox = () => {
             />
             <defs>
               <linearGradient
-                id="paint0_linear_1028_602"
+                id="paint0_linear_1028_601"
                 x1="-0.571054"
                 y1="-37.1717"
                 x2="28.7937"

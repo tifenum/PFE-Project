@@ -5,28 +5,28 @@ import SingleTestimonial from "./SingleTestimonial";
 const testimonialData: Testimonial[] = [
   {
     id: 1,
-    name: "Musharof Chy",
-    designation: "Founder @TailGrids",
+    name: "Jack Thompson",
+    designation: "Frequent Flyer",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "Booking my flights through this platform was a breeze! The interface is so intuitive, and I found amazing deals to Europe. Highly recommend for stress-free travel planning.",
     image: "/images/testimonials/auth-01.png",
     star: 5,
   },
   {
     id: 2,
-    name: "Devid Weilium",
-    designation: "Founder @UIdeck",
+    name: "Michael Chen",
+    designation: "Family Vacationer",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "I booked a hotel and car rental for our family trip to Hawaii, and everything was seamless. The prices were unbeatable, and the support team was super helpful!",
     image: "/images/testimonials/auth-02.png",
     star: 5,
   },
   {
     id: 3,
-    name: "Lethium Frenci",
-    designation: "Founder @Lineicons",
+    name: "John Rodriguez",
+    designation: "Adventure Traveler",
     content:
-      "Our members are so impressed. It's intuitive. It's clean. It's distraction free. If you're building a community.",
+      "This platform made my solo trip to New Zealand unforgettable. I got a great deal on flights and a rental car, and the whole process was so easy. I’m already planning my next adventure!",
     image: "/images/testimonials/auth-03.png",
     star: 5,
   },
@@ -37,8 +37,8 @@ const Testimonials = () => {
     <section className="dark:bg-bg-color-dark bg-gray-light relative z-10 py-16 md:py-20 lg:py-28">
       <div className="container">
         <SectionTitle
-          title="What Our Users Says"
-          paragraph="There are many variations of passages of Lorem Ipsum available but the majority have suffered alteration in some form."
+          title="What Our Travelers Say"
+          paragraph="Our users love the seamless experience of booking flights, hotels, and car rentals. Discover why travelers trust us for their adventures."
           center
         />
 

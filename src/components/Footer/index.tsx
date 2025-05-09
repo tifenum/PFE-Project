@@ -12,14 +12,14 @@ const Footer = () => {
               <div className="mb-12 max-w-[360px] lg:mb-16">
                 <Link href="/" className="mb-8 inline-block">
                   <Image
-                    src="/images/logo/logo-2.svg"
+                    src="/images/logo/logo-2.png"
                     alt="logo"
                     className="w-full dark:hidden"
                     width={140}
                     height={30}
                   />
                   <Image
-                    src="/images/logo/logo.svg"
+                    src="/images/logo/logo.png"
                     alt="logo"
                     className="hidden w-full dark:block"
                     width={140}
@@ -27,12 +27,11 @@ const Footer = () => {
                   />
                 </Link>
                 <p className="mb-9 text-base leading-relaxed text-body-color dark:text-body-color-dark">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Integer lobortis.
+                  Plan your perfect trip with us! Book flights, hotels, and car rentals seamlessly, and explore the world with ease and confidence.
                 </p>
                 <div className="flex items-center">
                   <a
-                    href="/"
+                    href="https://facebook.com/yourtravelplatform"
                     aria-label="social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -52,7 +51,7 @@ const Footer = () => {
                     </svg>
                   </a>
                   <a
-                    href="/"
+                    href="https://twitter.com/yourtravelplatform"
                     aria-label="social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -74,7 +73,7 @@ const Footer = () => {
                     </svg>
                   </a>
                   <a
-                    href="/"
+                    href="https://youtube.com/yourtravelplatform"
                     aria-label="social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -90,7 +89,7 @@ const Footer = () => {
                     </svg>
                   </a>
                   <a
-                    href="/"
+                    href="https://linkedin.com/company/yourtravelplatform"
                     aria-label="social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -112,31 +111,31 @@ const Footer = () => {
             <div className="w-full px-4 sm:w-1/2 md:w-1/2 lg:w-2/12 xl:w-2/12">
               <div className="mb-12 lg:mb-16">
                 <h2 className="mb-10 text-xl font-bold text-black dark:text-white">
-                  Useful Links
+                  Travel Services
                 </h2>
                 <ul>
                   <li>
                     <Link
-                      href="/blog"
+                      href="/flights"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      Blog
+                      Flights
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/"
+                      href="/hotels"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      Pricing
+                      Hotels
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/about"
+                      href="/cars"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      About
+                      Cars
                     </Link>
                   </li>
                 </ul>
@@ -188,23 +187,23 @@ const Footer = () => {
                       href="/contact"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      Open Support Ticket
+                      Contact Us
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/"
+                      href="/faqs"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      Terms of Use
+                      FAQs
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/about"
+                      href="/guides"
                       className="mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:text-body-color-dark dark:hover:text-primary"
                     >
-                      About
+                      Travel Guides
                     </Link>
                   </li>
                 </ul>
@@ -215,7 +214,7 @@ const Footer = () => {
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[#D2D8E183] to-transparent dark:via-[#959CB183]"></div>
           <div className="py-8">
             <p className="text-center text-base text-body-color dark:text-white">
-              Template by{" "}
+              Mohamed Habib has Edited this Template by{" "}
               <a
                 href="http://uideck.com"
                 target="_blank"

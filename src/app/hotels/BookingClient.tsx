@@ -9,6 +9,7 @@ import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeywor
 import AutocompleteCountry from "@/components/globe/countries";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SectionTitle from "@/components/Common/SectionTitle";
 
 delete L.Icon.Default.prototype._getIconUrl;
 
@@ -201,6 +202,12 @@ const ClientBookingPage = () => {
   return (
     <section className="overflow-hidden pb-8 pt-16 lg:pt-20">
       <div className="container mx-auto">
+        {/* <SectionTitle
+          title="The Best Hotel Deals"
+          paragraph="Find the Best Hotel Deals and offers from all over the world. Book your Hotel now!"
+          center
+          width="650px"
+        /> */}
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           <div className="w-full lg:w-8/12 px-4">
             <div style={{ height: "calc(105vh - 8rem)", overflow: "hidden" }}>
@@ -209,7 +216,8 @@ const ClientBookingPage = () => {
               center={mapCenter}
               zoom={13}
               style={{ height: "100%", width: "100%" }}
-            >                <MapUpdater center={mapCenter} />
+            >                
+            <MapUpdater center={mapCenter} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='© <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
