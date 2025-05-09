@@ -31,7 +31,6 @@ const BlogSidebarPage = () => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const handleCountrySelect = (type: 'origin' | 'destination', countryName: string) => {
-    // console.log('Selected country:', countryName);
     if (type === 'origin') {
       setOrigin(countryName);
     } else {

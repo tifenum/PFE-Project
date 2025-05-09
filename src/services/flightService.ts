@@ -11,7 +11,6 @@ export async function searchFlights(
 ) {
   const url = `${API_BASE_URL}/flights/fake?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&adults=${adults}`;
   const response = await fetch(url);
-   console.log(response);
   if (!response.ok) {
     throw new Error('Flight search failed');
   }
@@ -20,7 +19,6 @@ export async function searchFlights(
 
 export async function bookFlight(bookingData) {
   try {
-    console.log("Booking Data:", bookingData);
     const response = await fetch(`${API_BASE_URL}/flights/book-flight`, {
       method: "POST",
       headers: {

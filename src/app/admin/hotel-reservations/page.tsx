@@ -15,7 +15,6 @@ const HotelReservationsPage = () => {
         setLoading(true);
         const hotelData = await fetchAllPendingHotelReservations();
         setHotelReservations(hotelData);
-        console.log(hotelData);
       } catch (error) {
         console.error("Error fetching hotel reservations:", error);
       } finally {

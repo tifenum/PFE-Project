@@ -176,7 +176,6 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
-      console.log("Booking successful:", savedBooking);
       toast.success("Booking confirmed, dude! Redirecting...");
       setTimeout(() => {
         router.push('/'); // send them home, bro 🏄‍♂️

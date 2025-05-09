@@ -45,7 +45,6 @@ const Global = () => {
     const centroid = getCountryCenter(d);
     
     setSelectedCountry(d);
-    console.log('Country center:', d.properties.ADMIN);
     setHoveredCountry(d);
     if (globeRef.current) {
       globeRef.current.controls().autoRotate = !d;
@@ -103,7 +102,6 @@ const Global = () => {
           )
             .then((res) => res.json())
             .then(function (res) {
-              console.log(res);
               setGlobeData({
                 countries: res[0],
                 points: res[1]

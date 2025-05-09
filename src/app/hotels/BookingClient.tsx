@@ -79,11 +79,9 @@ const ClientBookingPage = () => {
   const handleBookNow = (hotel) => {
     const stateName = typeof destination === "object" ? destination.name || "" : destination || "";
     const url = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&country=${encodeURIComponent(bookingCountry.name)}&state=${encodeURIComponent(stateName)}`;
-    console.log("Navigating to:", url); // Debug
     router.push(url);
   };
   useEffect(() => {
-    console.log("Hotels:", hotels);
   }, [hotels]);
 
   
@@ -133,7 +131,6 @@ const ClientBookingPage = () => {
     setIsSearching(true);
     try {
       const fetchedHotels = await searchHotels({ cityCode: destination.iataCode });
-      console.log("Fetched hotels:", fetchedHotels);
       setHotels(fetchedHotels);
       if (destination.geoCode && destination.geoCode.latitude && destination.geoCode.longitude) {
         setMapCenter([destination.geoCode.latitude, destination.geoCode.longitude]);
@@ -150,7 +147,6 @@ const ClientBookingPage = () => {
     setIsSearching(true);
     try {
       const fetchedHotels = await searchHotelsByKeyword({ keyword: hotelName });
-      console.log("Fetched hotels by name:", fetchedHotels);
       setHotels(fetchedHotels);
       if (fetchedHotels.length > 0 && fetchedHotels[0].geoCode) {
         setMapCenter([fetchedHotels[0].geoCode.latitude, fetchedHotels[0].geoCode.longitude]);
@@ -187,7 +183,6 @@ const ClientBookingPage = () => {
     try {
       const [latitude, longitude] = circleCenter;
       const fetchedHotels = await searchHotelsByGeocode({ latitude, longitude, radius: radiusKm });
-      console.log("Fetched hotels by geocode:", fetchedHotels);
       setHotels(fetchedHotels);
     } catch (error) {
       console.error("Error fetching hotels by geocode:", error);

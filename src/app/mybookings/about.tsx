@@ -34,8 +34,6 @@ const ReservationsPage = () => {
         ]);
         setHotelReservations(hotels);
         setFlightReservations(flights);
-        console.log("Flight Reservations:", flights);
-        console.log("Hotel Reservations:", hotels);
       } catch (error) {
         console.error("Error fetching reservations:", error);
         toast.error("Failed to fetch bookings. Please try again.", { id: "fetching-bookings" });

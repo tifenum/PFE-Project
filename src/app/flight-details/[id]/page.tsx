@@ -27,10 +27,9 @@ export default function FlightDetails() {
     const raw = sessionStorage.getItem("pendingFlight");
     if (raw) {
       const flight = JSON.parse(raw);
-      console.log("Flight data loaded from sessionStorage:", flight);
       setFlightData(flight);
     } else {
-      console.log("No pendingFlight in sessionStorage");
+      console.error("No pendingFlight in sessionStorage");
     }
   }, []);
 

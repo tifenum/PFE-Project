@@ -13,7 +13,6 @@ export const login = async (email: string, password: string) => {
     if (response.status === 200) {
       const token = response.data;
       localStorage.setItem("jwt_token", token.access_token);
-      console.log("Login successful:", token);
       return { success: true, token };
     }
     return { success: false, error: "Invalid credentials" };
@@ -78,7 +77,6 @@ export const fetchAllClients = async () => {
     });
 
     if (response.status === 200) {
-      console.log('Fetched clients:', response.data);
       return response.data;
     }
     throw new Error('Failed to fetch clients');
@@ -97,7 +95,6 @@ export const deleteUser = async (userId: string) => {
     });
 
     if (response.status === 204) {
-      console.log(`User ${userId} deleted successfully`);
       return true;
     }
     throw new Error('Failed to delete user');
@@ -116,7 +113,6 @@ export const logout = async () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Logout successful");
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {

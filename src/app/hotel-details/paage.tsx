@@ -25,7 +25,6 @@ const parseHotelName = (name) => {
 
 // Decode the hotelName to remove % signs from spaces
 const initialRawName = searchParams.get("hotelName") || "";
-console.log("Initial raw hotel name:", initialRawName);
 const [rawHotelName, setRawHotelName] = useState(initialRawName);
 
 
@@ -56,7 +55,6 @@ const [rawHotelName, setRawHotelName] = useState(initialRawName);
       toast.success("Login successful! 🎉" ,{ id: "login-success" });;
       // strip suffix
       const cleaned = rawHotelName.slice(0, -suffix.length);
-      console.log("Cleaned hotel name:", cleaned);
       setRawHotelName(cleaned);
       // update URL without reloading
       const qs = new URLSearchParams(window.location.search);
@@ -214,7 +212,6 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
-      console.log("Booking successful:", savedBooking);
       toast.success("Booking confirmed, dude! Redirecting...");
       setTimeout(() => {
         router.push('/'); // send them home, bro 🏄‍♂️

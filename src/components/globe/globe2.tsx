@@ -46,7 +46,6 @@ const Global = ({
   const getCountryCenter = (feature) => {
     const centroid = turf.centroid(feature);
     if (feature.properties.ADMIN === 'France') {
-      console.log('Using static coordinates for France');
       return [2.2137, 46.2276]; 
     }
     return centroid.geometry.coordinates;
