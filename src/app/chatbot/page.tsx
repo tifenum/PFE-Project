@@ -115,6 +115,7 @@ export default function ChatPage() {
       <Head>
         <title>Chat with Travel Bot</title>
       </Head>
+      
       <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-900 mt-16 mb-16">
         <div className="flex flex-1 justify-center items-start px-4 py-6">
           <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col">

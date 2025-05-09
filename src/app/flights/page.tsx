@@ -1,14 +1,18 @@
 // frontend/app/flights/page.tsx
 import { Suspense } from "react";
 import FlightSearchClient from "./FlightSearchClient";
+import SectionTitle from "@/components/Common/SectionTitle";
 
 const BlogSidebarPage = () => {
   return (
     <section className="overflow-hidden pb-[120px] pt-[180px]">
       <div className="container">
-        <h1 className="mb-8 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
-          The world is in your hands
-        </h1>
+        <SectionTitle
+          title="The Best Flight Deals"
+          paragraph="Find the Best Flight Deals and offers from all over the world. Book your Flight now!"
+          center
+          width="1000px"
+        />
         <Suspense fallback={<div className="text-center py-10 text-gray-500">Loading flight search...</div>}>
           <FlightSearchClient />
         </Suspense>
@@ -252,6 +256,7 @@ const BlogSidebarPage = () => {
               </radialGradient>
             </defs>
           </svg>
+          
         </div>
       </div>
     </section>

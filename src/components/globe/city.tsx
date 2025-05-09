@@ -89,7 +89,7 @@ const CityAutocomplete = ({
                   setSearchQuery("");
                 }}
               >
-                {city.name} ({city.code})
+                {city.name}
               </div>
             ))}
           </div>
