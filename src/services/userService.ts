@@ -22,18 +22,19 @@ export const login = async (email: string, password: string) => {
     return { success: false, error: "Login failed. Please try again." };
   }
 };
-  const getUserId = () => {
-    if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("jwt_token");
-    if (!token) return null;
-    try {
-      const decoded: any = jwtDecode(token);
-      return decoded.sub;
-    } catch {
-      return null;
-    }
-  };
-// Updated Frontend JavaScript
+
+const getUserId = () => {
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("jwt_token");
+  if (!token) return null;
+  try {
+    const decoded: any = jwtDecode(token);
+    return decoded.sub;
+  } catch {
+    return null;
+  }
+};
+
 export const askAssistant = async (
   message: string,
   sessionId: string,
@@ -44,6 +45,7 @@ export const askAssistant = async (
   });
   return response.data;
 };
+
 export const signup = async (username: string, email: string, password: string) => {
   try {
     const response = await axios.post(
@@ -83,6 +85,25 @@ export const fetchAllClients = async () => {
   } catch (error) {
     console.error('Error fetching clients:', error.response?.data || error.message);
     return [];
+  }
+};
+
+export const deleteUser = async (userId: string) => {
+  try {
+    const response = await axios.delete(`${API_BASE_URL}/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
+      },
+    });
+
+    if (response.status === 204) {
+      console.log(`User ${userId} deleted successfully`);
+      return true;
+    }
+    throw new Error('Failed to delete user');
+  } catch (error) {
+    console.error('Error deleting user:', error.response?.data || error.message);
+    throw error;
   }
 };
 

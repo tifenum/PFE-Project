@@ -106,3 +106,22 @@ export const updateBookingStatus = async (bookingId: string, status: "Accepted" 
     throw error;
   }
 };
+export const deleteFlightReservation = async (bookingId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/flights/bookings/${bookingId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete flight reservation");
+    }
+
+    return true; // Return true to indicate success
+  } catch (error) {
+    console.error("Error deleting flight reservation:", error);
+    throw error;
+  }
+};

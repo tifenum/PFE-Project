@@ -164,4 +164,24 @@ export const updateHotelReservationStatus = async (reservationId: string, status
     console.error("Error updating reservation status:", error);
     throw error;
   }
+  
 }
+export const deleteHotelReservation = async (reservationId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/hotels/reservations/${reservationId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete hotel reservation");
+    }
+
+    return true; // Return true to indicate success
+  } catch (error) {
+    console.error("Error deleting hotel reservation:", error);
+    throw error;
+  }
+};

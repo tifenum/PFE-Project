@@ -1,8 +1,8 @@
 'use client';
 export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
-import { fetchHotelReservations } from "@/services/hotelService";
-import { fetchFlightReservations } from "@/services/flightService";
+import { fetchHotelReservations, deleteHotelReservation } from "@/services/hotelService";
+import { fetchFlightReservations, deleteFlightReservation } from "@/services/flightService";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,7 +13,7 @@ const ReservationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [hotelPage, setHotelPage] = useState(1);
   const [flightPage, setFlightPage] = useState(1);
-  const itemsPerPage = 10; // Number of reservations per page
+  const itemsPerPage = 10;
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -64,7 +64,12 @@ const ReservationsPage = () => {
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const formatTime = (dateString: string) => {
@@ -73,14 +78,35 @@ const ReservationsPage = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Pagination logic for hotels
+  const handleDeleteHotelReservation = async (reservationId: string) => {
+    try {
+      await deleteHotelReservation(reservationId);
+      setHotelReservations(hotelReservations.filter(res => res.id !== reservationId));
+      toast.success("Hotel reservation deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting hotel reservation:", error);
+      toast.error("Failed to delete hotel reservation. Please try again.");
+    }
+  };
+
+  const handleDeleteFlightReservation = async (reservationId: string) => {
+    try {
+      await deleteFlightReservation(reservationId);
+      setFlightReservations(flightReservations.filter(res => res.id !== reservationId));
+      toast.success("Flight reservation deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting flight reservation:", error);
+      toast.error("Failed to delete flight reservation. Please try again.");
+    }
+  };
+
+
   const totalHotelPages = Math.ceil(hotelReservations.length / itemsPerPage);
   const paginatedHotelReservations = hotelReservations.slice(
     (hotelPage - 1) * itemsPerPage,
     hotelPage * itemsPerPage
   );
 
-  // Pagination logic for flights
   const totalFlightPages = Math.ceil(flightReservations.length / itemsPerPage);
   const paginatedFlightReservations = flightReservations.slice(
     (flightPage - 1) * itemsPerPage,
@@ -202,6 +228,7 @@ const ReservationsPage = () => {
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Time</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Price</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,11 +258,19 @@ const ReservationsPage = () => {
                             {res.bookingStatus || "-"}
                           </span>
                         </td>
+                       <td className="px-6 py-4 text-sm">
+                          <button
+                            onClick={() => handleDeleteFlightReservation(res.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Delete
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
                         No flight reservations found
                       </td>
                     </tr>
@@ -253,8 +288,8 @@ const ReservationsPage = () => {
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Location</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Check-In</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Check-Out</th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Guests</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -268,18 +303,23 @@ const ReservationsPage = () => {
                           {res.hotelAddress}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.checkInDate}
+                          {res.checkInDate ? formatDate(res.checkInDate) : "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.checkOutDate}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.guests ?? "N/A"}
+                          {res.checkOutDate ? formatDate(res.checkOutDate) : "-"}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span className={getStatusStyle(res.reservationStatus)}>
                             {res.reservationStatus}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            onClick={() => handleDeleteHotelReservation(res.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -330,7 +370,7 @@ const ReservationsPage = () => {
               fill="url(#paint3_linear_25:217)"
             />
             <circle
-              opacity="0.8"
+              opacity="0 unveiled.8"
               cx="184.521"
               cy="315.521"
               r="132.862"

@@ -7,7 +7,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "node_modules/react-modal-video/css/modal-video.css";
 import "../styles/index.css";
-import { Providers } from "./providers";
+import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "./LoadingContext";
 import ClientNavigationHandler from "./ClientNavigationHandler";
 import ClientGlobalLoaderWrapper from "./ClientGlobalLoaderWrapper";
@@ -20,11 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
         <LoadingProvider>
-          <Providers>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Header />
             <Toaster richColors />
             <ClientNavigationHandler />
@@ -32,7 +32,7 @@ export default function RootLayout({
             {children}
             <Footer />
             <ScrollToTop />
-          </Providers>
+          </ThemeProvider>
         </LoadingProvider>
       </body>
     </html>
