@@ -11,6 +11,7 @@ import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "./LoadingContext";
 import ClientNavigationHandler from "./ClientNavigationHandler";
 import ClientGlobalLoaderWrapper from "./ClientGlobalLoaderWrapper";
+import { usePathname } from "next/navigation"; // Import usePathname
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname(); // Get current pathname
+  const hideFooter = pathname === "/chatbot"; // Hide footer for /chat route
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -30,7 +34,7 @@ export default function RootLayout({
             <ClientNavigationHandler />
             <ClientGlobalLoaderWrapper />
             {children}
-            <Footer />
+            {!hideFooter && <Footer />} {/* Conditionally render Footer */}
             <ScrollToTop />
           </ThemeProvider>
         </LoadingProvider>
