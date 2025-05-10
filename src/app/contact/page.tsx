@@ -97,7 +97,7 @@ const BlogSidebarPage = () => {
 
 
   {/* Plane Seat Map */}
-  <div className="w-full lg:w-1/2 px-4 flex flex-col justify-center">
+        <div className="w-full lg:w-1/2 px-4 flex flex-col justify-center">
             <div className="w-full h-full">
               <section className="relative z-10 overflow-hidden h-full flex items-center">
                 <div id="container" className="w-full h-[610px]"></div>

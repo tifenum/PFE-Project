@@ -14,7 +14,10 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
   }, []);
 
   if (!flights || flights.length === 0) return null;
-
+  const getRandomHotelImage = (index: number): string => {
+    const imageNumber = Math.floor(Math.random() * 15) + 1;
+    return `/images/flight-images/flight${imageNumber}.jpg`;
+  };
   const handleFlightClick = (flight: any) => {
     // stash the flight for later
     if (typeof window !== "undefined") {
@@ -51,7 +54,7 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
                     : "Flight"}
                 </span>
                 <Image
-                  src="/images/blog/blog-02.jpg"
+                src={getRandomHotelImage(flight.id)}
                   alt="flight"
                   fill
                   className="object-cover"
@@ -90,7 +93,7 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
           ))}
         </div>
         {/* Pagination Section */}
-        <div className="-mx-4 flex flex-wrap" data-wow-delay=".15s">
+        {/* <div className="-mx-4 flex flex-wrap" data-wow-delay=".15s">
           <div className="w-full px-4">
             <ul className="flex items-center justify-center pt-8">
               <li className="mx-1">
@@ -148,7 +151,7 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
               </li>
             </ul>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

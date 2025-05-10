@@ -1,4 +1,9 @@
-import NewsLatterBox from "./NewsLatterBox";
+"use client";
+
+import dynamic from "next/dynamic";
+
+// Dynamically import NewsLatterBox with SSR disabled
+const NewsLatterBox = dynamic(() => import("./NewsLatterBox"), { ssr: false });
 
 const Contact = () => {
   return (

@@ -1,6 +1,3 @@
-
-
-// frontend/app/hotel-details/HotelDetailsClient.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { fetchFakeHotel, createBooking } from "@/services/hotelService";
@@ -22,25 +19,35 @@ interface HotelData {
 
 interface HotelDetailsClientProps {
   rawHotelName: string;
-  latitude:     string;
-  longitude:    string;
+  latitude: string;
+  longitude: string;
 }
 
 export default function HotelDetailsClient({ rawHotelName, latitude, longitude }: HotelDetailsClientProps) {
   const [hotelData, setHotelData] = useState<HotelData | null>(null);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
   const [roomToBook, setRoomToBook] = useState<Room | null>(null);
   const router = useRouter();
-  const [totalPrice, setTotalPrice] = useState(0);
 
-  // Parse display name
-  const displayName = rawHotelName.replace(/%20/g, " ");
+  // Parse hotel name: remove ?login=success, replace %20, capitalize first letters
+  const parseHotelName = (name: string) => {
+    if (!name) return "";
+    const cleanedName = name
+      .replace(/\?login=success/g, "")
+      .replace(/%20/g, " ")
+      .toLowerCase();
+    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const displayName = parseHotelName(rawHotelName);
+
+  // Generate random hotel image between 1 and 63
   const getRandomHotelImage = (index: number): string => {
-    const imageNumber = (index % 63) + 1;
+    const imageNumber = Math.floor(Math.random() * 63) + 1;
     return `/images/hotel-images/hotel${imageNumber}.jpg`;
   };
-  
-  // Fetch hotel data once browser is ready
+
+  // Fetch hotel data
   useEffect(() => {
     const token = localStorage.getItem("jwt_token");
     if (!token) {
@@ -48,8 +55,8 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
       setLoading(false);
       return;
     }
-    
-    fetchFakeHotel({ latitude, longitude, hotelName: rawHotelName})
+
+    fetchFakeHotel({ latitude, longitude, hotelName: rawHotelName })
       .then(data => {
         if (data) setHotelData(data);
       })
@@ -60,11 +67,12 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
       .finally(() => setLoading(false));
   }, [latitude, longitude, rawHotelName]);
 
-  if (loading) return <p className="text-center">Loading Available Rooms...</p>;
+  if (loading) return <p className="text-center text-gray-600 dark:text-gray-400 animate-pulse">Loading Available Rooms...</p>;
   if (!hotelData) return <p className="text-center text-red-500">No hotel data found.</p>;
 
   const openBooking = (room: Room) => setRoomToBook(room);
   const closeBooking = () => setRoomToBook(null);
+
   const getUserIdFromToken = () => {
     const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
     if (token) {
@@ -82,30 +90,59 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
 
   return (
     <>
-      <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">{displayName}</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">{hotelData.address}</p>
-      <h2 className="text-2xl font-semibold mb-6 text-gray-700 dark:text-gray-300">Available Rooms</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hotelData.rooms.map((room, idx) => (
-          <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition">
-                <img
+      {/* Hero Section with rounded corners */}
+      <div className="relative mb-12 overflow-hidden rounded-2xl">
+        <img
+          src={getRandomHotelImage(0)}
+          alt={`${displayName} Hero`}
+          className="w-full h-64 md:h-96 object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg"; }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">{displayName}</h1>
+            <p className="text-lg text-gray-200">{hotelData.address}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">Available Rooms</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {hotelData.rooms.map((room, idx) => (
+            <div
+              key={idx}
+              className="group relative overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105"
+            >
+              <img
                 src={getRandomHotelImage(idx)}
                 alt={`${room.type} Image`}
-                className="w-full h-48 object-cover rounded-md mb-4"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
-                }}
+                className="w-full h-64 object-cover rounded-xl"
+                onError={(e) => { (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg"; }}
               />
-            <h3 className="text-xl font-semibold mb-2">{room.type}</h3>
-            <p className="mb-2">Price: ${room.price.toFixed(2)}</p>
-            <ul className="list-disc list-inside mb-4">
-              {[...new Set(room.features)].map((f, i) => <li key={i}>{f}</li>)}
-            </ul>
-            <button onClick={() => openBooking(room)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              Book Now
-            </button>
-          </div>
-        ))}
+              <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
+                <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{room.type}</h3>
+                <p className="mb-3 text-gray-600 dark:text-gray-300">Price: ${room.price.toFixed(2)} / night</p>
+                <ul className="list-none mb-4 space-y-2 flex-grow">
+                  {[...new Set(room.features)].slice(0, 4).map((f, i) => (
+                    <li key={i} className="flex items-center text-gray-600 dark:text-gray-300">
+                      <svg className="w-4 h-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 6.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => openBooking(room)}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-auto"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {roomToBook && (
@@ -114,9 +151,6 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
     </>
   );
 }
-
-// BookingModal component
-
 
 const BookingModal = ({ room, hotelData, userId, onClose }) => {
   const router = useRouter();
@@ -127,11 +161,17 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  const parseHotelName = (name) => {
-    if (!name) return "";
-    const cleanedName = name.replace(/%20/g, " ").toLowerCase();
-    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
-  };
+  console.log("name", hotelData.name);
+const parseHotelName = (name: string) => {
+  if (!name) return "";
+  const decodedName = decodeURIComponent(name)
+    .replace(/\?login=success/gi, "")
+    .replace(/%20/g, " ")
+    .toLowerCase()
+    .trim();
+  return decodedName.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
   useEffect(() => {
     if (checkIn && checkOut && checkOut > checkIn) {
       const inDate = new Date(checkIn);
@@ -146,7 +186,7 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!checkIn || !checkOut) {
       toast.warning("Yo, pick your check-in and check-out dates!");
       return;
@@ -159,7 +199,7 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
       toast.warning("Check-out’s gotta be after check-in, fam!");
       return;
     }
-  
+
     const bookingData = {
       userId,
       hotelName: hotelData.name,
@@ -172,14 +212,14 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
       totalPrice,
       notes: note,
     };
-  
+
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
       toast.success("Booking confirmed, dude! Redirecting...");
       setTimeout(() => {
-        router.push('/'); // send them home, bro 🏄‍♂️
-      }, 1000); // give them 2 secs to enjoy that toast
+        router.push("/");
+      }, 1000);
       onClose();
     } catch (error) {
       toast.error("Failed to book the room. Try again, man!");
@@ -191,69 +231,102 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-300"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96 transform transition-all duration-300 scale-100"
+        className="relative bg-white dark:bg-gray-900 p-6 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-500 ease-out scale-0 animate-[modalFadeIn_0.5s_ease-out_forwards]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+        <style jsx>{`
+          @keyframes modalFadeIn {
+            from {
+              transform: scale(0.7);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+        `}</style>
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
           Book {room.type}
         </h2>
-        <p className="mb-4 text-gray-700 dark:text-gray-300">
-          You are booking the {room.type} room at {parseHotelName(hotelData.name)}. Please select your check-in and check-out dates to proceed.
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          At {parseHotelName(hotelData.name)}
         </p>
+
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 dark:text-gray-300">Check-in Date</label>
-            <input
-              type="date"
-              min={today}
-              value={checkIn}
-              onChange={(e) => setCheckIn(e.target.value)}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Check-in Date
+              </label>
+              <input
+                type="date"
+                min={today}
+                value={checkIn}
+                onChange={(e) => setCheckIn(e.target.value)}
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Check-out Date
+              </label>
+              <input
+                type="date"
+                min={checkIn || today}
+                value={checkOut}
+                onChange={(e) => setCheckOut(e.target.value)}
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Notes
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Special requests..."
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+                rows={3}
+              />
+            </div>
           </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 dark:text-gray-300">Check-out Date</label>
-            <input
-              type="date"
-              min={checkIn || today}
-              value={checkOut}
-              onChange={(e) => setCheckOut(e.target.value)}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-            />
+
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Room: {room.type}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Price per Night: ${room.price.toFixed(2)}
+            </p>
+            <p className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-2">
+              Total: ${totalPrice.toFixed(2)}
+            </p>
           </div>
-          {/* New Note Field */}
-          <div className="mb-4">
-            <label className="block text-gray-700 dark:text-gray-300">Do you have a note?</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Enter any additional notes..."
-              className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
-              rows={3}
-            />
-          </div>
-          <p className="mb-4 text-gray-700 dark:text-gray-300">
-            Total Price: ${totalPrice.toFixed(2)}
-          </p>
+
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`flex items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 py-2 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white ${
+            className={`w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
             {isSubmitting ? "Booking..." : "Confirm Booking"}
           </button>
         </form>
-        <button onClick={onClose} className="mt-4 text-red-500 dark:text-red-400">
-          Close
-        </button>
       </div>
-      
     </div>
   );
 };
