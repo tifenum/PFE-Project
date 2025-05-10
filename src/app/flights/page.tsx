@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import Global from "@/components/globe/globe2";
+import nextDynamic from 'next/dynamic'; // Import dynamic from Next.js
 import React, { useRef, useEffect } from "react";
 import AutocompleteCountry from "@/components/globe/countries";
 import CityAutocomplete from "@/components/globe/city";
@@ -9,6 +9,12 @@ import { searchFlights } from "@/services/flightService";
 import FlightBlog from "@/components/Blog/flightBlog";
 import SectionTitle from "@/components/Common/SectionTitle";
 import { toast } from "sonner";
+
+// Dynamically import the Global component with SSR disabled
+const Global = nextDynamic(() => import('@/components/globe/globe2'), {
+  ssr: false, // Disable server-side rendering
+  loading: () => <div className="min-h-[800px] flex items-center justify-center text-gray-500">Loading globe...</div>, // Optional loading placeholder
+});
 
 interface CityOption {
   name: string;
