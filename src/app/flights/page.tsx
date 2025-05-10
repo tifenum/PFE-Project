@@ -1,21 +1,223 @@
-// frontend/app/flights/page.tsx
-import { Suspense } from "react";
-import FlightSearchClient from "./FlightSearchClient";
+"use client";
+export const dynamic = 'force-dynamic';
+
+import Global from "@/components/globe/globe2";
+import React, { useRef, useEffect } from "react";
+import AutocompleteCountry from "@/components/globe/countries";
+import CityAutocomplete from "@/components/globe/city";
+import { searchFlights } from "@/services/flightService";
+import FlightBlog from "@/components/Blog/flightBlog";
 import SectionTitle from "@/components/Common/SectionTitle";
+import { toast } from "sonner";
+
+interface CityOption {
+  name: string;
+  code: string;
+}
 
 const BlogSidebarPage = () => {
+  const [origin, setOrigin] = React.useState('');
+  const [destination, setDestination] = React.useState('');
+  const [departureCity, setDepartureCity] = React.useState<CityOption | null>(null);
+  const [destinationCity, setDestinationCity] = React.useState<CityOption | null>(null);
+  const [departureDate, setDepartureDate] = React.useState("");
+  const [returnDate, setReturnDate] = React.useState("");
+  const [flightType, setFlightType] = React.useState<"one-way" | "round-trip">("one-way");
+  const [flightResults, setFlightResults] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const formRef = useRef<HTMLDivElement>(null);
+  const globeRef = useRef<HTMLDivElement>(null);
+
+  const handleCountrySelect = (type: 'origin' | 'destination', countryName: string) => {
+    if (type === 'origin') {
+      setOrigin(countryName);
+    } else {
+      setDestination(countryName);
+    }
+  };
+
+  const handleSearchFlights = async () => {
+    if (!departureCity || !destinationCity) {
+      toast.error("Please fill in the departure airport and destination airport.");
+      return;
+    }
+    if (!departureDate) {
+      toast.error("Please select a departure date.");
+      return;
+    }
+    if (flightType === "round-trip" && !returnDate) {
+      toast.error("Please select a return date for round-trip flights.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await searchFlights(
+        departureCity.code,
+        destinationCity.code,
+        departureDate,
+        flightType === "round-trip" ? returnDate : "",
+        flightType
+      );
+      console.log('Flight Search Data:', data);
+      if (!Array.isArray(data) || data.length === 0) {
+        setError("No flights found for the selected criteria.");
+        setFlightResults([]);
+      } else {
+        setFlightResults(data);
+      }
+    } catch (err: any) {
+      console.error('Search Error:', err);
+      setError("An error occurred while searching for flights.");
+      setFlightResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    const syncHeight = () => {
+      if (formRef.current && globeRef.current) {
+        const formHeight = formRef.current.getBoundingClientRect().height;
+        const globeHeight = Math.max(formHeight - 100, 700);
+        globeRef.current.style.height = `${globeHeight}px`;
+        console.log(`Form Height: ${formHeight}px, Globe Height: ${globeHeight}px`);
+      } else {
+        console.warn('formRef or globeRef is null');
+      }
+    };
+
+    syncHeight();
+    window.addEventListener('resize', syncHeight);
+    return () => window.removeEventListener('resize', syncHeight);
+  }, []);
+
   return (
-    <section className="overflow-hidden pb-[120px] pt-[180px]">
+    <section className="overflow-hidden pt-32 pb-16 min-h-screen">
       <div className="container">
-        <SectionTitle
-          title="The Best Flight Deals"
-          paragraph="Find the Best Flight Deals and offers from all over the world. Book your Flight now!"
-          center
-          width="1000px"
-        />
-        <Suspense fallback={<div className="text-center py-10 text-gray-500">Loading flight search...</div>}>
-          <FlightSearchClient />
-        </Suspense>
+        <div className="mt-12">
+          <SectionTitle
+            title="The Best Flight Deals"
+            paragraph="Find the Best Flight Deals and offers from all over the world. Book your Flight now!"
+            center
+            width="1000px"
+          />
+        </div>
+        <div className="-mx-4 flex flex-wrap">
+          <div className="w-full px-4 flex flex-col lg:flex-row-reverse gap-8">
+            {/* Flight Search Form (Right, 1/3) */}
+            <div className="w-full lg:w-1/3" ref={formRef}>
+              <div className="shadow-three dark:bg-gray-dark rounded-sm bg-white p-6 dark:shadow-none">
+                <h2 className="mb-6 text-2xl font-bold text-dark dark:text-white">
+                  Flight Search
+                </h2>
+                <div className="space-y-4">
+                  <AutocompleteCountry
+                    label="Origin Country"
+                    value={origin}
+                    onChange={(value) => {
+                      setOrigin(value.name);
+                      handleCountrySelect('origin', value.name);
+                    }}
+                  />
+                  <CityAutocomplete
+                    label="Departure Airport"
+                    value={departureCity}
+                    onChange={setDepartureCity}
+                    country={origin}
+                  />
+                  <AutocompleteCountry
+                    label="Destination Country"
+                    value={destination}
+                    onChange={(value) => {
+                      setDestination(value.name);
+                      handleCountrySelect('destination', value.name);
+                    }}
+                  />
+                  <CityAutocomplete
+                    label="Destination Airport"
+                    value={destinationCity}
+                    onChange={setDestinationCity}
+                    country={destination}
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                        Departure Date
+                      </label>
+                      <input
+                        type="date"
+                        value={departureDate}
+                        onChange={(e) => setDepartureDate(e.target.value)}
+                        min={today} // Disable past dates
+                        className="border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                        Return Date
+                      </label>
+                      <input
+                        type="date"
+                        value={returnDate}
+                        onChange={(e) => setReturnDate(e.target.value)}
+                        min={departureDate} // Disable dates before departure
+                        disabled={flightType === "one-way"}
+                        className={`border-stroke dark:focus:border-primary w-full rounded-sm border bg-[#f8f8f8] px-4 py-3 text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B] ${flightType === "one-way" ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-dark dark:text-white text-center">
+                        Flight Type
+                      </label>
+                      <div className="flex items-center justify-center space-x-4">
+                        <span className="text-sm text-dark dark:text-white">One-way</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={flightType === "round-trip"}
+                            onChange={(e) => setFlightType(e.target.checked ? "round-trip" : "one-way")}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm text-dark dark:text-white">Round-trip</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSearchFlights}
+                    className="flex w-full items-center justify-center rounded-sm bg-primary px-4 py-3 text-white transition hover:bg-opacity-90"
+                  >
+                    {loading ? "Searching..." : "Search Flights"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Globe (Left, 2/3) */}
+            <div className="w-full lg:w-2/3" ref={globeRef}>
+              <div className="rounded-xl overflow-hidden min-h-[800px]">
+                <Global 
+                  origin={origin}
+                  destination={destination}
+                  onCountrySelect={(type, country) => 
+                    handleCountrySelect(type, country.properties.ADMIN)
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4">
+          <FlightBlog flights={flightResults} />
+        </div>
+        {/* Background SVGs */}
         <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">
           <svg
             width="450"
@@ -256,7 +458,6 @@ const BlogSidebarPage = () => {
               </radialGradient>
             </defs>
           </svg>
-          
         </div>
       </div>
     </section>

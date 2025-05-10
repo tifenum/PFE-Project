@@ -51,7 +51,6 @@ const BlogSidebarPage = () => {
         destinationCity.code,
         departureDate,
         returnDate,
-        adults
       );
       setFlightResults(data);
     } catch (err: any) {

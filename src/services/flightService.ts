@@ -7,16 +7,22 @@ export async function searchFlights(
   destination: string,
   departureDate: string,
   returnDate: string,
-  adults: number
+  flightType: string
 ) {
-  const url = `${API_BASE_URL}/flights/fake?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&adults=${adults}`;
-  const response = await fetch(url);
+  const params = new URLSearchParams({
+    origin,
+    destination,
+    flightType,
+    ...(departureDate && { departureDate }),
+    ...(returnDate && { returnDate }),
+  });
+
+  const response = await fetch(`${API_BASE_URL}/flights/fake?${params.toString()}`);
   if (!response.ok) {
-    throw new Error('Flight search failed');
+    throw new Error('Failed to fetch flight offers');
   }
   return response.json();
 }
-
 export async function bookFlight(bookingData) {
   try {
     const response = await fetch(`${API_BASE_URL}/flights/book-flight`, {

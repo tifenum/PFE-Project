@@ -53,14 +53,13 @@ const FlightSearchClient: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      const data = await searchFlights(
-        departureCity.code,
-        destinationCity.code,
-        departureDate,
-        returnDate,
-        adults
-      );
-      setFlightResults(data);
+      // const data = await searchFlights(
+      //   departureCity.code,
+      //   destinationCity.code,
+      //   departureDate,
+      //   returnDate,
+      // );
+      // setFlightResults(data);
     } catch (err: any) {
       console.error(err);
       setError("An error occurred while searching for flights.");

@@ -14,66 +14,62 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
   }, []);
 
   if (!flights || flights.length === 0) return null;
+
   const getRandomHotelImage = (index: number): string => {
     const imageNumber = Math.floor(Math.random() * 15) + 1;
     return `/images/flight-images/flight${imageNumber}.jpg`;
   };
+
   const handleFlightClick = (flight: any) => {
-    // stash the flight for later
     if (typeof window !== "undefined") {
       sessionStorage.setItem("pendingFlight", JSON.stringify(flight));
     }
-  
     const destinationPath = `/flight-details/${flight.id}`;
     if (token) {
       router.push(destinationPath);
     } else {
-      // just pass the path to return to—no big JSON blob in the URL
       router.push(`/signin?redirect=${encodeURIComponent(destinationPath)}`);
     }
   };
-  
+
   return (
     <section
       id="blog"
-      className="bg-gray-light dark:bg-bg-color-dark py-16 md:py-20 lg:py-28"
+      className="bg-gray-light dark:bg-bg-color-dark py-12 md:py-16 lg:py-20" // Reduced padding
     >
       <div className="container">
-        <div className="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 md:gap-x-6 lg:gap-x-8 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 md:gap-x-4 lg:gap-x-6 xl:grid-cols-3"> {/* Tighter gaps */}
           {flights.map((flight) => (
             <div
               key={flight.id}
               className="group relative overflow-hidden rounded-sm bg-white shadow-one duration-300 hover:shadow-two dark:bg-dark dark:hover:shadow-gray-dark cursor-pointer"
               onClick={() => handleFlightClick(flight)}
             >
-              <div className="relative block aspect-[37/22] w-full">
-                <span className="absolute right-6 top-6 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white">
-                  {flight.validatingAirlineCodes &&
-                  flight.validatingAirlineCodes[0]
-                    ? flight.validatingAirlineCodes[0]
-                    : "Flight"}
+              <div className="relative block aspect-[37/25] w-full"> {/* Changed to shorter aspect ratio */}
+                <span className="absolute right-4 top-4 z-20 inline-flex items-center justify-center rounded-full bg-primary px-3 py-1 text-xs font-semibold capitalize text-white"> {/* Smaller badge */}
+                  {flight.validatingAirlineCodes?.[0] ?? "Flight"}
                 </span>
                 <Image
-                src={getRandomHotelImage(flight.id)}
+                  src={getRandomHotelImage(flight.id)}
                   alt="flight"
                   fill
                   className="object-cover"
                 />
               </div>
 
-              <div className="p-6 sm:p-8 md:px-6 md:py-8 lg:p-8 xl:px-5 xl:py-8 2xl:p-8">
+              <div className="p-4 sm:p-6 md:px-4 md:py-6 lg:p-6 xl:px-4 xl:py-6 2xl:p-6"> {/* Reduced padding */}
                 <h3>
-                  <span className="mb-4 block text-xl font-bold text-black hover:text-primary dark:text-white dark:hover:text-primary sm:text-2xl">
+                  <span className="mb-2 block text-lg font-bold text-black hover:text-primary dark:text-white dark:hover:text-primary sm:text-xl"> {/* Smaller title */}
                     Flight {flight.id}
                   </span>
                 </h3>
-                <p className="mb-6 border-b border-body-color border-opacity-10 pb-6 text-base font-medium text-body-color dark:border-white dark:border-opacity-10">
-                  Price: $ {flight.price}
+                <p className="mb-4 border-b border-body-color border-opacity-10 pb-4 text-sm font-medium text-body-color dark:border-white dark:border-opacity-10"> {/* Tighter spacing */}
+                  Price: ${flight.price}
                 </p>
                 <div className="flex items-center">
-                  <div className="mr-5 flex items-center border-r border-body-color border-opacity-10 pr-5 dark:border-white dark:border-opacity-10 xl:mr-3 xl:pr-3 2xl:mr-5 2xl:pr-5">
+                  <div className="mr-4 flex items-center border-r border-body-color border-opacity-10 pr-4 dark:border-white dark:border-opacity-10 xl:mr-2 xl:pr-2 2xl:mr-4 2xl:pr-4">
                     <div className="w-full">
-                      <p className="text-sm font-medium text-dark dark:text-white">
+                      <p className="text-xs font-medium text-dark dark:text-white">
                         {flight.itineraries[0]?.segments[0]?.departure.iataCode}{" "}
                         to{" "}
                         {flight.itineraries[0]?.segments[
@@ -92,66 +88,6 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
             </div>
           ))}
         </div>
-        {/* Pagination Section */}
-        {/* <div className="-mx-4 flex flex-wrap" data-wow-delay=".15s">
-          <div className="w-full px-4">
-            <ul className="flex items-center justify-center pt-8">
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  Prev
-                </a>
-              </li>
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  1
-                </a>
-              </li>
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  2
-                </a>
-              </li>
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  3
-                </a>
-              </li>
-              <li className="mx-1">
-                <span className="flex h-9 min-w-[36px] cursor-not-allowed items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color">
-                  ...
-                </span>
-              </li>
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  12
-                </a>
-              </li>
-              <li className="mx-1">
-                <a
-                  href="#0"
-                  className="flex h-9 min-w-[36px] items-center justify-center rounded-md bg-body-color bg-opacity-[15%] px-4 text-sm text-body-color transition hover:bg-primary hover:bg-opacity-100 hover:text-white"
-                >
-                  Next
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div> */}
       </div>
     </section>
   );

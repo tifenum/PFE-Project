@@ -320,7 +320,7 @@ export default function FlightDetails() {
                     status="active"
                   />
                   <OfferList
-                    text={`Destination: ${flightData?.itineraries?.[0]?.segments?.slice(-1)[0]?.arrival?.iataCode || "Unknown"}`}
+                    text={`Type: ${flightData?.tripType || "Unknown"}`}
                     status="active"
                   />
                   <OfferList
