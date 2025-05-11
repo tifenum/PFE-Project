@@ -166,7 +166,7 @@ const handleBookNow = (url: string) => {
   const token = localStorage.getItem('jwt_token');
 
   // Use FRONTEND_BASE_URL if defined and non-empty, otherwise fallback to localhost
-  const baseUrl = FRONTEND_BASE_URL && FRONTEND_BASE_URL.trim() !== '' ? FRONTEND_BASE_URL : 'http://localhost:3000';
+  const baseUrl = FRONTEND_BASE_URL;
   // Ensure the URL is absolute by prepending baseUrl if it's relative
   const absoluteUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
 
