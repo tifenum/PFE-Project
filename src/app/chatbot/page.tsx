@@ -7,7 +7,7 @@ import { askAssistant } from '@/services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plane, Hotel } from 'lucide-react';
 import { FlightCard, HotelCard } from './TravelCards';
-import { API_BASE_URL } from '@/services/config';
+import { FRONTEND_BASE_URL } from '@/services/config';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -160,26 +160,30 @@ export default function ChatPage() {
     }
   };
 
-  const handleBookNow = (url: string) => {
-    if (typeof window === 'undefined') return;
+const handleBookNow = (url: string) => {
+  if (typeof window === 'undefined') return;
 
-    const token = localStorage.getItem('jwt_token');
+  const token = localStorage.getItem('jwt_token');
 
-    if (url.includes('flight-details')) {
-      const flightId = url.split('/').pop();
-      const selectedFlight = flightOffers.find((offer) => offer.id === parseInt(flightId || '0'));
-      if (selectedFlight) {
-        sessionStorage.setItem('pendingFlight', JSON.stringify(selectedFlight));
-      }
+  // Use FRONTEND_BASE_URL if defined and non-empty, otherwise fallback to localhost
+  const baseUrl = FRONTEND_BASE_URL && FRONTEND_BASE_URL.trim() !== '' ? FRONTEND_BASE_URL : 'http://localhost:3000';
+  // Ensure the URL is absolute by prepending baseUrl if it's relative
+  const absoluteUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
+
+  if (url.includes('flight-details')) {
+    const flightId = url.split('/').pop();
+    const selectedFlight = flightOffers.find((offer) => offer.id === parseInt(flightId || '0'));
+    if (selectedFlight) {
+      sessionStorage.setItem('pendingFlight', JSON.stringify(selectedFlight));
     }
+  }
 
-    if (token) {
-      router.push(url);
-    } else {
-      router.push(`/signin?redirect=${encodeURIComponent(url)}`);
-    }
-  };
-
+  if (token) {
+    router.push(absoluteUrl);
+  } else {
+    router.push(`/signin?redirect=${encodeURIComponent(absoluteUrl)}`);
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col relative">
