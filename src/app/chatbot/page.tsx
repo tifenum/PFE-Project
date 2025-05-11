@@ -6,17 +6,57 @@ import { v4 as uuidv4 } from 'uuid';
 import { askAssistant } from '@/services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plane, Hotel } from 'lucide-react';
-
+import { FlightCard, HotelCard } from './TravelCards';
+import { API_BASE_URL } from '@/services/config';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   bookUrl?: string;
+  flightOffer?: FlightOffer;
+  hotelOffer?: HotelOffer;
+}
+
+interface Seat {
+  class: 'Business' | 'Econom-Plus' | 'Economy';
+  id: string;
+  isReserved: boolean;
+}
+
+interface Segment {
+  duration: string;
+  arrival: {
+    iataCode: string;
+    terminal: string;
+    at: string;
+  };
+  departure: {
+    iataCode: string;
+    terminal: string;
+    at: string;
+  };
+}
+
+interface Itinerary {
+  duration: string;
+  segments: Segment[];
 }
 
 interface FlightOffer {
   id: number;
   AirlineCodes: string;
-  price: number;
+  price: string;
+  tripType: 'One Way' | 'Round Trip';
+  oneWay: boolean;
+  returnDate: string | null;
+  itineraries: Itinerary[];
+  seatMap: Seat[][];
+  bookingLink: string;
+}
+
+interface HotelOffer {
+  name: string;
+  description: string;
+  bookUrl: string;
 }
 
 export default function ChatPage() {
@@ -33,7 +73,6 @@ export default function ChatPage() {
   const router = useRouter();
   const [sessionId] = useState(uuidv4());
 
-  // Dynamic scroll to latest message
   useEffect(() => {
     const scrollToBottom = () => {
       if (containerRef.current) {
@@ -68,8 +107,10 @@ export default function ChatPage() {
       const assistantMessages: Message[] = [];
 
       if (rawBot.startsWith('[FLIGHT_RESULTS]')) {
+        console.log('Flight offers:', offers);
         let cleanBotMessage = rawBot
           .replace(/\[FLIGHT_RESULTS\]/g, '')
+          .replace(/\```json```/g, '')        
           .replace(/\[PARAMETERS:[\s\S]*?]/, '')
           .trim();
 
@@ -80,21 +121,24 @@ export default function ChatPage() {
           offers.forEach((offer: FlightOffer) => {
             assistantMessages.push({
               role: 'assistant',
-              content: `${offer.AirlineCodes} – $${offer.price}`,
-              bookUrl: `http://localhost:3000/flight-details/${offer.id}`,
+              content: '',
+              flightOffer: offer,
+              bookUrl: offer.bookingLink,
             });
           });
         }
       } else if (rawBot.startsWith('[HOTEL_RESULTS]')) {
         const hotelLines = rawBot.replace(/\[HOTEL_RESULTS\]/, '').split('\n').filter((line) => line.trim());
         hotelLines.forEach((line) => {
-          const match = line.match(/(.*?)\s*\[BOOK_NOW:(.*?)\]/);
+          const match = line.match(/(.*?):\s*(.*?)\s*\[BOOK_NOW:(.*?)\]/);
           if (match) {
-            const hotelDescription = match[1].trim();
-            const bookUrl = match[2].trim();
+            const hotelName = match[1].trim();
+            const description = match[2].trim();
+            const bookUrl = match[3].trim();
             assistantMessages.push({
               role: 'assistant',
-              content: hotelDescription,
+              content: '',
+              hotelOffer: { name: hotelName, description, bookUrl },
               bookUrl,
             });
           } else if (line.trim()) {
@@ -111,7 +155,7 @@ export default function ChatPage() {
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Oops! Something went wrong.' },
+        { role: 'assistant', content: 'Oops! Something went wrong. Please try again later. Let me know how I can assist you further.' },
       ]);
     }
   };
@@ -136,11 +180,10 @@ export default function ChatPage() {
     }
   };
 
+
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Header offset */}
       <div className="w-full h-[80px]" />
-      {/* Top-Right SVG */}
       <div className="absolute right-0 top-0 z-[-1] opacity-100">
         <svg
           width="450"
@@ -149,137 +192,45 @@ export default function ChatPage() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle
-            cx="277"
-            cy="63"
-            r="225"
-            fill="url(#paint0_linear_25_217)"
-          />
-          <circle
-            cx="17.9997"
-            cy="182"
-            r="18"
-            fill="url(#paint1_radial_25_217)"
-          />
-          <circle
-            cx="76.9997"
-            cy="288"
-            r="34"
-            fill="url(#paint2_radial_25_217)"
-          />
-          <circle
-            cx="325.486"
-            cy="302.87"
-            r="180"
-            transform="rotate(-37.6852 325.486 302.87)"
-            fill="url(#paint3_linear_25_217)"
-          />
-          <circle
-            opacity="0.8"
-            cx="184.521"
-            cy="315.521"
-            r="132.862"
-            transform="rotate(114.874 184.521 315.521)"
-            stroke="url(#paint4_linear_25_217)"
-          />
-          <circle
-            opacity="0.8"
-            cx="356"
-            cy="290"
-            r="179.5"
-            transform="rotate(-30 356 290)"
-            stroke="url(#paint5_linear_25_217)"
-          />
-          <circle
-            opacity="0.8"
-            cx="191.659"
-            cy="302.659"
-            r="133.362"
-            transform="rotate(133.319 191.659 302.659)"
-            fill="url(#paint6_linear_25_217)"
-          />
+          <circle cx="277" cy="63" r="225" fill="url(#paint0_linear_25_217)" />
+          <circle cx="17.9997" cy="182" r="18" fill="url(#paint1_radial_25_217)" />
+          <circle cx="76.9997" cy="288" r="34" fill="url(#paint2_radial_25_217)" />
+          <circle cx="325.486" cy="302.87" r="180" transform="rotate(-37.6852 325.486 302.87)" fill="url(#paint3_linear_25_217)" />
+          <circle opacity="0.8" cx="184.521" cy="315.521" r="132.862" transform="rotate(114.874 184.521 315.521)" stroke="url(#paint4_linear_25_217)" />
+          <circle opacity="0.8" cx="356" cy="290" r="179.5" transform="rotate(-30 356 290)" stroke="url(#paint5_linear_25_217)" />
+          <circle opacity="0.8" cx="191.659" cy="302.659" r="133.362" transform="rotate(133.319 191.659 302.659)" fill="url(#paint6_linear_25_217)" />
           <defs>
-            <linearGradient
-              id="paint0_linear_25_217"
-              x1="-54.5003"
-              y1="-178"
-              x2="222"
-              y2="288"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint0_linear_25_217" x1="-54.5003" y1="-178" x2="222" y2="288" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
             </linearGradient>
-            <radialGradient
-              id="paint1_radial_25_217"
-              cx="0"
-              cy="0"
-              r="1"
-              gradientUnits="userSpaceOnUse"
-              gradientTransform="translate(17.9997 182) rotate(90) scale(18)"
-            >
+            <radialGradient id="paint1_radial_25_217" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17.9997 182) rotate(90) scale(18)">
               <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
             </radialGradient>
-            <radialGradient
-              id="paint2_radial_25_217"
-              cx="0"
-              cy="0"
-              r="1"
-              gradientUnits="userSpaceOnUse"
-              gradientTransform="translate(76.9997 288) rotate(90) scale(34)"
-            >
+            <radialGradient id="paint2_radial_25_217" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(76.9997 288) rotate(90) scale(34)">
               <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
             </radialGradient>
-            <linearGradient
-              id="paint3_linear_25_217"
-              x1="226.775"
-              y1="-66.1548"
-              x2="292.157"
-              y2="351.421"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint3_linear_25_217" x1="226.775" y1="-66.1548" x2="292.157" y2="351.421" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
             </linearGradient>
-            <linearGradient
-              id="paint4_linear_25_217"
-              x1="184.521"
-              y1="182.159"
-              x2="184.521"
-              y2="448.882"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint4_linear_25_217" x1="184.521" y1="182.159" x2="184.521" y2="448.882" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="white" stopOpacity="0" />
             </linearGradient>
-            <linearGradient
-              id="paint5_linear_25_217"
-              x1="356"
-              y1="110"
-              x2="356"
-              y2="470"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint5_linear_25_217" x1="356" y1="110" x2="356" y2="470" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="white" stopOpacity="0" />
             </linearGradient>
-            <linearGradient
-              id="paint6_linear_25_217"
-              x1="118.524"
-              y1="29.2497"
-              x2="166.965"
-              y2="338.63"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint6_linear_25_217" x1="118.524" y1="29.2497" x2="166.965" y2="338.63" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
             </linearGradient>
           </defs>
         </svg>
       </div>
-      {/* Bottom-Left SVG */}
       <div className="absolute bottom-0 left-0 z-[-1] opacity-100">
         <svg
           width="364"
@@ -314,69 +265,27 @@ export default function ChatPage() {
           />
           <circle cx="220" cy="63" r="43" fill="url(#paint5_radial_25_218)" />
           <defs>
-            <linearGradient
-              id="paint0_linear_25_218"
-              x1="184.389"
-              y1="69.2405"
-              x2="184.389"
-              y2="212.24"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint0_linear_25_218" x1="184.389" y1="69.2405" x2="184.389" y2="212.24" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" />
             </linearGradient>
-            <linearGradient
-              id="paint1_linear_25_218"
-              x1="156.389"
-              y1="69.2405"
-              x2="156.389"
-              y2="212.24"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint1_linear_25_218" x1="156.389" y1="69.2405" x2="156.389" y2="212.24" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" />
             </linearGradient>
-            <linearGradient
-              id="paint2_linear_25_218"
-              x1="125.389"
-              y1="69.2405"
-              x2="125.389"
-              y2="212.24"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint2_linear_25_218" x1="125.389" y1="69.2405" x2="125.389" y2="212.24" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" />
             </linearGradient>
-            <linearGradient
-              id="paint3_linear_25_218"
-              x1="93.8507"
-              y1="67.2674"
-              x2="89.9278"
-              y2="210.214"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint3_linear_25_218" x1="93.8507" y1="67.2674" x2="89.9278" y2="210.214" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" stopOpacity="0" />
               <stop offset="1" stopColor="#4A6CF7" />
             </linearGradient>
-            <linearGradient
-              id="paint4_linear_25_218"
-              x1="214.505"
-              y1="10.2849"
-              x2="212.684"
-              y2="99.5816"
-              gradientUnits="userSpaceOnUse"
-            >
+            <linearGradient id="paint4_linear_25_218" x1="214.505" y1="10.2849" x2="212.684" y2="99.5816" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
             </linearGradient>
-            <radialGradient
-              id="paint5_radial_25_218"
-              cx="0"
-              cy="0"
-              r="1"
-              gradientUnits="userSpaceOnUse"
-              gradientTransform="translate(220 63) rotate(90) scale(43)"
-            >
+            <radialGradient id="paint5_radial_25_218" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 63) rotate(90) scale(43)">
               <stop offset="0.145833" stopColor="white" stopOpacity="0" />
               <stop offset="1" stopColor="white" stopOpacity="0.08" />
             </radialGradient>
@@ -398,45 +307,48 @@ export default function ChatPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.4 }}
-                  className={`flex w-full ${
-                    msg.role === 'user' ? 'justify-end ml-auto' : 'justify-start mr-auto'
-                  }`}
+                  className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className="flex items-start space-x-3">
-                    {msg.role === 'assistant' && (
+                  {msg.role === 'user' ? (
+                    <div className="max-w-[70%] sm:max-w-[50%] ml-auto">
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl px-6 py-4 shadow-lg">
+                        <p className="text-base leading-relaxed">{msg.content}</p>
+                      </div>
+                    </div>
+                  ) : msg.flightOffer ? (
+                      <div className="flex items-start space-x-3">
+                        <img
+                          src="/images/Assistant/agent.png"
+                          alt="Assistant Avatar"
+                          className="w-10 h-10 rounded-full mt-1"
+                        />
+                        <div className="w-full">
+                          <FlightCard offer={msg.flightOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
+                        </div>
+                      </div>
+                    ) : msg.hotelOffer ? (
+                      <div className="flex items-start space-x-3">
+                        <img
+                          src="/images/Assistant/agent.png"
+                          alt="Assistant Avatar"
+                          className="w-10 h-10 rounded-full mt-1"
+                        />
+                        <div className="w-full">
+                          <HotelCard offer={msg.hotelOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
+                        </div>
+                      </div>
+                    ) : (
+                    <div className="flex items-start space-x-3">
                       <img
                         src="/images/Assistant/agent.png"
                         alt="Assistant Avatar"
                         className="w-10 h-10 rounded-full mt-1"
                       />
-                    )}
-                    <div
-                      className={`w-full sm:w-auto max-w-[90%] sm:max-w-none rounded-2xl px-6 py-4 flex items-start space-x-3 ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                          : 'bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-200'
-                      } shadow-lg backdrop-blur-sm`}
-                    >
-                      {msg.role === 'assistant' && msg.bookUrl && (
-                        msg.bookUrl.includes('flight-details') ? (
-                          <Plane className="w-6 h-6 text-blue-400 mt-1" />
-                        ) : (
-                          <Hotel className="w-6 h-6 text-green-400 mt-1" />
-                        )
-                      )}
-                      <div>
+                      <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
                         <p className="text-base leading-relaxed">{msg.content}</p>
-                        {msg.bookUrl && (
-                          <button
-                            onClick={() => handleBookNow(msg.bookUrl as string)}
-                            className="mt-3 bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-full text-sm font-medium transition-all duration-200"
-                          >
-                            Book Now
-                          </button>
-                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               ))}
               {isTyping && (
@@ -444,7 +356,7 @@ export default function ChatPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex justify-start mr-auto w-full"
+                  className="flex justify-start w-full"
                 >
                   <div className="flex items-start space-x-3">
                     <img
