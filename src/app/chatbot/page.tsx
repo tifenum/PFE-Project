@@ -7,7 +7,7 @@ import { askAssistant } from '@/services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plane, Hotel } from 'lucide-react';
 import { FlightCard, HotelCard } from './TravelCards';
-import { FRONTEND_BASE_URL } from '@/services/config';
+// import { FRONTEND_BASE_URL } from '@/services/config';
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -165,26 +165,32 @@ const handleBookNow = (url: string) => {
 
   const token = localStorage.getItem('jwt_token');
 
-  // Use FRONTEND_BASE_URL if defined and non-empty, otherwise fallback to localhost
-  const baseUrl = FRONTEND_BASE_URL;
-  // Ensure the URL is absolute by prepending baseUrl if it's relative
-  const absoluteUrl = url.startsWith('/') ? `${baseUrl}${url}` : url;
+  // Parse the URL to get the relative path and query
+  let relativeUrl;
+  try {
+    const parsedUrl = new URL(url, window.location.origin); // Use current origin as base
+    relativeUrl = parsedUrl.pathname + parsedUrl.search; // e.g., "/hotel-details?lat=48.8584&lng=2.2945"
+  } catch (e) {
+    console.error('Invalid URL, bro:', url);
+    return;
+  }
 
+  // Handle flight details
   if (url.includes('flight-details')) {
-    const flightId = url.split('/').pop();
+    const flightId = relativeUrl.split('/').pop(); // Get the ID from the path
     const selectedFlight = flightOffers.find((offer) => offer.id === parseInt(flightId || '0'));
     if (selectedFlight) {
       sessionStorage.setItem('pendingFlight', JSON.stringify(selectedFlight));
     }
   }
 
+  // Redirect based on token
   if (token) {
-    router.push(absoluteUrl);
+    router.push(relativeUrl);
   } else {
-    router.push(`/signin?redirect=${encodeURIComponent(absoluteUrl)}`);
+    router.push(`/signin?redirect=${encodeURIComponent(relativeUrl)}`);
   }
 };
-
   return (
     <div className="min-h-screen flex flex-col relative">
       <div className="w-full h-[80px]" />
