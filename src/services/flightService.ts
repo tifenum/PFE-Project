@@ -21,6 +21,7 @@ export async function searchFlights(
   if (!response.ok) {
     throw new Error('Failed to fetch flight offers');
   }
+  console.log("Flight offers response:", response);
   return response.json();
 }
 export async function bookFlight(bookingData) {

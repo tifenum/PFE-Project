@@ -122,7 +122,7 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
               />
               <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
                 <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{room.type}</h3>
-                <p className="mb-3 text-gray-600 dark:text-gray-300">Price: ${room.price.toFixed(2)} / night</p>
+                <p className="mb-3 text-gray-600 dark:text-gray-300">Price: ${room.price} / night</p>
                 <ul className="list-none mb-4 space-y-2 flex-grow">
                   {[...new Set(room.features)].slice(0, 4).map((f, i) => (
                     <li key={i} className="flex items-center text-gray-600 dark:text-gray-300">
@@ -309,10 +309,10 @@ const parseHotelName = (name: string) => {
           <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
             <p className="text-sm text-gray-600 dark:text-gray-400">Room: {room.type}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Price per Night: ${room.price.toFixed(2)}
+              Price per Night: ${room.price}
             </p>
             <p className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-2">
-              Total: ${totalPrice.toFixed(2)}
+              Total: ${totalPrice}
             </p>
           </div>
 

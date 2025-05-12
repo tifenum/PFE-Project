@@ -53,7 +53,7 @@ const getRandomFlightImage = (flightId: number): string => {
 
 const getRandomHotelImage = (hotelName: string): string => {
   const hash = simpleHash(hotelName);
-  const imageNumber = (hash % 63) + 1;
+  const imageNumber = (hash % 61) + 1;
   return `/images/hotel-images/hotel${imageNumber}.jpg`;
 };
 

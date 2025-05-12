@@ -195,9 +195,10 @@ export default function FlightDetails() {
                 const id = e.point.get("id");
                 const cls = e.point.get("class");
                 const extra = cls === "Business" ? 150 : cls === "Econom-Plus" ? 80 : 30;
-                const current = parseFloat(price.replace(",", "."));
-                const newPrice = (current + extra).toFixed(2).replace(".", ",");
-                setPrice(newPrice);
+                const current = price;
+                const currentInt = parseInt(current, 10); // Convert "144" to 144
+                const newPrice = currentInt + Math.floor(extra);
+                setPrice(newPrice.toString());
                 setSelectedSeat({ id, class: cls, extraCost: extra });
               });
             },

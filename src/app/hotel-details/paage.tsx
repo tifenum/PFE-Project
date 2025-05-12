@@ -45,7 +45,7 @@ const [rawHotelName, setRawHotelName] = useState(initialRawName);
   const userId = getUserIdFromToken();
 
   const getRandomHotelImage = (index) => {
-    const imageNumber = (index % 63) + 1;
+    const imageNumber = (index % 61) + 1;
     return `/images/hotel-images/hotel${imageNumber}.jpg`;
   };
   useEffect(() => {

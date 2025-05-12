@@ -7,13 +7,15 @@ import { askAssistant } from '@/services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plane, Hotel } from 'lucide-react';
 import { FlightCard, HotelCard } from './TravelCards';
-// import { FRONTEND_BASE_URL } from '@/services/config';
+import { parseBookings, BookingTable } from './BookingCards';
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   bookUrl?: string;
   flightOffer?: FlightOffer;
   hotelOffer?: HotelOffer;
+  bookings?: Booking[];
 }
 
 interface Seat {
@@ -24,16 +26,8 @@ interface Seat {
 
 interface Segment {
   duration: string;
-  arrival: {
-    iataCode: string;
-    terminal: string;
-    at: string;
-  };
-  departure: {
-    iataCode: string;
-    terminal: string;
-    at: string;
-  };
+  arrival: { iataCode: string; terminal: string; at: string };
+  departure: { iataCode: string; terminal: string; at: string };
 }
 
 interface Itinerary {
@@ -59,6 +53,22 @@ interface HotelOffer {
   bookUrl: string;
 }
 
+interface Booking {
+  type: 'flight' | 'hotel';
+  details: {
+    flightId?: string;
+    origin?: string;
+    destination?: string;
+    departure?: string;
+    status?: string;
+    price?: string;
+    name?: string;
+    address?: string;
+    checkIn?: string;
+    checkOut?: string;
+  };
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -80,13 +90,8 @@ export default function ChatPage() {
         containerRef.current.scrollTop = scrollHeight - clientHeight;
       }
     };
-
-    const frameId = requestAnimationFrame(() => {
-      scrollToBottom();
-    });
-
+    const frameId = requestAnimationFrame(() => scrollToBottom());
     const timeoutId = setTimeout(scrollToBottom, 100);
-
     return () => {
       cancelAnimationFrame(frameId);
       clearTimeout(timeoutId);
@@ -107,13 +112,11 @@ export default function ChatPage() {
       const assistantMessages: Message[] = [];
 
       if (rawBot.startsWith('[FLIGHT_RESULTS]')) {
-        console.log('Flight offers:', offers);
         let cleanBotMessage = rawBot
           .replace(/\[FLIGHT_RESULTS\]/g, '')
-          .replace(/\```json```/g, '')        
+          .replace(/\```json```/g, '')
           .replace(/\[PARAMETERS:[\s\S]*?]/, '')
           .trim();
-
         if (cleanBotMessage) {
           assistantMessages.push({ role: 'assistant', content: cleanBotMessage });
         }
@@ -145,6 +148,12 @@ export default function ChatPage() {
             assistantMessages.push({ role: 'assistant', content: line.trim() });
           }
         });
+      } else if (rawBot.includes('Your Flight Bookings:') || rawBot.includes('Your Hotel Bookings:')) {
+        const bookings = parseBookings(rawBot);
+        assistantMessages.push(
+          { role: 'assistant', content: 'Here are your bookings!' },
+          { role: 'assistant', content: '', bookings }
+        );
       } else {
         assistantMessages.push({ role: 'assistant', content: rawBot });
       }
@@ -155,53 +164,41 @@ export default function ChatPage() {
       setIsTyping(false);
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Oops! Something went wrong. Please try again later. Let me know how I can assist you further.' },
+        { role: 'assistant', content: 'Oops! Something went wrong. Try again, man!' },
       ]);
     }
   };
 
-const handleBookNow = (url: string) => {
-  if (typeof window === 'undefined') return;
-
-  const token = localStorage.getItem('jwt_token');
-
-  // Parse the URL to get the relative path and query
-  let relativeUrl;
-  try {
-    const parsedUrl = new URL(url, window.location.origin); // Use current origin as base
-    relativeUrl = parsedUrl.pathname + parsedUrl.search; // e.g., "/hotel-details?lat=48.8584&lng=2.2945"
-  } catch (e) {
-    console.error('Invalid URL, bro:', url);
-    return;
-  }
-
-  // Handle flight details
-  if (url.includes('flight-details')) {
-    const flightId = relativeUrl.split('/').pop(); // Get the ID from the path
-    const selectedFlight = flightOffers.find((offer) => offer.id === parseInt(flightId || '0'));
-    if (selectedFlight) {
-      sessionStorage.setItem('pendingFlight', JSON.stringify(selectedFlight));
+  const handleBookNow = (url: string) => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('jwt_token');
+    let relativeUrl;
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      relativeUrl = parsedUrl.pathname + parsedUrl.search;
+    } catch (e) {
+      console.error('Invalid URL, bro:', url);
+      return;
     }
-  }
+    if (url.includes('flight-details')) {
+      const flightId = relativeUrl.split('/').pop();
+      const selectedFlight = flightOffers.find((offer) => offer.id === parseInt(flightId || '0'));
+      if (selectedFlight) {
+        sessionStorage.setItem('pendingFlight', JSON.stringify(selectedFlight));
+      }
+    }
+    if (token) {
+      router.push(relativeUrl);
+    } else {
+      router.push(`/signin?redirect=${encodeURIComponent(relativeUrl)}`);
+    }
+  };
 
-  // Redirect based on token
-  if (token) {
-    router.push(relativeUrl);
-  } else {
-    router.push(`/signin?redirect=${encodeURIComponent(relativeUrl)}`);
-  }
-};
   return (
     <div className="min-h-screen flex flex-col relative">
       <div className="w-full h-[80px]" />
       <div className="absolute right-0 top-0 z-[-1] opacity-100">
-        <svg
-          width="450"
-          height="556"
-          viewBox="0 0 450 556"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="277" cy="63" r="225" fill="url(#paint0_linear_25_217)" />
           <circle cx="17.9997" cy="182" r="18" fill="url(#paint1_radial_25_217)" />
           <circle cx="76.9997" cy="288" r="34" fill="url(#paint2_radial_25_217)" />
@@ -242,37 +239,12 @@ const handleBookNow = (url: string) => {
         </svg>
       </div>
       <div className="absolute bottom-0 left-0 z-[-1] opacity-100">
-        <svg
-          width="364"
-          height="201"
-          viewBox="0 0 364 201"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M5.88928 72.3303C33.6599 66.4798 101.397 64.9086 150.178 105.427C211.155 156.076 229.59 162.093 264.333 166.607C299.076 171.12 337.718 183.657 362.889 212.24"
-            stroke="url(#paint0_linear_25_218)"
-          />
-          <path
-            d="M-22.1107 72.3303C5.65989 66.4798 73.3965 64.9086 122.178 105.427C183.155 156.076 201.59 162.093 236.333 166.607C271.076 171.12 309.718 183.657 334.889 212.24"
-            stroke="url(#paint1_linear_25_218)"
-          />
-          <path
-            d="M-53.1107 72.3303C-25.3401 66.4798 42.3965 64.9086 91.1783 105.427C152.155 156.076 170.59 162.093 205.333 166.607C240.076 171.12 278.718 183.657 303.889 212.24"
-            stroke="url(#paint2_linear_25_218)"
-          />
-          <path
-            d="M-98.1618 65.0889C-68.1416 60.0601 4.73364 60.4882 56.0734 102.431C120.248 154.86 139.905 161.419 177.137 166.956C214.37 172.493 255.575 186.165 281.856 215.481"
-            stroke="url(#paint3_linear_25_218)"
-          />
-          <circle
-            opacity="0.8"
-            cx="214.505"
-            cy="60.5054"
-            r="49.7205"
-            transform="rotate(-13.421 214.505 60.5054)"
-            stroke="url(#paint4_linear_25_218)"
-          />
+        <svg width="364" height="201" viewBox="0 0 364 201" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5.88928 72.3303C33.6599 66.4798 101.397 64.9086 150.178 105.427C211.155 156.076 229.59 162.093 264.333 166.607C299.076 171.12 337.718 183.657 362.889 212.24" stroke="url(#paint0_linear_25_218)" />
+          <path d="M-22.1107 72.3303C5.65989 66.4798 73.3965 64.9086 122.178 105.427C183.155 156.076 201.59 162.093 236.333 166.607C271.076 171.12 309.718 183.657 334.889 212.24" stroke="url(#paint1_linear_25_218)" />
+          <path d="M-53.1107 72.3303C-25.3401 66.4798 42.3965 64.9086 91.1783 105.427C152.155 156.076 170.59 162.093 205.333 166.607C240.076 171.12 278.718 183.657 303.889 212.24" stroke="url(#paint2_linear_25_218)" />
+          <path d="M-98.1618 65.0889C-68.1416 60.0601 4.73364 60.4882 56.0734 102.431C120.248 154.86 139.905 161.419 177.137 166.956C214.37 172.493 255.575 186.165 281.856 215.481" stroke="url(#paint3_linear_25_218)" />
+          <circle opacity="0.8" cx="214.505" cy="60.5054" r="49.7205" transform="rotate(-13.421 214.505 60.5054)" stroke="url(#paint4_linear_25_218)" />
           <circle cx="220" cy="63" r="43" fill="url(#paint5_radial_25_218)" />
           <defs>
             <linearGradient id="paint0_linear_25_218" x1="184.389" y1="69.2405" x2="184.389" y2="212.24" gradientUnits="userSpaceOnUse">
@@ -304,11 +276,7 @@ const handleBookNow = (url: string) => {
       </div>
       <div className="flex flex-1 flex-col items-center px-4 pt-8 pb-[120px] bg-transparent">
         <div className="w-full max-w-6xl bg-transparent">
-          <div
-            ref={containerRef}
-            className="overflow-y-auto space-y-8 bg-transparent"
-            style={{ minHeight: 'calc(100vh - 12rem)' }}
-          >
+          <div ref={containerRef} className="overflow-y-auto space-y-8 bg-transparent" style={{ minHeight: 'calc(100vh - 12rem)' }}>
             <AnimatePresence>
               {messages.map((msg, i) => (
                 <motion.div
@@ -326,34 +294,29 @@ const handleBookNow = (url: string) => {
                       </div>
                     </div>
                   ) : msg.flightOffer ? (
-                      <div className="flex items-start space-x-3">
-                        <img
-                          src="/images/Assistant/agent.png"
-                          alt="Assistant Avatar"
-                          className="w-10 h-10 rounded-full mt-1"
-                        />
-                        <div className="w-full">
-                          <FlightCard offer={msg.flightOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
-                        </div>
-                      </div>
-                    ) : msg.hotelOffer ? (
-                      <div className="flex items-start space-x-3">
-                        <img
-                          src="/images/Assistant/agent.png"
-                          alt="Assistant Avatar"
-                          className="w-10 h-10 rounded-full mt-1"
-                        />
-                        <div className="w-full">
-                          <HotelCard offer={msg.hotelOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
-                        </div>
-                      </div>
-                    ) : (
                     <div className="flex items-start space-x-3">
-                      <img
-                        src="/images/Assistant/agent.png"
-                        alt="Assistant Avatar"
-                        className="w-10 h-10 rounded-full mt-1"
-                      />
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <div className="w-full">
+                        <FlightCard offer={msg.flightOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
+                      </div>
+                    </div>
+                  ) : msg.hotelOffer ? (
+                    <div className="flex items-start space-x-3">
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <div className="w-full">
+                        <HotelCard offer={msg.hotelOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
+                      </div>
+                    </div>
+                  ) : msg.bookings ? (
+                    <div className="flex items-start space-x-3">
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
+                        <BookingTable bookings={msg.bookings} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start space-x-3">
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
                         <p className="text-base leading-relaxed">{msg.content}</p>
                       </div>
@@ -369,25 +332,12 @@ const handleBookNow = (url: string) => {
                   className="flex justify-start w-full"
                 >
                   <div className="flex items-start space-x-3">
-                    <img
-                      src="/images/Assistant/agent.png"
-                      alt="Assistant Avatar"
-                      className="w-10 h-10 rounded-full mt-1"
-                    />
+                    <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                     <div className="rounded-2xl bg-white/90 dark:bg-gray-800/90 px-6 py-4 flex items-center space-x-3 backdrop-blur-sm">
                       <div className="flex space-x-1">
-                        <div
-                          className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '0s' }}
-                        />
-                        <div
-                          className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '0.2s' }}
-                        />
-                        <div
-                          className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '0.4s' }}
-                        />
+                        <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                        <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                       </div>
                       <span className="text-base text-gray-500 dark:text-gray-400">Typing...</span>
                     </div>
@@ -423,16 +373,16 @@ const handleBookNow = (url: string) => {
           .animate-bounce {
             animation: bounce 1s infinite;
           }
-          .animate-pulse {
-            animation: pulse 3s infinite ease-in-out;
-          }
           @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
           }
-          @keyframes pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 0.9; }
+          .animate-spin-slow {
+            animation: spin 3s linear infinite;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
           }
         `}
       </style>
