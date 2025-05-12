@@ -56,18 +56,17 @@ export const signup = async (username: string, email: string, password: string) 
     );
 
     if (response.status === 200) {
-      return { success: true, message: 'User registered successfully' };
+      return { success: true, message: response.data }; // Forward the backend message
     }
     return { success: false, error: 'Signup failed. Please try again.' };
   } catch (error: any) {
     console.error('Signup failed:', error);
     if (error.response && error.response.status === 400) {
-      return { success: false, error: 'Email already in use' };
+      return { success: false, error: error.response.data }; // Forward specific error
     }
     return { success: false, error: 'Signup failed. Please try again.' };
   }
 };
-
 export const fetchAllClients = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/users/clients`, {
