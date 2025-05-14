@@ -4,19 +4,19 @@ const adminMenuData: Menu[] = [
   {
     id: 100,
     title: "List of Users",
-    path: "/admin/users-list",
+    path: "/adminpage/users-list",
     newTab: false,
   },
   {
     id: 101,
     title: "Flight Bookings",
-    path: "/admin/flight-bookings",
+    path: "/adminpage/flight-bookings",
     newTab: false,
   },
   {
     id: 102,
     title: "Hotel Bookings",
-    path: "/admin/hotel-reservations",
+    path: "/adminpage/hotel-reservations",
     newTab: false,
   },
 ];
