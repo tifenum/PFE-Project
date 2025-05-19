@@ -19,6 +19,12 @@ const adminMenuData: Menu[] = [
     path: "/adminpage/hotel-reservations",
     newTab: false,
   },
+  {
+  id: 102,
+  title: "Car rental",
+  path: "/adminpage/car-rentals",
+  newTab: false,
+  },
 ];
 
 export default adminMenuData;
