@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CityAutocomplete from "@/components/globe/city";
 import AutocompleteCountry from "@/components/globe/countries";
 import SectionTitle from "@/components/Common/SectionTitle";
@@ -36,7 +36,25 @@ const CarRentalSearchPage = () => {
   const [carResults, setCarResults] = useState<CarData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const getUserIdFromToken = () => {
+      const token = localStorage.getItem("jwt_token");
+      if (token) {
+        try {
+          const decoded: { sub: string } = jwtDecode(token);
+          return decoded.sub;
+        } catch (error) {
+          console.error("Error decoding token", error);
+          return null;
+        }
+      }
+      return null;
+    };
+    setUserId(getUserIdFromToken());
+  }, []);
 
   const handleSearchCars = async () => {
     if (!pickupCountry) {
@@ -73,21 +91,6 @@ const CarRentalSearchPage = () => {
       setLoading(false);
     }
   };
-
-  const getUserIdFromToken = () => {
-    const token = localStorage.getItem("jwt_token");
-    if (token) {
-      try {
-        const decoded: { sub: string } = jwtDecode(token);
-        return decoded.sub;
-      } catch (error) {
-        console.error("Error decoding token", error);
-        return null;
-      }
-    }
-    return null;
-  };
-  const userId = getUserIdFromToken();
 
   return (
     <section className="overflow-hidden pt-32 pb-16 min-h-screen">
