@@ -329,7 +329,7 @@ const CarDetailsClient = ({ carData, carTypeFilter, passengers, userId }) => {
   return (
     <div className="mt-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="relative mb-12 overflow-hidden rounded-2xl">
+        {/* <div className="relative mb-12 overflow-hidden rounded-2xl">
           <img
             src={getRandomCarImage(0)}
             alt={`${displayName} Hero`}
@@ -342,7 +342,7 @@ const CarDetailsClient = ({ carData, carTypeFilter, passengers, userId }) => {
               <p className="text-lg text-gray-200">{carData.pickupCity}, {carData.pickupCountry}</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <h2 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">Available Cars</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

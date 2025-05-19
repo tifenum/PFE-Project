@@ -18,20 +18,13 @@ export async function searchCities({ countryCode, keyword, max = 10 }) {
 
 export async function searchCars({ pickupCountry, pickupCity, carType, passengers}) {
   try {
-    const token = localStorage.getItem("jwt_token");
-    if (!token) throw new Error("No token found");
-
     const queryParams = new URLSearchParams({
       pickupCountry,
       pickupCity,
       carType,
       passengers,
     });
-    const res = await fetch(`${API_BASE_URL}/cars/fake?${queryParams.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+    const res = await fetch(`${API_BASE_URL}/cars/fake?${queryParams.toString()}`);
     if (!res.ok) {
       throw new Error("Failed to fetch cars");
     }
