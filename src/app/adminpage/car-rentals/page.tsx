@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { fetchAllPendingCarReservations, updateCarReservationStatus, deleteCarReservation } from "@/services/carsService";
+import { fetchAllPendingCarReservations, updateCarReservationStatus } from "@/services/carsService";
 import { toast, Toaster } from "sonner";
 
 const CarReservationsPage = () => {
@@ -53,19 +53,6 @@ const CarReservationsPage = () => {
     }
   };
 
-  const handleDelete = async (reservationId: string) => {
-    if (!confirm("Are you sure you want to delete this reservation?")) return;
-    try {
-      await deleteCarReservation(reservationId);
-      setCarReservations((prevReservations) =>
-        prevReservations.filter((res) => res.id !== reservationId)
-      );
-      toast.success("Reservation deleted! 🗑️");
-    } catch (error) {
-      console.error(`Error deleting reservation ${reservationId}:`, error);
-      toast.error("Failed to delete reservation. Try again 😓");
-    }
-  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -196,12 +183,6 @@ const CarReservationsPage = () => {
                             className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 text-xs"
                           >
                             Refuse
-                          </button>
-                          <button
-                            onClick={() => handleDelete(res.id)}
-                            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition duration-200 text-xs"
-                          >
-                            Delete
                           </button>
                         </>
                       ) : (
