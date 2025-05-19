@@ -3,16 +3,19 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from "react";
 import { fetchHotelReservations, deleteHotelReservation } from "@/services/hotelService";
 import { fetchFlightReservations, deleteFlightReservation } from "@/services/flightService";
+import { fetchCarReservations, deleteCarReservation } from "@/services/carsService";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 const ReservationsPage = () => {
-  const [activeTab, setActiveTab] = useState<"flight" | "hotel">("flight");
+  const [activeTab, setActiveTab] = useState<"flight" | "hotel" | "car">("flight");
   const [hotelReservations, setHotelReservations] = useState<any[]>([]);
   const [flightReservations, setFlightReservations] = useState<any[]>([]);
+  const [carReservations, setCarReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [hotelPage, setHotelPage] = useState(1);
   const [flightPage, setFlightPage] = useState(1);
+  const [carPage, setCarPage] = useState(1);
   const itemsPerPage = 10;
   const searchParams = useSearchParams();
 
@@ -28,12 +31,14 @@ const ReservationsPage = () => {
       try {
         setLoading(true);
         toast.info("Fetching your bookings...", { id: "fetching-bookings" });
-        const [hotels, flights] = await Promise.all([
+        const [hotels, flights, cars] = await Promise.all([
           fetchHotelReservations(),
-          fetchFlightReservations()
+          fetchFlightReservations(),
+          fetchCarReservations()
         ]);
         setHotelReservations(hotels);
         setFlightReservations(flights);
+        setCarReservations(cars);
       } catch (error) {
         console.error("Error fetching reservations:", error);
         toast.error("Failed to fetch bookings. Please try again.", { id: "fetching-bookings" });
@@ -98,6 +103,16 @@ const ReservationsPage = () => {
     }
   };
 
+  const handleDeleteCarReservation = async (reservationId: string) => {
+    try {
+      await deleteCarReservation(reservationId);
+      setCarReservations(carReservations.filter(res => res.id !== reservationId));
+      toast.success("Car reservation deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting car reservation:", error);
+      toast.error("Failed to delete car reservation. Please try again.");
+    }
+  };
 
   const totalHotelPages = Math.ceil(hotelReservations.length / itemsPerPage);
   const paginatedHotelReservations = hotelReservations.slice(
@@ -109,6 +124,12 @@ const ReservationsPage = () => {
   const paginatedFlightReservations = flightReservations.slice(
     (flightPage - 1) * itemsPerPage,
     flightPage * itemsPerPage
+  );
+
+  const totalCarPages = Math.ceil(carReservations.length / itemsPerPage);
+  const paginatedCarReservations = carReservations.slice(
+    (carPage - 1) * itemsPerPage,
+    carPage * itemsPerPage
   );
 
   const renderPagination = (currentPage: number, totalPages: number, setPage: (page: number) => void) => {
@@ -186,7 +207,7 @@ const ReservationsPage = () => {
             Your Reservations
           </h2>
           <p className="text-base text-body-color mt-3 max-w-xl mx-auto">
-            Toggle between Flights and Hotels reservations below.
+            Toggle between Flights, Hotels, and Car reservations below.
           </p>
 
           <div className="mt-6 flex justify-center space-x-4">
@@ -209,6 +230,16 @@ const ReservationsPage = () => {
               onClick={() => setActiveTab("hotel")}
             >
               Hotel Reservations
+            </button>
+            <button
+              className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                activeTab === "car"
+                  ? "bg-primary text-white"
+                  : "bg-gray-200 dark:bg-gray-800 text-black dark:text-white"
+              }`}
+              onClick={() => setActiveTab("car")}
+            >
+              Car Reservations
             </button>
           </div>
         </div>
@@ -256,7 +287,7 @@ const ReservationsPage = () => {
                             {res.bookingStatus || "-"}
                           </span>
                         </td>
-                       <td className="px-6 py-4 text-sm">
+                        <td className="px-6 py-4 text-sm">
                           <button
                             onClick={() => handleDeleteFlightReservation(res.id)}
                             className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
@@ -277,7 +308,7 @@ const ReservationsPage = () => {
               </table>
               {totalFlightPages > 1 && renderPagination(flightPage, totalFlightPages, setFlightPage)}
             </>
-          ) : (
+          ) : activeTab === "hotel" ? (
             <>
               <table className="min-w-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow">
                 <thead className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
@@ -332,6 +363,61 @@ const ReservationsPage = () => {
               </table>
               {totalHotelPages > 1 && renderPagination(hotelPage, totalHotelPages, setHotelPage)}
             </>
+          ) : (
+            <>
+              <table className="min-w-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow">
+                <thead className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Provider</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Location</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Pickup Date</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Drop-off Date</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Status</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedCarReservations.length > 0 ? (
+                    paginatedCarReservations.map((res, index) => (
+                      <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {res.carProvider || "-"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {res.pickupCity}, {res.pickupCountry}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {res.pickupDate ? formatDate(res.pickupDate) : "-"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {res.dropoffDate ? formatDate(res.dropoffDate) : "-"}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={getStatusStyle(res.reservationStatus)}>
+                            {res.reservationStatus || "-"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            onClick={() => handleDeleteCarReservation(res.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                        No car reservations found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              {totalCarPages > 1 && renderPagination(carPage, totalCarPages, setCarPage)}
+            </>
           )}
         </div>
         <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">
@@ -342,130 +428,39 @@ const ReservationsPage = () => {
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <circle
-              cx="277"
-              cy="63"
-              r="225"
-              fill="url(#paint0_linear_25:217)"
-            />
-            <circle
-              cx="17.9997"
-              cy="182"
-              r="18"
-              fill="url(#paint1_radial_25:217)"
-            />
-            <circle
-              cx="76.9997"
-              cy="288"
-              r="34"
-              fill="url(#paint2_radial_25:217)"
-            />
-            <circle
-              cx="325.486"
-              cy="302.87"
-              r="180"
-              transform="rotate(-37.6852 325.486 302.87)"
-              fill="url(#paint3_linear_25:217)"
-            />
-            <circle
-              opacity="0 unveiled.8"
-              cx="184.521"
-              cy="315.521"
-              r="132.862"
-              transform="rotate(114.874 184.521 315.521)"
-              stroke="url(#paint4_linear_25:217)"
-            />
-            <circle
-              opacity="0.8"
-              cx="356"
-              cy="290"
-              r="179.5"
-              transform="rotate(-30 356 290)"
-              stroke="url(#paint5_linear_25:217)"
-            />
-            <circle
-              opacity="0.8"
-              cx="191.659"
-              cy="302.659"
-              r="133.362"
-              transform="rotate(133.319 191.659 302.659)"
-              fill="url(#paint6_linear_25:217)"
-            />
+            <circle cx="277" cy="63" r="225" fill="url(#paint0_linear_25:217)" />
+            <circle cx="17.9997" cy="182" r="18" fill="url(#paint1_radial_25:217)" />
+            <circle cx="76.9997" cy="288" r="34" fill="url(#paint2_radial_25:217)" />
+            <circle cx="325.486" cy="302.87" r="180" transform="rotate(-37.6852 325.486 302.87)" fill="url(#paint3_linear_25:217)" />
+            <circle opacity="0.8" cx="184.521" cy="315.521" r="132.862" transform="rotate(114.874 184.521 315.521)" stroke="url(#paint4_linear_25:217)" />
+            <circle opacity="0.8" cx="356" cy="290" r="179.5" transform="rotate(-30 356 290)" stroke="url(#paint5_linear_25:217)" />
+            <circle opacity="0.8" cx="191.659" cy="302.659" r="133.362" transform="rotate(133.319 191.659 302.659)" fill="url(#paint6_linear_25:217)" />
             <defs>
-              <linearGradient
-                id="paint0_linear_25:217"
-                x1="-54.5003"
-                y1="-178"
-                x2="222"
-                y2="288"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint0_linear_25:217" x1="-54.5003" y1="-178" x2="222" y2="288" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
               </linearGradient>
-              <radialGradient
-                id="paint1_radial_25:217"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(17.9997 182) rotate(90) scale(18)"
-              >
+              <radialGradient id="paint1_radial_25:217" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17.9997 182) rotate(90) scale(18)">
                 <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
               </radialGradient>
-              <radialGradient
-                id="paint2_radial_25:217"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(76.9997 288) rotate(90) scale(34)"
-              >
+              <radialGradient id="paint2_radial_25:217" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(76.9997 288) rotate(90) scale(34)">
                 <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
               </radialGradient>
-              <linearGradient
-                id="paint3_linear_25:217"
-                x1="226.775"
-                y1="-66.1548"
-                x2="292.157"
-                y2="351.421"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint3_linear_25:217" x1="226.775" y1="-66.1548" x2="292.157" y2="351.421" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
               </linearGradient>
-              <linearGradient
-                id="paint4_linear_25:217"
-                x1="184.521"
-                y1="182.159"
-                x2="184.521"
-                y2="448.882"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint4_linear_25:217" x1="184.521" y1="182.159" x2="184.521" y2="448.882" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="white" stopOpacity="0" />
               </linearGradient>
-              <linearGradient
-                id="paint5_linear_25:217"
-                x1="356"
-                y1="110"
-                x2="356"
-                y2="470"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint5_linear_25:217" x1="356" y1="110" x2="356" y2="470" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="white" stopOpacity="0" />
               </linearGradient>
-              <linearGradient
-                id="paint6_linear_25:217"
-                x1="118.524"
-                y1="29.2497"
-                x2="166.965"
-                y2="338.63"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint6_linear_25:217" x1="118.524" y1="29.2497" x2="166.965" y2="338.63" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
               </linearGradient>
@@ -506,69 +501,27 @@ const ReservationsPage = () => {
             />
             <circle cx="220" cy="63" r="43" fill="url(#paint5_radial_25:218)" />
             <defs>
-              <linearGradient
-                id="paint0_linear_25:218"
-                x1="184.389"
-                y1="69.2405"
-                x2="184.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint0_linear_25:218" x1="184.389" y1="69.2405" x2="184.389" y2="212.24" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" />
               </linearGradient>
-              <linearGradient
-                id="paint1_linear_25:218"
-                x1="156.389"
-                y1="69.2405"
-                x2="156.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint1_linear_25:218" x1="156.389" y1="69.2405" x2="156.389" y2="212.24" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" />
               </linearGradient>
-              <linearGradient
-                id="paint2_linear_25:218"
-                x1="125.389"
-                y1="69.2405"
-                x2="125.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint2_linear_25:218" x1="125.389" y1="69.2405" x2="125.389" y2="212.24" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" />
               </linearGradient>
-              <linearGradient
-                id="paint3_linear_25:218"
-                x1="93.8507"
-                y1="67.2674"
-                x2="89.9278"
-                y2="210.214"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint3_linear_25:218" x1="93.8507" y1="67.2674" x2="89.9278" y2="210.214" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" stopOpacity="0" />
                 <stop offset="1" stopColor="#4A6CF7" />
               </linearGradient>
-              <linearGradient
-                id="paint4_linear_25:218"
-                x1="214.505"
-                y1="10.2849"
-                x2="212.684"
-                y2="99.5816"
-                gradientUnits="userSpaceOnUse"
-              >
+              <linearGradient id="paint4_linear_25:218" x1="214.505" y1="10.2849" x2="212.684" y2="99.5816" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#4A6CF7" />
                 <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
               </linearGradient>
-              <radialGradient
-                id="paint5_radial_25:218"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(220 63) rotate(90) scale(43)"
-              >
+              <radialGradient id="paint5_radial_25:218" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 63) rotate(90) scale(43)">
                 <stop offset="0.145833" stopColor="white" stopOpacity="0" />
                 <stop offset="1" stopColor="white" stopOpacity="0.08" />
               </radialGradient>

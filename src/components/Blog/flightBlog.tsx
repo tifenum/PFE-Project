@@ -38,14 +38,14 @@ const FlightBlog = ({ flights }: { flights: any[] }) => {
       className="bg-gray-light dark:bg-bg-color-dark py-12 md:py-16 lg:py-20" // Reduced padding
     >
       <div className="container">
-        <div className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 md:gap-x-4 lg:gap-x-6 xl:grid-cols-3"> {/* Tighter gaps */}
+        <div className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 md:gap-x-4 lg:gap-x-6 xl:grid-cols-3">
           {flights.map((flight) => (
             <div
               key={flight.id}
               className="group relative overflow-hidden rounded-sm bg-white shadow-one duration-300 hover:shadow-two dark:bg-dark dark:hover:shadow-gray-dark cursor-pointer"
               onClick={() => handleFlightClick(flight)}
             >
-              <div className="relative block aspect-[37/25] w-full"> {/* Changed to shorter aspect ratio */}
+              <div className="relative block aspect-[37/25] w-full">
                 <span className="absolute right-4 top-4 z-20 inline-flex items-center justify-center rounded-full bg-primary px-3 py-1 text-xs font-semibold capitalize text-white"> {/* Smaller badge */}
                   {flight.validatingAirlineCodes?.[0] ?? "Flight"}
                 </span>
