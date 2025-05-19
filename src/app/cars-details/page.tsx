@@ -1,14 +1,15 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { createBooking } from "@/services/carsService";
 import { jwtDecode } from "jwt-decode";
 import SectionTitle from "@/components/Common/SectionTitle";
 
-const CarsDetailsPage = () => {
+// Client-side component for search params
+const CarsDetailsContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [driversLicense, setDriversLicense] = useState("");
@@ -482,6 +483,23 @@ const CarsDetailsPage = () => {
         </div>
       </div>
     </section>
+  );
+};
+
+// Main page component
+const CarsDetailsPage = () => {
+  return (
+    <Suspense fallback={
+      <section className="py-16 md:py-20 lg:py-28">
+        <div className="container text-center">
+          <div className="flex justify-center items-center">
+            <div className="w-16 h-16 border-4 border-t-[#4A6CF7] border-[#4A6CF7]/30 rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </section>
+    }>
+      <CarsDetailsContent />
+    </Suspense>
   );
 };
 
