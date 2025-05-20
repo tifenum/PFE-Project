@@ -22,7 +22,7 @@ const CollapsibleSection = ({ title, children, defaultOpen = true }) => {
           className={`w-5 h-5 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24"
+          viewBox="0 0 24 24" 
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
@@ -66,12 +66,10 @@ const ProgressBar = ({ currentStep }) => {
 const CarsDetailsContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [driversLicense, setDriversLicense] = useState("");
-  const [insurance, setInsurance] = useState("no");
   const [pickupDate, setPickupDate] = useState("");
-  const [pickupTime, setPickupTime] = useState("");
+  const [pickupTime, setPickupTime] = useState("10:30");
   const [dropoffDate, setDropoffDate] = useState("");
-  const [dropoffTime, setDropoffTime] = useState("");
+  const [dropoffTime, setDropoffTime] = useState("10:30");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingData, setBookingData] = useState<any>(null);
@@ -85,16 +83,18 @@ const CarsDetailsContent = () => {
       return;
     }
 
+    // Parse passengers to remove any query parameters like ?login=success
+    const rawPassengers = searchParams.get("passengers") || "";
+    const passengers = rawPassengers.split("?")[0]; // Extract only the passenger count (e.g., "3-4")
+
     const data = {
-      userId: searchParams.get("userId") || "",
-      carProvider: searchParams.get("carProvider") || "",
       pickupCountry: searchParams.get("pickupCountry") || "",
       pickupCity: searchParams.get("pickupCity") || "",
       carType: searchParams.get("carType") || "",
       carFeatures: searchParams.get("carFeatures")?.split(",") || [],
       pricePerDay: parseFloat(searchParams.get("pricePerDay") || "0"),
       carTypeFilter: searchParams.get("carTypeFilter") || "",
-      passengers: searchParams.get("passengers") || "",
+      passengers,
       transmission: searchParams.get("transmission") || "",
     };
 
@@ -128,10 +128,6 @@ const CarsDetailsContent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!driversLicense) {
-      toast.warning("Driver’s license number is required!");
-      return;
-    }
     if (!pickupDate) {
       toast.warning("Pickup date is required!");
       return;
@@ -163,10 +159,15 @@ const CarsDetailsContent = () => {
       return;
     }
 
+    if (!userId) {
+      toast.error("User authentication failed. Please sign in again.");
+      return;
+    }
+
     const totalPrice = calculateTotalPrice();
 
     const finalBookingData = {
-      userId: userId || bookingData.userId,
+      userId,
       carProvider: bookingData.carProvider,
       pickupCountry: bookingData.pickupCountry,
       pickupCity: bookingData.pickupCity,
@@ -177,7 +178,7 @@ const CarsDetailsContent = () => {
       pickupTime,
       dropoffDate,
       dropoffTime,
-      notes: `Driver's License: ${driversLicense}; Insurance: ${insurance}; Car Type Filter: ${bookingData.carTypeFilter}; Passengers: ${bookingData.passengers}; Transmission: ${bookingData.transmission}; Additional Notes: ${additionalNotes}`,
+      notes: `Car Type Filter: ${bookingData.carTypeFilter}; Passengers: ${bookingData.passengers}; Transmission: ${bookingData.transmission}; Additional Notes: ${additionalNotes}`,
       totalPrice,
     };
 
@@ -237,27 +238,6 @@ const CarsDetailsContent = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Car Provider
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={bookingData.carProvider}
-                      readOnly
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                    />
-                    <svg
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7h6v10m-6 0h6m-9 4h12" />
-                    </svg>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Car Type
                   </label>
                   <div className="relative">
@@ -296,6 +276,27 @@ const CarsDetailsContent = () => {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Number of Passengers
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={`${bookingData.passengers} passengers`}
+                      readOnly
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                    />
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                   </div>
                 </div>
@@ -418,54 +419,8 @@ const CarsDetailsContent = () => {
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Driver Information">
+            <CollapsibleSection title="Additional Information">
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Driver’s License Number *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={driversLicense}
-                      onChange={(e) => setDriversLicense(e.target.value)}
-                      placeholder="Enter your driver’s license number"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                    <svg
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Insurance
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={insurance}
-                      onChange={(e) => setInsurance(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 appearance-none"
-                    >
-                      <option value="no">No Insurance</option>
-                      <option value="yes">Add Insurance</option>
-                    </select>
-                    <svg
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center">
                     Additional Notes

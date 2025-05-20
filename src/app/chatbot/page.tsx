@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { askAssistant } from '@/services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plane, Hotel } from 'lucide-react';
-import { FlightCard, HotelCard } from './TravelCards';
+import { FlightCard, HotelCard, CarCard } from './TravelCards';
 import { parseBookings, BookingTable } from './BookingCards';
 
 interface Message {
@@ -15,6 +14,7 @@ interface Message {
   bookUrl?: string;
   flightOffer?: FlightOffer;
   hotelOffer?: HotelOffer;
+  carOffer?: CarOffer;
   bookings?: Booking[];
 }
 
@@ -53,8 +53,15 @@ interface HotelOffer {
   bookUrl: string;
 }
 
+interface CarOffer {
+  pickupCountry: string;
+  pickupCity: string;
+  carTypes: { type: string; pricePerDay: number; features: string[]; carTypeFilter: string; passengers: string}[];
+  bookingLink: string;
+}
+
 interface Booking {
-  type: 'flight' | 'hotel';
+  type: 'flight' | 'hotel' | 'car';
   details: {
     flightId?: string;
     origin?: string;
@@ -66,6 +73,9 @@ interface Booking {
     address?: string;
     checkIn?: string;
     checkOut?: string;
+    carType?: string;
+    location?: string;
+    pickupDate?: string;
   };
 }
 
@@ -73,7 +83,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hey there! Ready to plan your next adventure? Ask me about flights, hotels, or deals!',
+      content: 'Hey there! Ready to plan your next adventure? Ask me about flights, hotels, cars, or deals!',
     },
   ]);
   const [input, setInput] = useState('');
@@ -105,9 +115,9 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
-      const { message: rawBot, flightOffers: offers = [] } = await askAssistant(input, sessionId);
+      const { message: rawBot, flightOffers: flightOffersData = [], carOffers = [] } = await askAssistant(input, sessionId);
       setIsTyping(false);
-      setFlightOffers(offers);
+      setFlightOffers(flightOffersData);
 
       const assistantMessages: Message[] = [];
 
@@ -120,8 +130,8 @@ export default function ChatPage() {
         if (cleanBotMessage) {
           assistantMessages.push({ role: 'assistant', content: cleanBotMessage });
         }
-        if (Array.isArray(offers)) {
-          offers.forEach((offer: FlightOffer) => {
+        if (Array.isArray(flightOffersData)) {
+          flightOffersData.forEach((offer: FlightOffer) => {
             assistantMessages.push({
               role: 'assistant',
               content: '',
@@ -148,7 +158,26 @@ export default function ChatPage() {
             assistantMessages.push({ role: 'assistant', content: line.trim() });
           }
         });
-      } else if (rawBot.includes('Your Flight Bookings:') || rawBot.includes('Your Hotel Bookings:')) {
+      } else if (rawBot.startsWith('[CAR_RESULTS]')) {
+        let cleanBotMessage = rawBot
+          .replace(/\[CAR_RESULTS\]/g, '')
+          .replace(/\```json```/g, '')
+          .replace(/\[PARAMETERS:[\s\S]*?]/, '')
+          .trim();
+        if (cleanBotMessage) {
+          assistantMessages.push({ role: 'assistant', content: cleanBotMessage });
+        }
+        if (Array.isArray(carOffers)) {
+          carOffers.forEach((offer: CarOffer) => {
+            assistantMessages.push({
+              role: 'assistant',
+              content: '',
+              carOffer: offer,
+              bookUrl: offer.bookingLink,
+            });
+          });
+        }
+      } else if (rawBot.includes('Your Flight Bookings:') || rawBot.includes('Your Hotel Bookings:') || rawBot.includes('Your Car Bookings:')) {
         const bookings = parseBookings(rawBot);
         assistantMessages.push(
           { role: 'assistant', content: 'Here are your bookings!' },
@@ -168,6 +197,26 @@ export default function ChatPage() {
       ]);
     }
   };
+
+
+  const handleBookNow1 = (url: string) => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('jwt_token');
+    let relativeUrl;
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      relativeUrl = parsedUrl.pathname + parsedUrl.search;
+    } catch (e) {
+      console.error('Invalid URL, bro:', url);
+      return;
+    }
+    if (token) {
+      router.push(relativeUrl);
+    } else {
+      router.push(`/signin?redirect=${encodeURIComponent(relativeUrl)}`);
+    }
+  };
+
 
   const handleBookNow = (url: string) => {
     if (typeof window === 'undefined') return;
@@ -307,6 +356,13 @@ export default function ChatPage() {
                         <HotelCard offer={msg.hotelOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
                       </div>
                     </div>
+                  ) : msg.carOffer ? (
+                    <div className="flex items-start space-x-3">
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <div className="w-full">
+                        <CarCard offer={msg.carOffer} index={i} handleBookNow={handleBookNow1} />
+                      </div>
+                    </div>
                   ) : msg.bookings ? (
                     <div className="flex items-start space-x-3">
                       <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
@@ -355,7 +411,7 @@ export default function ChatPage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about flights, hotels, or deals..."
+              placeholder="Ask about flights, hotels, cars, or deals..."
               className="w-full rounded-full border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-white px-6 py-4 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all backdrop-blur-sm"
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             />
@@ -389,3 +445,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

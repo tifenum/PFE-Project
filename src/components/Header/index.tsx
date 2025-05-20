@@ -139,8 +139,8 @@ const Header = () => {
                       {menuItem.path ? (
                         <Link
                           href={
-                            menuItem.path === "/mybookings" && !isLoggedIn
-                              ? `/signin?redirect=${encodeURIComponent("/mybookings")}`
+                            menuItem.path === "/bookings" && !isLoggedIn
+                              ? `/signin?redirect=${encodeURIComponent("/bookings")}`
                               : menuItem.path
                           }
                           className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${

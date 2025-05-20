@@ -1,7 +1,7 @@
-import { Plane, Hotel } from 'lucide-react';
+import { Plane, Hotel, Car } from 'lucide-react';
 
 interface Booking {
-  type: 'flight' | 'hotel';
+  type: 'flight' | 'hotel' | 'car';
   details: {
     flightId?: string;
     origin?: string;
@@ -13,19 +13,24 @@ interface Booking {
     address?: string;
     checkIn?: string;
     checkOut?: string;
+    carType?: string;
+    location?: string;
+    pickupDate?: string;
   };
 }
 
 const parseBookings = (content: string): Booking[] => {
   const lines = content.split('\n');
   const bookings: Booking[] = [];
-  let currentType: 'flight' | 'hotel' | null = null;
+  let currentType: 'flight' | 'hotel' | 'car' | null = null;
 
   for (const line of lines) {
     if (line.includes('Your Flight Bookings:')) {
       currentType = 'flight';
     } else if (line.includes('Your Hotel Bookings:')) {
       currentType = 'hotel';
+    } else if (line.includes('Your Car Bookings:')) {
+      currentType = 'car';
     } else if (line.startsWith('- ') && currentType) {
       const details = line.substring(2).split(' | ');
       if (currentType === 'flight') {
@@ -48,6 +53,15 @@ const parseBookings = (content: string): Booking[] => {
         bookings.push({
           type: 'hotel',
           details: { name, address, checkIn, checkOut, status, price },
+        });
+      } else if (currentType === 'car') {
+        const [carType, location, pickupDateStr, dropoffDateStr, statusStr, priceStr] = details;
+        const pickupDate = pickupDateStr.split(': ')[1];
+        const status = statusStr.split(': ')[1];
+        const price = priceStr.replace('$', '');
+        bookings.push({
+          type: 'car',
+          details: { carType, location, pickupDate, status, price },
         });
       }
     }
@@ -77,23 +91,31 @@ const BookingTable = ({ bookings }: { bookings: Booking[] }) => (
             <td className="p-2">
               {booking.type === 'flight' ? (
                 <Plane className="w-4 h-4 text-blue-400 animate-spin-slow" />
-              ) : (
+              ) : booking.type === 'hotel' ? (
                 <Hotel className="w-4 h-4 text-blue-400 animate-spin-slow" />
+              ) : (
+                <Car className="w-4 h-4 text-blue-400 animate-spin-slow" />
               )}
             </td>
             <td className="p-2 truncate max-w-[120px]">{index + 1}</td>
             <td className="p-2 truncate max-w-[200px]">
               {booking.type === 'flight'
                 ? `${booking.details.origin} → ${booking.details.destination}`
-                : booking.details.address}
+                : booking.type === 'hotel'
+                ? booking.details.address
+                : booking.details.location}
             </td>
             <td className="p-2 hidden sm:table-cell truncate max-w-[120px]">
-              {booking.type === 'flight' ? booking.details.departure : `${booking.details.checkIn}`}
+              {booking.type === 'flight'
+                ? booking.details.departure
+                : booking.type === 'hotel'
+                ? `${booking.details.checkIn}`
+                : booking.details.pickupDate}
             </td>
             <td className="p-2 hidden md:table-cell">
               <span
                 className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  booking.details.status === 'Accepted'
+                  booking.details.status === 'Accepted' || booking.details.status === 'CONFIRMED'
                     ? 'bg-green-500/20 text-green-500'
                     : 'bg-yellow-500/20 text-yellow-500'
                 }`}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plane, Hotel } from 'lucide-react';
+import { Plane, Hotel, Car } from 'lucide-react';
 
 interface Seat {
   class: 'Business' | 'Econom-Plus' | 'Economy';
@@ -37,6 +37,13 @@ interface HotelOffer {
   bookUrl: string;
 }
 
+interface CarOffer {
+  pickupCountry: string;
+  pickupCity: string;
+  carTypes: { type: string; pricePerDay: number; features: string[]; carTypeFilter: string; passengers: string }[];
+  bookingLink: string;
+}
+
 // Simple hash function to generate a consistent number from a string
 const simpleHash = (str: string): number => {
   let hash = 0;
@@ -57,6 +64,12 @@ const getRandomHotelImage = (hotelName: string): string => {
   return `/images/hotel-images/hotel${imageNumber}.jpg`;
 };
 
+const getRandomCarImage = (carType: string): string => {
+  const hash = simpleHash(carType);
+  const imageNumber = (hash % 15) + 1;
+  return `/images/car-images/car${imageNumber}.jpg`;
+};
+
 const getAvailableSeats = (seatMap: Seat[][]): { [key: string]: number } => {
   const counts: { [key: string]: number } = {
     Business: 0,
@@ -73,7 +86,6 @@ const getAvailableSeats = (seatMap: Seat[][]): { [key: string]: number } => {
 
 export const FlightCard = ({ offer, bookUrl, index, handleBookNow }: { offer: FlightOffer; bookUrl: string; index: number; handleBookNow: (url: string) => void }) => {
   const availableSeats = getAvailableSeats(offer.seatMap);
-  console.log(offer);
   return (
     <motion.div
       className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden w-full sm:w-[640px] border border-gray-100 dark:border-gray-800"
@@ -180,6 +192,87 @@ export const HotelCard = ({ offer, bookUrl, index, handleBookNow }: { offer: Hot
           aria-label={`Book hotel ${offer.name}`}
         >
           <Hotel className="w-5 h-5 mr-2" />
+          Book Now
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+};
+
+export const CarCard = ({
+  offer,
+  index,
+  handleBookNow,
+}: {
+  offer: CarOffer;
+  index: number;
+  handleBookNow: (url: string) => void;
+}) => {
+  const primaryCarType = offer.carTypes[0] || { type: "Unknown", pricePerDay: 0, features: [] };
+  console.log("Primary Car Type:", primaryCarType);
+  console.log("Car Types:", offer.carTypes);
+  const bookUrl = `/cars-details?pickupCountry=${encodeURIComponent(
+    offer.pickupCountry
+  )}&pickupCity=${encodeURIComponent(offer.pickupCity)}&carType=${encodeURIComponent(
+    primaryCarType.type
+  )}&pricePerDay=${primaryCarType.pricePerDay}&carFeatures=${primaryCarType.features}&passengers=${'passengers' in primaryCarType ? primaryCarType.passengers : ''}`;
+
+  return (
+    <motion.div
+      className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden w-full sm:w-[640px] border border-gray-100 dark:border-gray-800"
+      whileHover={{ scale: 1.03, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.15)" }}
+      transition={{ duration: 0.3 }}
+      role="article"
+      aria-labelledby={`car-${index}`}
+    >
+      <div className="relative">
+        <img
+          src={getRandomCarImage(primaryCarType.type)}
+          alt={`Car ${primaryCarType.type}`}
+          className="w-full h-56 sm:h-64 object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div className="absolute top-4 right-4 bg-green-500 text-white text-sm font-semibold px-3 py-1 rounded-full">
+          ${primaryCarType.pricePerDay}/day
+        </div>
+      </div>
+      <div className="p-5 sm:p-6">
+        <div className="flex items-center mb-4">
+          <Car className="w-6 h-6 text-indigo-500 mr-2" />
+          <h3
+            id={`car-${index}`}
+            className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100"
+          >
+            {primaryCarType.type} in {offer.pickupCity}, {offer.pickupCountry}
+          </h3>
+        </div>
+        <div className="mb-5">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Location: {offer.pickupCity}, {offer.pickupCountry}
+          </p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Features:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {primaryCarType.features.map((feature, idx) => (
+              <span
+                key={idx}
+                className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-md"
+              >
+                {feature}
+              </span>
+            ))}
+          </div>
+        </div>
+        <motion.button
+          onClick={() => handleBookNow(bookUrl)}
+          className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg font-semibold text-sm flex items-center justify-center transition-all duration-300"
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ y: -2 }}
+          aria-label={`Book car ${primaryCarType.type} in ${offer.pickupCity}`}
+        >
+          <Car className="w-5 h-5 mr-2" />
           Book Now
         </motion.button>
       </div>

@@ -368,7 +368,7 @@ const ReservationsPage = () => {
               <table className="min-w-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow">
                 <thead className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Provider</th>
+                    <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Country</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Location</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Pickup Date</th>
                     <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Drop-off Date</th>
@@ -381,7 +381,7 @@ const ReservationsPage = () => {
                     paginatedCarReservations.map((res, index) => (
                       <tr key={index} className="border-t border-gray-200 dark:border-gray-700">
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.carProvider || "-"}
+                          {res.pickupCountry || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                           {res.pickupCity}, {res.pickupCountry}
