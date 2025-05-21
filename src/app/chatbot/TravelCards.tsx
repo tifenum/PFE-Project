@@ -32,9 +32,10 @@ interface FlightOffer {
 }
 
 interface HotelOffer {
-  name: string;
+  hotelName: string;
   description: string;
-  bookUrl: string;
+  lat: number;
+  lng: number;
 }
 
 interface CarOffer {
@@ -44,7 +45,6 @@ interface CarOffer {
   bookingLink: string;
 }
 
-// Simple hash function to generate a consistent number from a string
 const simpleHash = (str: string): number => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -165,12 +165,12 @@ export const HotelCard = ({ offer, bookUrl, index, handleBookNow }: { offer: Hot
       whileHover={{ scale: 1.03, boxShadow: "0 12px 24px rgba(0, 0, 0, 0.15)" }}
       transition={{ duration: 0.3 }}
       role="article"
-      aria-labelledby={`hotel-${offer.name}`}
+      aria-labelledby={`hotel-${offer.hotelName}`}
     >
       <div className="relative">
         <img
-          src={getRandomHotelImage(offer.name)}
-          alt={`Hotel ${offer.name}`}
+          src={getRandomHotelImage(offer.hotelName)}
+          alt={`Hotel ${offer.hotelName}`}
           className="w-full h-56 sm:h-64 object-cover"
           loading="lazy"
         />
@@ -179,8 +179,8 @@ export const HotelCard = ({ offer, bookUrl, index, handleBookNow }: { offer: Hot
       <div className="p-5 sm:p-6">
         <div className="flex items-center mb-4">
           <Hotel className="w-6 h-6 text-indigo-500 mr-2" />
-          <h3 id={`hotel-${offer.name}`} className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {offer.name}
+          <h3 id={`hotel-${offer.hotelName}`} className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
+            {offer.hotelName}
           </h3>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-5 line-clamp-3">{offer.description}</p>
@@ -189,7 +189,7 @@ export const HotelCard = ({ offer, bookUrl, index, handleBookNow }: { offer: Hot
           className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white px-6 py-3 rounded-lg font-semibold text-sm flex items-center justify-center transition-all duration-300"
           whileTap={{ scale: 0.95 }}
           whileHover={{ y: -2 }}
-          aria-label={`Book hotel ${offer.name}`}
+          aria-label={`Book hotel ${offer.hotelName}`}
         >
           <Hotel className="w-5 h-5 mr-2" />
           Book Now
@@ -208,9 +208,7 @@ export const CarCard = ({
   index: number;
   handleBookNow: (url: string) => void;
 }) => {
-  const primaryCarType = offer.carTypes[0] || { type: "Unknown", pricePerDay: 0, features: [] };
-  console.log("Primary Car Type:", primaryCarType);
-  console.log("Car Types:", offer.carTypes);
+  const primaryCarType = offer.carTypes[0] || { type: "Unknown", pricePerDay: 0, features: [], carTypeFilter: "", passengers: "1-2" };
   const bookUrl = `/cars-details?pickupCountry=${encodeURIComponent(
     offer.pickupCountry
   )}&pickupCity=${encodeURIComponent(offer.pickupCity)}&carType=${encodeURIComponent(
@@ -250,6 +248,9 @@ export const CarCard = ({
         <div className="mb-5">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Location: {offer.pickupCity}, {offer.pickupCountry}
+          </p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Passengers: {primaryCarType.passengers}
           </p>
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             Features:

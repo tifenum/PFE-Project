@@ -48,15 +48,16 @@ interface FlightOffer {
 }
 
 interface HotelOffer {
-  name: string;
+  hotelName: string;
   description: string;
-  bookUrl: string;
+  lat: number;
+  lng: number;
 }
 
 interface CarOffer {
   pickupCountry: string;
   pickupCity: string;
-  carTypes: { type: string; pricePerDay: number; features: string[]; carTypeFilter: string; passengers: string}[];
+  carTypes: { type: string; pricePerDay: number; features: string[]; carTypeFilter: string; passengers: string }[];
   bookingLink: string;
 }
 
@@ -111,26 +112,53 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     setMessages((prev) => [...prev, { role: 'user', content: input }]);
+    const userInput = input.toLowerCase(); // Capture input for type detection
     setInput('');
     setIsTyping(true);
 
     try {
-      const { message: rawBot, flightOffers: flightOffersData = [], carOffers = [] } = await askAssistant(input, sessionId);
+      const { message: botMessage, flightOffers: flightOffersData = [], carOffers = [], hotelOffers = [] } = await askAssistant(input, sessionId);
       setIsTyping(false);
       setFlightOffers(flightOffersData);
 
       const assistantMessages: Message[] = [];
 
-      if (rawBot.startsWith('[FLIGHT_RESULTS]')) {
-        let cleanBotMessage = rawBot
-          .replace(/\[FLIGHT_RESULTS\]/g, '')
-          .replace(/\```json```/g, '')
-          .replace(/\[PARAMETERS:[\s\S]*?]/, '')
-          .trim();
-        if (cleanBotMessage) {
-          assistantMessages.push({ role: 'assistant', content: cleanBotMessage });
+      // Handle bookings
+      if (botMessage.includes('Your Flight Bookings:') || botMessage.includes('Your Hotel Bookings:') || botMessage.includes('Your Car Bookings:') || botMessage.includes('No bookings found!')) {
+        const bookings = parseBookings(botMessage);
+        let filteredBookings = bookings;
+
+        // Filter bookings based on user input
+        if (userInput.includes('flight')) {
+          filteredBookings = bookings.filter((b) => b.type === 'flight');
+        } else if (userInput.includes('hotel')) {
+          filteredBookings = bookings.filter((b) => b.type === 'hotel');
+        } else if (userInput.includes('car') || userInput.includes('rental')) {
+          filteredBookings = bookings.filter((b) => b.type === 'car');
         }
-        if (Array.isArray(flightOffersData)) {
+
+        // If no bookings match the filter or no bookings exist, show a message
+        if (filteredBookings.length === 0) {
+          let noBookingsMessage = 'No bookings found!';
+          if (userInput.includes('flight')) {
+            noBookingsMessage = 'No flight bookings found!';
+          } else if (userInput.includes('hotel')) {
+            noBookingsMessage = 'No hotel bookings found!';
+          } else if (userInput.includes('car') || userInput.includes('rental')) {
+            noBookingsMessage = 'No car bookings found!';
+          }
+          assistantMessages.push({ role: 'assistant', content: noBookingsMessage });
+        } else {
+          assistantMessages.push({ role: 'assistant', content: '', bookings: filteredBookings });
+        }
+      } else {
+        // Add the bot's conversational message if no bookings
+        if (botMessage) {
+          assistantMessages.push({ role: 'assistant', content: botMessage });
+        }
+
+        // Handle flight offers
+        if (flightOffersData.length > 0) {
           flightOffersData.forEach((offer: FlightOffer) => {
             assistantMessages.push({
               role: 'assistant',
@@ -140,34 +168,22 @@ export default function ChatPage() {
             });
           });
         }
-      } else if (rawBot.startsWith('[HOTEL_RESULTS]')) {
-        const hotelLines = rawBot.replace(/\[HOTEL_RESULTS\]/, '').split('\n').filter((line) => line.trim());
-        hotelLines.forEach((line) => {
-          const match = line.match(/(.*?):\s*(.*?)\s*\[BOOK_NOW:(.*?)\]/);
-          if (match) {
-            const hotelName = match[1].trim();
-            const description = match[2].trim();
-            const bookUrl = match[3].trim();
+
+        // Handle hotel offers
+        if (hotelOffers.length > 0) {
+          hotelOffers.forEach((offer: HotelOffer) => {
+            const bookUrl = `/hotel-details?lat=${offer.lat}&lng=${offer.lng}&hotelName=${encodeURIComponent(offer.hotelName)}`;
             assistantMessages.push({
               role: 'assistant',
               content: '',
-              hotelOffer: { name: hotelName, description, bookUrl },
+              hotelOffer: offer,
               bookUrl,
             });
-          } else if (line.trim()) {
-            assistantMessages.push({ role: 'assistant', content: line.trim() });
-          }
-        });
-      } else if (rawBot.startsWith('[CAR_RESULTS]')) {
-        let cleanBotMessage = rawBot
-          .replace(/\[CAR_RESULTS\]/g, '')
-          .replace(/\```json```/g, '')
-          .replace(/\[PARAMETERS:[\s\S]*?]/, '')
-          .trim();
-        if (cleanBotMessage) {
-          assistantMessages.push({ role: 'assistant', content: cleanBotMessage });
+          });
         }
-        if (Array.isArray(carOffers)) {
+
+        // Handle car offers
+        if (carOffers.length > 0) {
           carOffers.forEach((offer: CarOffer) => {
             assistantMessages.push({
               role: 'assistant',
@@ -177,14 +193,6 @@ export default function ChatPage() {
             });
           });
         }
-      } else if (rawBot.includes('Your Flight Bookings:') || rawBot.includes('Your Hotel Bookings:') || rawBot.includes('Your Car Bookings:')) {
-        const bookings = parseBookings(rawBot);
-        assistantMessages.push(
-          { role: 'assistant', content: 'Here are your bookings!' },
-          { role: 'assistant', content: '', bookings }
-        );
-      } else {
-        assistantMessages.push({ role: 'assistant', content: rawBot });
       }
 
       setMessages((prev) => [...prev, ...assistantMessages]);
@@ -197,7 +205,6 @@ export default function ChatPage() {
       ]);
     }
   };
-
 
   const handleBookNow1 = (url: string) => {
     if (typeof window === 'undefined') return;
@@ -216,7 +223,6 @@ export default function ChatPage() {
       router.push(`/signin?redirect=${encodeURIComponent(relativeUrl)}`);
     }
   };
-
 
   const handleBookNow = (url: string) => {
     if (typeof window === 'undefined') return;
@@ -315,6 +321,7 @@ export default function ChatPage() {
             <linearGradient id="paint4_linear_25_218" x1="214.505" y1="10.2849" x2="212.684" y2="99.5816" gradientUnits="userSpaceOnUse">
               <stop stopColor="#4A6CF7" />
               <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+              <stop offset="1" stopColor="white" stopOpacity="0" />
             </linearGradient>
             <radialGradient id="paint5_radial_25_218" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 63) rotate(90) scale(43)">
               <stop offset="0.145833" stopColor="white" stopOpacity="0" />
@@ -445,4 +452,3 @@ export default function ChatPage() {
     </div>
   );
 }
-

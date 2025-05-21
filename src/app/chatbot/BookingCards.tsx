@@ -114,11 +114,13 @@ const BookingTable = ({ bookings }: { bookings: Booking[] }) => (
             </td>
             <td className="p-2 hidden md:table-cell">
               <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  booking.details.status === 'Accepted' || booking.details.status === 'CONFIRMED'
-                    ? 'bg-green-500/20 text-green-500'
-                    : 'bg-yellow-500/20 text-yellow-500'
-                }`}
+                 className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    booking.details.status === 'Accepted'
+                      ? 'bg-green-500/20 text-green-500'
+                      : booking.details.status === 'Refused'
+                      ? 'bg-red-500/20 text-red-500'
+                      : 'bg-yellow-500/20 text-yellow-500'
+                  }`}
               >
                 {booking.details.status}
               </span>
