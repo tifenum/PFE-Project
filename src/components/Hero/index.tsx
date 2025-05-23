@@ -15,20 +15,26 @@ const Hero = () => {
                   Book Your Next Adventure with Ease and Confidence
                 </h1>
                 <p className="mb-12 text-base !leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
-                  Discover the best deals on flights and hotels with our user-friendly booking platform. Plan your dream trip effortlessly, with all the tools you need to explore destinations, compare prices, and secure your travel plans in one place.
+                  Discover the best deals on flights, hotels, and car rentals with our user-friendly booking platform. Plan your dream trip effortlessly, with all the tools you need to explore destinations, compare prices, and secure your travel plans in one place.
                 </p>
                 <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                   <Link
-                    href="http://localhost:3000/flights"
-                    className="rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80"
+                    href="https://booking.medhabib.me/flights"
+                    className="inline-block rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5"
                   >
                     Book Flight
                   </Link>
                   <Link
-                    href="http://localhost:3000/hotels"
-                    className="inline-block rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5"
+                    href="https://booking.medhabib.me/hotels"
+                    className="rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80"
                   >
                     Book Hotel
+                  </Link>
+                  <Link
+                    href="https://booking.medhabib.me/cars"
+                    className="inline-block rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5"
+                  >
+                    Rent Cars
                   </Link>
                 </div>
               </div>

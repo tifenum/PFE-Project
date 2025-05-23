@@ -16,6 +16,7 @@ interface Message {
   hotelOffer?: HotelOffer;
   carOffer?: CarOffer;
   bookings?: Booking[];
+  message?: string;
 }
 
 interface Seat {
@@ -63,6 +64,7 @@ interface CarOffer {
 
 interface Booking {
   type: 'flight' | 'hotel' | 'car';
+  customId: string;
   details: {
     flightId?: string;
     origin?: string;
@@ -77,6 +79,7 @@ interface Booking {
     carType?: string;
     location?: string;
     pickupDate?: string;
+    dropoffDate?: string;
   };
 }
 
@@ -112,85 +115,50 @@ export default function ChatPage() {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
     setMessages((prev) => [...prev, { role: 'user', content: input }]);
-    const userInput = input.toLowerCase(); // Capture input for type detection
     setInput('');
     setIsTyping(true);
 
     try {
-      const { message: botMessage, flightOffers: flightOffersData = [], carOffers = [], hotelOffers = [] } = await askAssistant(input, sessionId);
+      const response = await askAssistant(input, sessionId);
+      const { message: botMessage, flightOffers: flightOffersData = [], carOffers = [], hotelOffers = [], bookings = [] } = response;
       setIsTyping(false);
       setFlightOffers(flightOffersData);
 
       const assistantMessages: Message[] = [];
 
-      // Handle bookings
-      if (botMessage.includes('Your Flight Bookings:') || botMessage.includes('Your Hotel Bookings:') || botMessage.includes('Your Car Bookings:') || botMessage.includes('No bookings found!')) {
-        const bookings = parseBookings(botMessage);
-        let filteredBookings = bookings;
+      // Handle bookings only for actual booking lists or explicit "no bookings" responses
+      const parsedBookings = bookings.length > 0 ? bookings.map((b: any) => ({
+        type: b.type,
+        customId: b.customId,
+        details: b.details,
+      })) : [];
 
-        // Filter bookings based on user input
-        if (userInput.includes('flight')) {
-          filteredBookings = bookings.filter((b) => b.type === 'flight');
-        } else if (userInput.includes('hotel')) {
-          filteredBookings = bookings.filter((b) => b.type === 'hotel');
-        } else if (userInput.includes('car') || userInput.includes('rental')) {
-          filteredBookings = bookings.filter((b) => b.type === 'car');
-        }
-
-        // If no bookings match the filter or no bookings exist, show a message
-        if (filteredBookings.length === 0) {
-          let noBookingsMessage = 'No bookings found!';
-          if (userInput.includes('flight')) {
-            noBookingsMessage = 'No flight bookings found!';
-          } else if (userInput.includes('hotel')) {
-            noBookingsMessage = 'No hotel bookings found!';
-          } else if (userInput.includes('car') || userInput.includes('rental')) {
-            noBookingsMessage = 'No car bookings found!';
-          }
-          assistantMessages.push({ role: 'assistant', content: noBookingsMessage });
-        } else {
-          assistantMessages.push({ role: 'assistant', content: '', bookings: filteredBookings });
-        }
+      if (parsedBookings.length > 0 || botMessage.includes('No bookings found') || botMessage.includes('Successfully deleted')) {
+        assistantMessages.push({
+          role: 'assistant',
+          content: '',
+          bookings: parsedBookings,
+          message: parsedBookings.length === 0 ? botMessage : undefined,
+        });
       } else {
-        // Add the bot's conversational message if no bookings
+        // Non-booking responses (flight/hotel/car offers or general messages)
         if (botMessage) {
           assistantMessages.push({ role: 'assistant', content: botMessage });
         }
-
-        // Handle flight offers
         if (flightOffersData.length > 0) {
           flightOffersData.forEach((offer: FlightOffer) => {
-            assistantMessages.push({
-              role: 'assistant',
-              content: '',
-              flightOffer: offer,
-              bookUrl: offer.bookingLink,
-            });
+            assistantMessages.push({ role: 'assistant', content: '', flightOffer: offer, bookUrl: offer.bookingLink });
           });
         }
-
-        // Handle hotel offers
         if (hotelOffers.length > 0) {
           hotelOffers.forEach((offer: HotelOffer) => {
             const bookUrl = `/hotel-details?lat=${offer.lat}&lng=${offer.lng}&hotelName=${encodeURIComponent(offer.hotelName)}`;
-            assistantMessages.push({
-              role: 'assistant',
-              content: '',
-              hotelOffer: offer,
-              bookUrl,
-            });
+            assistantMessages.push({ role: 'assistant', content: '', hotelOffer: offer, bookUrl });
           });
         }
-
-        // Handle car offers
         if (carOffers.length > 0) {
           carOffers.forEach((offer: CarOffer) => {
-            assistantMessages.push({
-              role: 'assistant',
-              content: '',
-              carOffer: offer,
-              bookUrl: offer.bookingLink,
-            });
+            assistantMessages.push({ role: 'assistant', content: '', carOffer: offer, bookUrl: offer.bookingLink });
           });
         }
       }
@@ -199,10 +167,7 @@ export default function ChatPage() {
     } catch (err) {
       console.error('Error in handleSendMessage:', err);
       setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Oops! Something went wrong. Try again, man!' },
-      ]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: 'Oops! Something went wrong, bro!' }]);
     }
   };
 
@@ -370,18 +335,25 @@ export default function ChatPage() {
                         <CarCard offer={msg.carOffer} index={i} handleBookNow={handleBookNow1} />
                       </div>
                     </div>
-                  ) : msg.bookings ? (
+                  ) : msg.bookings && msg.bookings.length > 0 ? (
                     <div className="flex items-start space-x-3">
                       <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
-                        <BookingTable bookings={msg.bookings} />
+                        <BookingTable bookings={msg.bookings} message={msg.message} />
+                      </div>
+                    </div>
+                  ) : msg.message || msg.content ? (
+                    <div className="flex items-start space-x-3">
+                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
+                        <p className="text-base leading-relaxed">{msg.message || msg.content}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-start space-x-3">
                       <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
-                        <p className="text-base leading-relaxed">{msg.content}</p>
+                        <p className="text-base leading-relaxed">Something went wrong, bro!</p>
                       </div>
                     </div>
                   )}

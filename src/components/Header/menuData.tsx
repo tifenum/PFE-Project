@@ -33,7 +33,7 @@ const menuData: Menu[] = [
   },
   {
     id:6,
-    title: "Chat Bot",
+    title: "Chatbot",
     path: "/chatbot",
     newTab: false,
   }

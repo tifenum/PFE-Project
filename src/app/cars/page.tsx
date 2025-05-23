@@ -442,7 +442,7 @@ const CarDetailsClient = ({
   };
 
   const getRandomCarImage = (index: number): string => {
-    const imageNumber = Math.floor(Math.random() * 20) + 1;
+    const imageNumber = Math.floor(Math.random() * 14) + 1;
     return `/images/car-images/car${imageNumber}.jpg`;
   };
 
