@@ -85,6 +85,29 @@ export const fetchAllClients = async () => {
   }
 };
 
+export const resetPassword = async (email: string) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL1}/reset-password`,
+      { email },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (response.status === 200) {
+      return { success: true, message: response.data };
+    }
+    return { success: false, error: "Password reset failed. Please try again." };
+  } catch (error: any) {
+    console.error("Password reset failed:", error);
+    if (error.response && error.response.status === 404) {
+      return { success: false, error: "No user found with the provided email." };
+    }
+    return { success: false, error: "Password reset failed. Please try again." };
+  }
+};
+
 export const deleteUser = async (userId: string) => {
   try {
     const response = await axios.delete(`${API_BASE_URL}/users/${userId}`, {
