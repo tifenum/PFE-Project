@@ -1,0 +1,85 @@
+.mapillary-viewer {
+  background-color: #0F0F0F;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+.mapillary-interactive {
+  cursor: grab;
+}
+
+.mapillary-interactive:active {
+  cursor: grabbing;
+}
+
+.mapillary-viewer .mapillary-dom {
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  user-select: none;
+}
+
+.mapillary-dom .mapillary-dom-renderer {
+  pointer-events: auto;
+}
+
+.mapillary-viewer div {
+  box-sizing: content-box;
+}
+
+.mapillary-viewer input:focus {
+  background: none;
+}
+
+.viewer, .map {
+  transition: all 0.3s ease; /* Smooth transitions for size changes */
+  overflow: hidden; /* Ensure content is clipped */
+}
+
+.toggle-icon {
+  padding: 6px;
+  background-color: #05CB63;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-icon:hover {
+  background-color: #04a854;
+}
+
+.loading-indicator {
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 600px) {
+  .viewer, .map {
+    width: 250px !important;
+    height: 200px !important;
+  }
+  .viewer[style*="100vw"], .map[style*="100vw"] {
+    width: 100vw !important;
+    height: calc(100vh - 120px) !important; /* Header + Footer = 120px */
+  }
+  input, button {
+    font-size: 14px !important;
+    padding: 6px !important;
+  }
+  input {
+    width: 180px !important;
+  }
+  .toggle-icon {
+    left: 200px !important;
+    padding: 6px !important;
+    font-size: 16px !important;
+  }
+}

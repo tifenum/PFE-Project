@@ -146,3 +146,32 @@ export const logout = async () => {
     localStorage.removeItem("user");
   }
 };
+
+export const fetchMapillaryImages = async (bbox: string, limit: number = 2) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/users/map/images`, {
+      params: { bbox, limit }
+    });
+
+    if (response.status === 200) {
+      return response.data;
+    }
+    throw new Error('Failed to fetch map images');
+  } catch (error) {
+    console.error('Error fetching map images:', error.response?.data || error.message);
+    return [];
+  }
+};
+
+export const fetchMapillaryImageDetails = async (imageId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/users/map/image/${imageId}`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    throw new Error('Failed to fetch image details');
+  } catch (error) {
+    console.error('Error fetching image details:', error.response?.data || error.message);
+    return null;
+  }
+};

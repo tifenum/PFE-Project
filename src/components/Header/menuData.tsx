@@ -36,6 +36,12 @@ const menuData: Menu[] = [
     title: "Chatbot",
     path: "/chatbot",
     newTab: false,
+  },
+  {
+  id:7,
+  title: "Discovery",
+  path: "/map",
+  newTab: false,
   }
 ];
 export default menuData;
