@@ -2,8 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import MapContainer from './MapContainer';
 import ViewerContainer from './ViewerContainer';
-import { getSource } from './mapUtils';
-import { fetchMapillaryImageDetails } from '@/services/userService';
+import mapboxgl from 'mapbox-gl';
 
 interface MapillaryViewerProps {
   mapillaryAccessToken: string;
@@ -11,7 +10,7 @@ interface MapillaryViewerProps {
   headerHeight?: number;
 }
 
-export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToken, headerHeight = 80 }: MapillaryViewerProps) {
+export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToken, headerHeight = 0 }: MapillaryViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -27,6 +26,8 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
       if (header) {
         const height = header.offsetHeight;
         setActualHeaderHeight(height);
+      } else {
+        setActualHeaderHeight(0); // Assume no header if not found
       }
     };
 
@@ -38,28 +39,6 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
       window.removeEventListener('resize', updateHeaderHeight);
       window.removeEventListener('scroll', updateHeaderHeight);
     };
-  }, []);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    async function fetchInitialData() {
-      console.log('MapillaryViewer: Fetching initial source');
-      try {
-        const initialSource = await getSource();
-        const validFeature = initialSource.data.features.find((f: any) => !f.properties.imageId.startsWith('fallback-'));
-        if (validFeature) {
-          setInitialImageId(validFeature.properties.imageId);
-          console.log('MapillaryViewer: Set initialImageId:', validFeature.properties.imageId);
-        } else {
-          console.warn('MapillaryViewer: No valid feature found for initial image');
-        }
-      } catch (error) {
-        console.error('MapillaryViewer: Failed to fetch initial source:', error);
-      }
-    }
-
-    fetchInitialData();
   }, []);
 
   const toggleView = () => {
@@ -79,6 +58,10 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
     });
   };
 
+  const handleSetImageId = (imageId: string) => {
+    setInitialImageId(imageId);
+  };
+
   useEffect(() => {
     const viewerWrapper = containerRef.current?.querySelector('.viewer-wrapper') as HTMLDivElement | null;
     const viewerContainer = containerRef.current?.querySelector('.viewer') as HTMLDivElement | null;
@@ -92,7 +75,7 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
 
     switch (viewMode) {
       case 'default':
-        viewerWrapper.style.display = 'block';
+        viewerWrapper.style.display = initialImageId && !initialImageId.startsWith('fallback-') ? 'block' : 'none';
         viewerWrapper.style.width = '350px';
         viewerWrapper.style.height = '200px';
         viewerWrapper.style.bottom = '20px';
@@ -100,32 +83,32 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
         viewerWrapper.style.zIndex = '100';
         viewerWrapper.style.transform = 'scale(1)';
         mapContainer.style.display = 'block';
-        mapContainer.style.width = '100%';
-        mapContainer.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.width = '100vw';
+        mapContainer.style.height = '100vh';
         mapContainer.style.zIndex = '10';
         break;
       case 'map':
         viewerWrapper.style.display = 'none';
         mapContainer.style.display = 'block';
-        mapContainer.style.width = '100%';
-        mapContainer.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.width = '100vw';
+        mapContainer.style.height = '100vh';
         mapContainer.style.zIndex = '10';
         break;
       case 'viewer':
-        viewerWrapper.style.display = 'block';
-        viewerWrapper.style.width = '100%';
-        viewerWrapper.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
-        viewerWrapper.style.bottom = '60px';
+        viewerWrapper.style.display = initialImageId && !initialImageId.startsWith('fallback-') ? 'block' : 'none';
+        viewerWrapper.style.width = '100vw';
+        viewerWrapper.style.height = '100vh';
+        viewerWrapper.style.bottom = '0';
         viewerWrapper.style.left = '0';
         viewerWrapper.style.zIndex = '100';
         viewerWrapper.style.transform = 'scale(1)';
         mapContainer.style.display = 'none';
         break;
       case 'swapped':
-        viewerWrapper.style.display = 'block';
-        viewerWrapper.style.width = '100%';
-        viewerWrapper.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
-        viewerWrapper.style.bottom = '60px';
+        viewerWrapper.style.display = initialImageId && !initialImageId.startsWith('fallback-') ? 'block' : 'none';
+        viewerWrapper.style.width = '100vw';
+        viewerWrapper.style.height = '100vh';
+        viewerWrapper.style.bottom = '0';
         viewerWrapper.style.left = '0';
         viewerWrapper.style.zIndex = '10';
         viewerWrapper.style.transform = 'scale(1)';
@@ -154,15 +137,15 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
 
     const handleResize = () => {
       if (window.innerWidth <= 600 && (viewMode === 'default' || viewMode === 'swapped')) {
-        viewerWrapper.style.width = viewMode === 'default' ? '200px' : '100%';
-        viewerWrapper.style.height = viewMode === 'default' ? '150px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
-        mapContainer.style.width = viewMode === 'swapped' ? '200px' : '100%';
-        mapContainer.style.height = viewMode === 'swapped' ? '150px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        viewerWrapper.style.width = viewMode === 'default' ? '200px' : '100vw';
+        viewerWrapper.style.height = viewMode === 'default' ? '150px' : '100vh';
+        mapContainer.style.width = viewMode === 'swapped' ? '200px' : '100vw';
+        mapContainer.style.height = viewMode === 'swapped' ? '150px' : '100vh';
       } else if (viewMode === 'default' || viewMode === 'swapped') {
-        viewerWrapper.style.width = viewMode === 'default' ? '350px' : '100%';
-        viewerWrapper.style.height = viewMode === 'default' ? '200px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
-        mapContainer.style.width = viewMode === 'swapped' ? '350px' : '100%';
-        mapContainer.style.height = viewMode === 'swapped' ? '200px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        viewerWrapper.style.width = viewMode === 'default' ? '350px' : '100vw';
+        viewerWrapper.style.height = viewMode === 'default' ? '200px' : '100vh';
+        mapContainer.style.width = viewMode === 'swapped' ? '350px' : '100vw';
+        mapContainer.style.height = viewMode === 'swapped' ? '200px' : '100vh';
       }
     };
 
@@ -174,20 +157,17 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
       viewerWrapper.removeEventListener('mouseleave', handleHoverOut);
       window.removeEventListener('resize', handleResize);
     };
-  }, [viewMode, actualHeaderHeight]);
+  }, [viewMode, actualHeaderHeight, initialImageId]);
 
   return (
     <div
       style={{
-        position: 'relative',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         width: '100vw',
-        height: `calc(100vh - ${actualHeaderHeight}px)`,
+        height: '100vh',
         backgroundColor: '#f5f5f5',
-        border: '2px solid #e0e0e0',
-        borderRadius: '12px',
-        margin: '10px auto',
-        maxWidth: 'calc(100% - 20px)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
         overflow: 'hidden',
       }}
     >
@@ -204,13 +184,12 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
         <MapContainer
           mapboxAccessToken={mapboxAccessToken}
           mapStyle={mapStyle}
-          headerHeight={actualHeaderHeight}
           container={containerRef.current!}
           viewerRef={viewerRef}
           positionMarkerRef={positionMarkerRef}
-          setSource={() => {}} // Placeholder, handled internally
+          setImageId={handleSetImageId}
         />
-        {initialImageId && (
+        {initialImageId && !initialImageId.startsWith('fallback-') && (
           <ViewerContainer
             mapillaryAccessToken={mapillaryAccessToken}
             headerHeight={actualHeaderHeight}

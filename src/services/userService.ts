@@ -147,7 +147,8 @@ export const logout = async () => {
   }
 };
 
-export const fetchMapillaryImages = async (bbox: string, limit: number = 2) => {
+
+export const fetchMapillaryImages = async (bbox: string, limit: number = 2, p0: { is_pano: boolean; }) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/users/map/images`, {
       params: { bbox, limit }

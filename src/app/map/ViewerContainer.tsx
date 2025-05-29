@@ -1,13 +1,15 @@
+
 import React, { useEffect, useRef } from 'react';
 import { Viewer, CameraControls } from 'mapillary-js';
 import { makeContainers, makeMessage, makeLoadingIndicator, moveToWithRetry, coordinateCache } from './mapUtils';
 import { fetchMapillaryImageDetails } from '@/services/userService';
+import mapboxgl from 'mapbox-gl';
 
 interface ViewerContainerProps {
   mapillaryAccessToken: string;
   headerHeight: number;
   container: HTMLDivElement;
-  initialImageId: string | null;
+  initialImageId?: string | null;
   positionMarkerRef: React.MutableRefObject<mapboxgl.Marker | null>;
   mapRef: React.MutableRefObject<mapboxgl.Map | null>;
   viewerRef: React.MutableRefObject<any>;
@@ -41,7 +43,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     };
 
     const message = makeMessage('Loading Mapillary Viewer...');
-    // container.appendChild(message);
+    container.appendChild(message);
 
     try {
       viewerRef.current = new Viewer(viewerOptions);
@@ -55,45 +57,28 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     }
 
     const onImage = async (image: any) => {
-      if (!isMounted.current) return;
+      if (!isMounted.current || !viewerRef.current) return;
       let lngLat: [number, number] | undefined;
 
       if (coordinateCache.has(image.id)) {
         lngLat = coordinateCache.get(image.id);
+      } else if (image?.computed_geometry?.coordinates && Array.isArray(image.computed_geometry.coordinates) && image.computed_geometry.coordinates.length === 2) {
+        lngLat = image.computed_geometry.coordinates as [number, number];
+        coordinateCache.set(image.id, lngLat);
       } else {
-        if (image?.lngLat && typeof image.lngLat.lng === 'number' && typeof image.lngLat.lat === 'number') {
-          lngLat = [image.lngLat.lng, image.lngLat.lat];
-          coordinateCache.set(image.id, lngLat);
-        } else if (
-          image?.computed_geometry?.coordinates &&
-          Array.isArray(image.computed_geometry.coordinates) &&
-          image.computed_geometry.coordinates.length === 2 &&
-          typeof image.computed_geometry.coordinates[0] === 'number' &&
-          typeof image.computed_geometry.coordinates[1] === 'number'
-        ) {
-          lngLat = image.computed_geometry.coordinates as [number, number];
-          coordinateCache.set(image.id, lngLat);
-        } else {
-          try {
-            const imageDetails = await fetchMapillaryImageDetails(image.id);
-            if (
-              imageDetails?.coordinates &&
-              Array.isArray(imageDetails.coordinates) &&
-              imageDetails.coordinates.length === 2 &&
-              typeof imageDetails.coordinates[0] === 'number' &&
-              typeof imageDetails.coordinates[1] === 'number'
-            ) {
-              lngLat = imageDetails.coordinates as [number, number];
-              coordinateCache.set(image.id, lngLat);
-            }
-          } catch (error) {
-            console.error('ViewerContainer: Failed to fetch image details', error);
-            return;
+        try {
+          const imageDetails = await fetchMapillaryImageDetails(image.id);
+          if (imageDetails?.coordinates && Array.isArray(imageDetails.coordinates) && imageDetails.coordinates.length === 2) {
+            lngLat = imageDetails.coordinates as [number, number];
+            coordinateCache.set(image.id, lngLat);
           }
+        } catch (error) {
+          console.error('ViewerContainer: Failed to fetch image details', error);
+          return;
         }
       }
 
-      if (!lngLat || !Array.isArray(lngLat) || lngLat.length !== 2 || isNaN(lngLat[0]) || isNaN(lngLat[1])) {
+      if (!lngLat || isNaN(lngLat[0]) || isNaN(lngLat[1])) {
         console.warn('ViewerContainer: Invalid lngLat', lngLat);
         return;
       }
@@ -114,13 +99,13 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     };
 
     const onPosition = async () => {
-      if (!isMounted.current) return;
+      if (!isMounted.current || !viewerRef.current) return;
       try {
         const position = await viewerRef.current.getPosition();
         if (!position || typeof position.lng !== 'number' || typeof position.lat !== 'number') {
           return;
         }
-        const pos: [number, number] = [Number(position.lng), Number(position.lat)];
+        const pos: [number, number] = [position.lng, position.lat];
         if (mapRef.current && positionMarkerRef.current && !positionMarkerRef.current._map) {
           positionMarkerRef.current.addTo(mapRef.current);
           positionMarkerRef.current.setLngLat(pos);
@@ -184,7 +169,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     });
 
     viewerRef.current.on('image', async (event: any) => {
-      if (!isMounted.current) return;
+      if (!isMounted.current || !viewerRef.current) return;
       console.log('ViewerContainer: Image changed:', event.image.id);
       try {
         await onImage(event.image);
@@ -213,7 +198,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           } catch (error) {
             console.error('ViewerContainer: Error during cleanup:', error);
           }
-        }, 500); // Delay cleanup to avoid CancelMapillaryError
+        }, 500);
       }
       if (container.contains(message)) {
         container.removeChild(message);

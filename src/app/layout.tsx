@@ -22,19 +22,19 @@ export default function RootLayout({
 }) {
   const pathname = usePathname(); // Get current pathname
 const hideFooter = pathname === "/chatbot" || pathname === "/map";
-
+const hideHeader = pathname === "/map";
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
         <LoadingProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Header />
+            {!hideHeader && <Header />}
             <Toaster richColors />
             <ClientNavigationHandler />
             <ClientGlobalLoaderWrapper />
             {children}
-            {!hideFooter && <Footer />} {/* Conditionally render Footer */}
+            {!hideFooter && <Footer />}
             <ScrollToTop />
           </ThemeProvider>
         </LoadingProvider>

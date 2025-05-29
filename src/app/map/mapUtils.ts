@@ -1,25 +1,26 @@
+
 import mapboxgl from 'mapbox-gl';
 import { fetchMapillaryImages, fetchMapillaryImageDetails } from "@/services/userService";
+import countryCoordinates from './countryCoordinates';
 
 export const coordinateCache = new Map<string, [number, number]>();
-
-const countryCoordinates = [
-  { name: 'USA', coords: [-122.340955, 47.612389], bbox: '-122.36,47.61,-122.34,47.63' },
-  { name: 'Brazil', coords: [-46.633309, -23.550520], bbox: '-46.65,-23.57,-46.61,-23.53' },
-  { name: 'Japan', coords: [139.691706, 35.689487], bbox: '139.67,35.67,139.71,35.71' },
-  { name: 'Australia', coords: [151.209295, -33.868820], bbox: '151.19,-33.88,151.23,-33.85' },
-  { name: 'South Africa', coords: [28.047305, -26.204103], bbox: '28.02,-26.22,28.07,-26.18' },
-];
+const fetchCache = new Map<string, any[]>();
 
 export async function fetchImages(bbox: string, limit: number = 2): Promise<any[]> {
-  if (!bbox) return [];
+  const startTime = performance.now();
+  // Check the cache first
+  if (fetchCache.has(bbox)) {
+    return fetchCache.get(bbox)!;
+  }
+  if (!bbox) {
+    return [];
+  }
   try {
     const data = await fetchMapillaryImages(bbox, limit);
     if (!data || !Array.isArray(data)) {
-      console.warn('fetchImages: Invalid API response', data);
       return [];
     }
-    return data.map(item => {
+    const features = data.map(item => {
       const coordinates = (item.coordinates && Array.isArray(item.coordinates) && item.coordinates.length === 2)
         ? item.coordinates as [number, number]
         : bbox.split(',').slice(0, 2).map(Number) as [number, number];
@@ -33,41 +34,42 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
         },
       };
     });
+    // Cache the features before returning
+    fetchCache.set(bbox, features);
+    return features;
   } catch (error) {
-    console.error('fetchImages: Error fetching images', error);
     return [];
   }
 }
 
 export async function getSource(searchBbox?: string): Promise<any> {
+  const globalStartTime = performance.now();
+  console.time('getSource');
+
   let allFeatures: any[] = [];
   const useBbox = searchBbox ? [searchBbox] : countryCoordinates.map(c => c.bbox);
 
-  for (const bbox of useBbox) {
-    const features = await fetchImages(bbox, searchBbox ? 10 : 1);
-    if (features.length) {
-      allFeatures = allFeatures.concat(features);
-    } else {
-      const coords = searchBbox
-        ? searchBbox.split(',').slice(0, 2).map(Number) as [number, number]
-        : countryCoordinates.find(c => c.bbox === bbox)?.coords as [number, number];
-      allFeatures.push({
-        type: 'Feature',
-        properties: { imageId: `fallback-${searchBbox || bbox}`, thumbUrl: '' },
-        geometry: {
-          type: 'Point',
-          coordinates: coords,
-        },
-      });
-    }
-  }
+  // Create fallback features without fetching images
+  useBbox.forEach((bbox, index) => {
+    const coords = searchBbox
+      ? searchBbox.split(',').slice(0, 2).map(Number) as [number, number]
+      : countryCoordinates[index].coords as [number, number];
+    allFeatures.push({
+      type: 'Feature',
+      properties: { imageId: `fallback-${searchBbox || bbox}`, thumbUrl: '' },
+      geometry: {
+        type: 'Point',
+        coordinates: coords,
+      },
+    });
+  });
 
   const maxFeatures = searchBbox ? 10 : 100;
   if (allFeatures.length > maxFeatures) {
     allFeatures = allFeatures.slice(0, maxFeatures);
   }
 
-  return {
+  const result = {
     type: 'geojson',
     data: {
       type: 'FeatureCollection',
@@ -77,9 +79,16 @@ export async function getSource(searchBbox?: string): Promise<any> {
     clusterMaxZoom: 14,
     clusterRadius: 50,
   };
+
+  console.timeEnd('getSource');
+  console.log(`getSource total time: ${(performance.now() - globalStartTime).toFixed(2)} ms`);
+  return result;
 }
 
 export function makeContainers(container: HTMLDivElement, headerHeight: number) {
+  const startTime = performance.now();
+  console.time('makeContainers');
+
   let map = container.querySelector('.map-container') as HTMLDivElement | null;
   let viewer = container.querySelector('.viewer') as HTMLDivElement | null;
 
@@ -116,10 +125,15 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
     container.appendChild(viewerWrapper);
   }
 
+  console.timeEnd('makeContainers');
+  console.log(`makeContainers took ${(performance.now() - startTime).toFixed(2)} ms`);
   return { map, viewer };
 }
 
 export function makeMapboxMarker(options: { radius: number; color: string }, thumbUrl: string): mapboxgl.Marker {
+  const startTime = performance.now();
+  console.time('makeMapboxMarker');
+
   const size = `${2 * options.radius}px`;
   const markerElement = document.createElement('div');
   markerElement.style.width = size;
@@ -130,10 +144,17 @@ export function makeMapboxMarker(options: { radius: number; color: string }, thu
   markerElement.style.backgroundSize = 'cover';
   markerElement.style.border = `2px solid ${options.color}`;
   markerElement.style.cursor = 'pointer';
-  return new mapboxgl.Marker({ element: markerElement, rotationAlignment: 'map' });
+  const marker = new mapboxgl.Marker({ element: markerElement, rotationAlignment: 'map' });
+
+  console.timeEnd('makeMapboxMarker');
+  console.log(`makeMapboxMarker took ${(performance.now() - startTime).toFixed(2)} ms`);
+  return marker;
 }
 
 export function makeMessage(content: string): HTMLDivElement {
+  const startTime = performance.now();
+  console.time('makeMessage');
+
   const message = document.createElement('div');
   message.style.position = 'absolute';
   message.style.top = '50%';
@@ -146,10 +167,16 @@ export function makeMessage(content: string): HTMLDivElement {
   message.style.zIndex = '1000';
   message.style.fontFamily = 'Arial, sans-serif';
   message.innerHTML = content;
+
+  console.timeEnd('makeMessage');
+  console.log(`makeMessage took ${(performance.now() - startTime).toFixed(2)} ms`);
   return message;
 }
 
 export function makeLoadingIndicator(): HTMLDivElement {
+  const startTime = performance.now();
+  console.time('makeLoadingIndicator');
+
   const indicator = document.createElement('div');
   indicator.className = 'loading-indicator';
   indicator.style.position = 'fixed';
@@ -163,24 +190,41 @@ export function makeLoadingIndicator(): HTMLDivElement {
   indicator.style.zIndex = '1000';
   indicator.style.fontFamily = 'Arial, sans-serif';
   indicator.innerText = 'Loading image...';
+
+  console.timeEnd('makeLoadingIndicator');
+  console.log(`makeLoadingIndicator took ${(performance.now() - startTime).toFixed(2)} ms`);
   return indicator;
 }
 
 export function debounce<T extends (...args: any[]) => void>(fn: T, wait: number): (...args: Parameters<T>) => void {
+  const startTime = performance.now();
+  console.time('debounce');
+
   let timeoutId: NodeJS.Timeout | undefined;
-  return (...args: Parameters<T>) => {
+  const debouncedFn = (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), wait);
   };
+
+  console.timeEnd('debounce');
+  console.log(`debounce took ${(performance.now() - startTime).toFixed(2)} ms`);
+  return debouncedFn;
 }
 
 export async function moveToWithRetry(viewer: any, imageId: string, retries: number = 3, delay: number = 500, isInitialLoad: boolean = false): Promise<boolean> {
+  const startTime = performance.now();
+  console.time(`moveToWithRetry-${imageId}`);
+
   if (!viewer) {
     console.warn('moveToWithRetry: Viewer is null');
+    console.timeEnd(`moveToWithRetry-${imageId}`);
+    console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer null)`);
     return false;
   }
   if (viewer.isLoading) {
     viewer.pendingImageId = imageId;
+    console.timeEnd(`moveToWithRetry-${imageId}`);
+    console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer loading)`);
     return false;
   }
   viewer.isLoading = true;
@@ -193,6 +237,8 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
         const imageDetails = await fetchMapillaryImageDetails(imageId);
         if (!imageDetails?.id) {
           viewer.isLoading = false;
+          console.timeEnd(`moveToWithRetry-${imageId}`);
+          console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (no image details)`);
           return false;
         }
         if (imageDetails.coordinates && Array.isArray(imageDetails.coordinates) && imageDetails.coordinates.length === 2) {
@@ -206,6 +252,8 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
         viewer.pendingImageId = null;
         setTimeout(() => moveToWithRetry(viewer, nextImageId, retries, delay), 0);
       }
+      console.timeEnd(`moveToWithRetry-${imageId}`);
+      console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms`);
       return true;
     } catch (error: any) {
       console.error('moveToWithRetry: Error on attempt', attempt, error);
@@ -216,15 +264,21 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
           viewer.pendingImageId = null;
           setTimeout(() => moveToWithRetry(viewer, nextImageId, retries, delay), 0);
         }
+        console.timeEnd(`moveToWithRetry-${imageId}`);
+        console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (cancelled)`);
         return false;
       }
       if (attempt === maxAttempts) {
         viewer.isLoading = false;
+        console.timeEnd(`moveToWithRetry-${imageId}`);
+        console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (max attempts reached)`);
         return false;
       }
       await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
     }
   }
   viewer.isLoading = false;
+  console.timeEnd(`moveToWithRetry-${imageId}`);
+  console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (failed after retries)`);
   return false;
 }

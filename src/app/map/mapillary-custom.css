@@ -1,6 +1,16 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .mapillary-viewer {
   background-color: #0F0F0F;
   position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
@@ -29,7 +39,7 @@
 }
 
 .mapillary-viewer div {
-  box-sizing: content-box;
+  box-sizing: border-box; /* Changed to border-box for consistent sizing */
 }
 
 .mapillary-viewer input:focus {
@@ -37,38 +47,60 @@
 }
 
 .viewer, .map {
-  transition: all 0.3s ease; /* Smooth transitions for size changes */
-  overflow: hidden; /* Ensure content is clipped */
+  transition: all 0.3s ease;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 
-.toggle-icon {
-  padding: 6px;
-  background-color: #05CB63;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  transition: background-color 0.2s ease;
+.map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
-.toggle-icon:hover {
-  background-color: #04a854;
+.viewer-wrapper {
+  transition: transform 0.2s ease;
+  position: absolute;
 }
 
-.loading-indicator {
-  transition: opacity 0.3s ease;
+.viewer-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.mapboxgl-ctrl-geocoder {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+}
+
+.mapboxgl-ctrl-geocoder input {
+  padding: 8px;
+  font-size: 14px;
 }
 
 @media (max-width: 600px) {
-  .viewer, .map {
-    width: 250px !important;
-    height: 200px !important;
+  .viewer {
+    width: 200px !important;
+    height: 150px !important;
   }
-  .viewer[style*="100vw"], .map[style*="100vw"] {
+  .map {
     width: 100vw !important;
-    height: calc(100vh - 120px) !important; /* Header + Footer = 120px */
+    height: 100vh !important;
+  }
+  .viewer-wrapper {
+    width: 200px !important;
+    height: 150px !important;
+  }
+  .map-container {
+    width: 100vw !important;
+    height: 100vh !important;
   }
   input, button {
     font-size: 14px !important;
@@ -82,30 +114,4 @@
     padding: 6px !important;
     font-size: 16px !important;
   }
-}
-
-/* Custom styles for Mapillary viewer and map */
-.viewer-wrapper {
-  transition: transform 0.2s ease;
-}
-
-.viewer-wrapper:hover {
-  transform: scale(1.1);
-}
-
-.map-container {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.mapboxgl-ctrl-geocoder {
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  font-family: Arial, sans-serif;
-}
-
-.mapboxgl-ctrl-geocoder input {
-  padding: 8px;
-  font-size: 14px;
 }
