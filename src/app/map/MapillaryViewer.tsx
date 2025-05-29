@@ -1,0 +1,227 @@
+"use client";
+import React, { useEffect, useRef, useState } from 'react';
+import MapContainer from './MapContainer';
+import ViewerContainer from './ViewerContainer';
+import { getSource } from './mapUtils';
+import { fetchMapillaryImageDetails } from '@/services/userService';
+
+interface MapillaryViewerProps {
+  mapillaryAccessToken: string;
+  mapboxAccessToken: string;
+  headerHeight?: number;
+}
+
+export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToken, headerHeight = 80 }: MapillaryViewerProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const viewerRef = useRef<any>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const positionMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const [viewMode, setViewMode] = useState<string>('default');
+  const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/satellite-v9');
+  const [actualHeaderHeight, setActualHeaderHeight] = useState(headerHeight);
+  const [initialImageId, setInitialImageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      const header = document.querySelector('header');
+      if (header) {
+        const height = header.offsetHeight;
+        setActualHeaderHeight(height);
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    window.addEventListener('scroll', updateHeaderHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderHeight);
+      window.removeEventListener('scroll', updateHeaderHeight);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    async function fetchInitialData() {
+      console.log('MapillaryViewer: Fetching initial source');
+      try {
+        const initialSource = await getSource();
+        const validFeature = initialSource.data.features.find((f: any) => !f.properties.imageId.startsWith('fallback-'));
+        if (validFeature) {
+          setInitialImageId(validFeature.properties.imageId);
+          console.log('MapillaryViewer: Set initialImageId:', validFeature.properties.imageId);
+        } else {
+          console.warn('MapillaryViewer: No valid feature found for initial image');
+        }
+      } catch (error) {
+        console.error('MapillaryViewer: Failed to fetch initial source:', error);
+      }
+    }
+
+    fetchInitialData();
+  }, []);
+
+  const toggleView = () => {
+    setViewMode(prevMode => {
+      switch (prevMode) {
+        case 'default':
+          return 'map';
+        case 'map':
+          return 'viewer';
+        case 'viewer':
+          return 'swapped';
+        case 'swapped':
+          return 'default';
+        default:
+          return 'default';
+      }
+    });
+  };
+
+  useEffect(() => {
+    const viewerWrapper = containerRef.current?.querySelector('.viewer-wrapper') as HTMLDivElement | null;
+    const viewerContainer = containerRef.current?.querySelector('.viewer') as HTMLDivElement | null;
+    const mapContainer = containerRef.current?.querySelector('.map-container') as HTMLDivElement | null;
+    if (!viewerWrapper || !viewerContainer || !mapContainer) return;
+
+    viewerWrapper.style.transition = 'transform 0.2s ease';
+    viewerContainer.style.transition = 'none';
+    mapContainer.style.transition = 'none';
+    mapContainer.style.zIndex = '10';
+
+    switch (viewMode) {
+      case 'default':
+        viewerWrapper.style.display = 'block';
+        viewerWrapper.style.width = '350px';
+        viewerWrapper.style.height = '200px';
+        viewerWrapper.style.bottom = '20px';
+        viewerWrapper.style.left = '20px';
+        viewerWrapper.style.zIndex = '100';
+        viewerWrapper.style.transform = 'scale(1)';
+        mapContainer.style.display = 'block';
+        mapContainer.style.width = '100%';
+        mapContainer.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.zIndex = '10';
+        break;
+      case 'map':
+        viewerWrapper.style.display = 'none';
+        mapContainer.style.display = 'block';
+        mapContainer.style.width = '100%';
+        mapContainer.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.zIndex = '10';
+        break;
+      case 'viewer':
+        viewerWrapper.style.display = 'block';
+        viewerWrapper.style.width = '100%';
+        viewerWrapper.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        viewerWrapper.style.bottom = '60px';
+        viewerWrapper.style.left = '0';
+        viewerWrapper.style.zIndex = '100';
+        viewerWrapper.style.transform = 'scale(1)';
+        mapContainer.style.display = 'none';
+        break;
+      case 'swapped':
+        viewerWrapper.style.display = 'block';
+        viewerWrapper.style.width = '100%';
+        viewerWrapper.style.height = `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        viewerWrapper.style.bottom = '60px';
+        viewerWrapper.style.left = '0';
+        viewerWrapper.style.zIndex = '10';
+        viewerWrapper.style.transform = 'scale(1)';
+        mapContainer.style.display = 'block';
+        mapContainer.style.width = '350px';
+        mapContainer.style.height = '200px';
+        mapContainer.style.bottom = '80px';
+        mapContainer.style.left = '20px';
+        mapContainer.style.zIndex = '100';
+        break;
+    }
+
+    const handleHover = () => {
+      if (viewMode === 'default' || viewMode === 'swapped') {
+        viewerWrapper.style.transform = 'scale(1.1)';
+      }
+    };
+    const handleHoverOut = () => {
+      if (viewMode === 'default' || viewMode === 'swapped') {
+        viewerWrapper.style.transform = 'scale(1)';
+      }
+    };
+
+    viewerWrapper.addEventListener('mouseenter', handleHover);
+    viewerWrapper.addEventListener('mouseleave', handleHoverOut);
+
+    const handleResize = () => {
+      if (window.innerWidth <= 600 && (viewMode === 'default' || viewMode === 'swapped')) {
+        viewerWrapper.style.width = viewMode === 'default' ? '200px' : '100%';
+        viewerWrapper.style.height = viewMode === 'default' ? '150px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.width = viewMode === 'swapped' ? '200px' : '100%';
+        mapContainer.style.height = viewMode === 'swapped' ? '150px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+      } else if (viewMode === 'default' || viewMode === 'swapped') {
+        viewerWrapper.style.width = viewMode === 'default' ? '350px' : '100%';
+        viewerWrapper.style.height = viewMode === 'default' ? '200px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+        mapContainer.style.width = viewMode === 'swapped' ? '350px' : '100%';
+        mapContainer.style.height = viewMode === 'swapped' ? '200px' : `calc(100vh - ${actualHeaderHeight}px - 60px)`;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      viewerWrapper.removeEventListener('mouseenter', handleHover);
+      viewerWrapper.removeEventListener('mouseleave', handleHoverOut);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [viewMode, actualHeaderHeight]);
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: `calc(100vh - ${actualHeaderHeight}px)`,
+        backgroundColor: '#f5f5f5',
+        border: '2px solid #e0e0e0',
+        borderRadius: '12px',
+        margin: '10px auto',
+        maxWidth: 'calc(100% - 20px)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        ref={containerRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <MapContainer
+          mapboxAccessToken={mapboxAccessToken}
+          mapStyle={mapStyle}
+          headerHeight={actualHeaderHeight}
+          container={containerRef.current!}
+          viewerRef={viewerRef}
+          positionMarkerRef={positionMarkerRef}
+          setSource={() => {}} // Placeholder, handled internally
+        />
+        {initialImageId && (
+          <ViewerContainer
+            mapillaryAccessToken={mapillaryAccessToken}
+            headerHeight={actualHeaderHeight}
+            container={containerRef.current!}
+            initialImageId={initialImageId}
+            positionMarkerRef={positionMarkerRef}
+            mapRef={mapRef}
+            viewerRef={viewerRef}
+          />
+        )}
+      </div>
+    </div>
+  );
+}

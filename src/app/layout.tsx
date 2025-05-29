@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname(); // Get current pathname
-  const hideFooter = pathname === "/chatbot"; // Hide footer for /chat route
+const hideFooter = pathname === "/chatbot" || pathname === "/map";
 
   return (
     <html lang="en" suppressHydrationWarning>

@@ -83,3 +83,29 @@
     font-size: 16px !important;
   }
 }
+
+/* Custom styles for Mapillary viewer and map */
+.viewer-wrapper {
+  transition: transform 0.2s ease;
+}
+
+.viewer-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.map-container {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mapboxgl-ctrl-geocoder {
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: Arial, sans-serif;
+}
+
+.mapboxgl-ctrl-geocoder input {
+  padding: 8px;
+  font-size: 14px;
+}
