@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { Viewer, CameraControls } from 'mapillary-js';
 import { makeContainers, makeMessage, makeLoadingIndicator, moveToWithRetry, coordinateCache } from './mapUtils';
@@ -8,7 +7,7 @@ import mapboxgl from 'mapbox-gl';
 interface ViewerContainerProps {
   mapillaryAccessToken: string;
   headerHeight: number;
-  container: HTMLDivElement;
+  container: HTMLDivElement | null;
   initialImageId?: string | null;
   positionMarkerRef: React.MutableRefObject<mapboxgl.Marker | null>;
   mapRef: React.MutableRefObject<mapboxgl.Map | null>;
@@ -19,6 +18,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
   const isMounted = useRef(true);
 
   useEffect(() => {
+    console.log('ViewerContainer: useEffect running', { container, initialImageId });
     isMounted.current = true;
     if (!container || !initialImageId) {
       console.warn('ViewerContainer: Missing container or initialImageId', { container, initialImageId });
@@ -50,6 +50,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       viewerRef.current.isInitialized = false;
       viewerRef.current.isLoading = false;
       viewerRef.current.pendingImageId = null;
+      console.log('ViewerContainer: Viewer created');
     } catch (error) {
       console.error('ViewerContainer: Failed to create Viewer', error);
       message.innerHTML = 'Failed to initialize viewer. Please refresh.';

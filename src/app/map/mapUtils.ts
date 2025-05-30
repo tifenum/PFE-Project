@@ -1,4 +1,3 @@
-
 import mapboxgl from 'mapbox-gl';
 import { fetchMapillaryImages, fetchMapillaryImageDetails } from "@/services/userService";
 import countryCoordinates from './countryCoordinates';
@@ -8,16 +7,19 @@ const fetchCache = new Map<string, any[]>();
 
 export async function fetchImages(bbox: string, limit: number = 2): Promise<any[]> {
   const startTime = performance.now();
-  // Check the cache first
+  console.log('fetchImages: Starting for bbox', bbox);
   if (fetchCache.has(bbox)) {
+    console.log('fetchImages: Returning cached features for bbox', bbox);
     return fetchCache.get(bbox)!;
   }
   if (!bbox) {
+    console.log('fetchImages: No bbox provided, returning empty');
     return [];
   }
   try {
     const data = await fetchMapillaryImages(bbox, limit);
     if (!data || !Array.isArray(data)) {
+      console.log('fetchImages: No valid data returned');
       return [];
     }
     const features = data.map(item => {
@@ -34,10 +36,11 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
         },
       };
     });
-    // Cache the features before returning
     fetchCache.set(bbox, features);
+    console.log(`fetchImages: Fetched ${features.length} features in ${(performance.now() - startTime).toFixed(2)} ms`);
     return features;
   } catch (error) {
+    console.error('fetchImages: Error', error);
     return [];
   }
 }
@@ -49,7 +52,6 @@ export async function getSource(searchBbox?: string): Promise<any> {
   let allFeatures: any[] = [];
   const useBbox = searchBbox ? [searchBbox] : countryCoordinates.map(c => c.bbox);
 
-  // Create fallback features without fetching images
   useBbox.forEach((bbox, index) => {
     const coords = searchBbox
       ? searchBbox.split(',').slice(0, 2).map(Number) as [number, number]
@@ -98,10 +100,11 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
     map.style.position = 'absolute';
     map.style.top = '0';
     map.style.left = '0';
-    map.style.width = '100%';
-    map.style.height = `calc(100vh - ${headerHeight}px - 60px)`;
+    map.style.width = '100vw';
+    map.style.height = `calc(100vh - ${headerHeight}px)`;
     map.style.zIndex = '10';
     container.appendChild(map);
+    console.log('makeContainers: Created map container');
   }
 
   if (!viewer) {
@@ -123,8 +126,13 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
     viewer.style.height = '100%';
     viewerWrapper.appendChild(viewer);
     container.appendChild(viewerWrapper);
+    console.log('makeContainers: Created viewer container');
   }
 
+  console.log('makeContainers: Final sizes', {
+    map: { width: map.offsetWidth, height: map.offsetHeight },
+    viewer: { width: viewer.offsetWidth, height: viewer.offsetHeight }
+  });
   console.timeEnd('makeContainers');
   console.log(`makeContainers took ${(performance.now() - startTime).toFixed(2)} ms`);
   return { map, viewer };
