@@ -191,6 +191,7 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
       >
         {isContainerReady && containerRef.current && (
           <MapContainer
+            key="map-container"
             mapboxAccessToken={mapboxAccessToken}
             mapStyle={mapStyle}
             container={containerRef.current}
@@ -201,6 +202,7 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
         )}
         {isContainerReady && containerRef.current && (
           <ViewerContainer
+            key="viewer-container"
             mapillaryAccessToken={mapillaryAccessToken}
             headerHeight={actualHeaderHeight}
             container={containerRef.current}

@@ -150,7 +150,7 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
   let viewer = viewerWrapper.querySelector('.viewer') as HTMLDivElement | null;
   if (!viewer) {
     viewer = document.createElement('div');
-    viewer.className = 'viewer mapillary-interactive物の';
+    viewer.className = 'viewer mapillary-interactive';
     viewer.style.width = '100%';
     viewer.style.height = '100%';
     viewerWrapper.appendChild(viewer);
@@ -209,6 +209,31 @@ export function makeMessage(content: string): HTMLDivElement {
   return message;
 }
 
+export function makeErrorMessage(content: string): HTMLDivElement {
+  const startTime = performance.now();
+  console.time('makeErrorMessage');
+
+  const message = document.createElement('div');
+  message.className = 'error-message';
+  message.style.position = 'absolute';
+  message.style.top = '50%';
+  message.style.left = '50%';
+  message.style.transform = 'translate(-50%, -50%)';
+  message.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+  message.style.color = 'white';
+  message.style.padding = '10px 20px';
+  message.style.borderRadius = '8px';
+  message.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+  message.style.zIndex = '1000';
+  message.style.fontFamily = 'Arial, sans-serif';
+  message.style.fontSize = '14px';
+  message.innerHTML = content;
+
+  console.timeEnd('makeErrorMessage');
+  console.log(`makeErrorMessage took ${(performance.now() - startTime).toFixed(2)} ms`);
+  return message;
+}
+
 export function makeLoadingIndicator(): HTMLDivElement {
   const startTime = performance.now();
   console.time('makeLoadingIndicator');
@@ -247,7 +272,13 @@ export function debounce<T extends (...args: any[]) => void>(fn: T, wait: number
   return debouncedFn;
 }
 
-export async function moveToWithRetry(viewer: any, imageId: string, retries: number = 3, delay: number = 500, isInitialLoad: boolean = false): Promise<boolean> {
+export async function moveToWithRetry(
+  viewer: any,
+  imageId: string,
+  retries: number = 3,
+  delay: number = 500,
+  isInitialLoad: boolean = false
+): Promise<{ success: boolean; error?: string; fallbackImageId?: string }> {
   const startTime = performance.now();
   console.time(`moveToWithRetry-${imageId}`);
 
@@ -255,19 +286,24 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
     console.warn('moveToWithRetry: Viewer is null');
     console.timeEnd(`moveToWithRetry-${imageId}`);
     console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer null)`);
-    return false;
+    return { success: false, error: 'Viewer is null' };
   }
   if (viewer.isLoading) {
     viewer.pendingImageId = imageId;
     console.timeEnd(`moveToWithRetry-${imageId}`);
     console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer loading)`);
-    return false;
+    return { success: false, error: 'Viewer is already loading' };
   }
   viewer.isLoading = true;
 
   const maxAttempts = isInitialLoad ? 1 : retries;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (!viewer.isNavigable) {
+      console.log('moveToWithRetry: Viewer not navigable, waiting...');
+      await new Promise(resolve => setTimeout(resolve, delay));
+      continue;
+    }
     try {
       if (!coordinateCache.has(imageId)) {
         const imageDetails = await fetchMapillaryImageDetails(imageId);
@@ -275,7 +311,7 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
           viewer.isLoading = false;
           console.timeEnd(`moveToWithRetry-${imageId}`);
           console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (no image details)`);
-          return false;
+          return { success: false, error: 'No image details found' };
         }
         if (imageDetails.coordinates && Array.isArray(imageDetails.coordinates) && imageDetails.coordinates.length === 2) {
           coordinateCache.set(imageId, imageDetails.coordinates as [number, number]);
@@ -290,7 +326,7 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
       }
       console.timeEnd(`moveToWithRetry-${imageId}`);
       console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms`);
-      return true;
+      return { success: true };
     } catch (error: any) {
       console.error('moveToWithRetry: Error on attempt', attempt, error);
       if (error.name === 'CancelMapillaryError' || error.message.includes('Request aborted by a subsequent request')) {
@@ -302,13 +338,20 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
         }
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (cancelled)`);
-        return false;
+        return { success: false, error: 'Request cancelled' };
+      }
+      if (error.message.includes('Failed to fetch data') || error.message.includes('Context Lost')) {
+        viewer.isLoading = false;
+        console.timeEnd(`moveToWithRetry-${imageId}`);
+        console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (fetch or context error)`);
+        const fallback = countryCoordinates.find(c => c.image_id !== imageId && coordinateCache.has(c.image_id))?.image_id;
+        return { success: false, error: error.message, fallbackImageId: fallback };
       }
       if (attempt === maxAttempts) {
         viewer.isLoading = false;
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (max attempts reached)`);
-        return false;
+        return { success: false, error: error.message };
       }
       await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
     }
@@ -316,5 +359,5 @@ export async function moveToWithRetry(viewer: any, imageId: string, retries: num
   viewer.isLoading = false;
   console.timeEnd(`moveToWithRetry-${imageId}`);
   console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (failed after retries)`);
-  return false;
+  return { success: false, error: 'Unknown error after retries' };
 }

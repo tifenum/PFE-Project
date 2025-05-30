@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { makeContainers, makeMapboxMarker, makeMessage, makeLoadingIndicator, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
-import Geocoder from './mapbox/Geocoder';
+import { makeContainers, makeMapboxMarker, makeMessage, makeLoadingIndicator, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
+import GeocoderContainer from './mapbox/Geocoder';
 import MapButtons from './mapbox/MapButtons';
 import { MapContainerProps, MapStyle } from './mapbox/types';
 import { mapStyles } from './mapbox/mapStyles';
@@ -11,7 +11,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
   const initializedRef = useRef(false);
   const sourceCache = useRef<any>(null);
   const [currentStyleIndex, setCurrentStyleIndex] = useState(() => {
-    const index = mapStyles.findIndex(s => s.url === mapStyle);
+    const index = mapStyles.findIndex((s: MapStyle) => s.url === mapStyle);
     return index !== -1 ? index : 0;
   });
   const [projection, setProjection] = useState<'mercator' | 'globe'>('mercator');
@@ -19,7 +19,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
 
   useEffect(() => {
     if (!container || initializedRef.current) {
-      console.warn('MapContainer: container is null or already initialized, skipping', { containerId: container, initialized: initializedRef.current });
+      console.warn('MapContainer: container is null or already initialized, skipping', { initialized: initializedRef.current });
       return;
     }
 
@@ -34,7 +34,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
     map.style.zIndex = '10';
     console.log('MapContainer: map container size', {
       width: map.offsetWidth,
-      height: map.offsetHeight
+      height: map.offsetHeight,
     });
 
     if (map.offsetWidth === 0 || map.offsetHeight === 0) {
@@ -64,6 +64,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
         map.innerHTML = '';
         if (mapRef.current) {
           mapRef.current.remove();
+          mapRef.current = null;
         }
         mapRef.current = new mapboxgl.Map({
           container: map,
@@ -152,7 +153,12 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
 
               if (!imageId || imageId.startsWith('fallback-')) {
                 console.warn('MapContainer: Invalid or fallback imageId', closest.properties);
-                alert('No valid image available for this point.');
+                const viewerWrapper = container.querySelector('.viewer-wrapper');
+                if (viewerWrapper) {
+                  const errorMsg = makeErrorMessage('No valid image available for this point.');
+                  viewerWrapper.appendChild(errorMsg);
+                  setTimeout(() => errorMsg.remove(), 3000);
+                }
                 return;
               }
 
@@ -172,14 +178,37 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
               await Promise.all([
                 (async () => {
                   if (viewerRef.current?.isInitialized) {
-                    const success = await moveToWithRetry(viewerRef.current, imageId, 1, 200);
-                    if (success) {
+                    const indicator = makeLoadingIndicator();
+                    const viewerWrapper = container.querySelector('.viewer-wrapper');
+                    if (viewerWrapper) {
+                      viewerWrapper.appendChild(indicator);
+                    }
+                    const result = await moveToWithRetry(viewerRef.current, imageId, 3, 500);
+                    if (viewerWrapper) {
+                      viewerWrapper.querySelector('.loading-indicator')?.remove();
+                    }
+                    if (result.success) {
                       setImageId(imageId);
                     } else {
-                      alert('Failed to load image.');
+                      console.warn('MapContainer: Failed to load image', imageId, result.error);
+                      if (viewerWrapper) {
+                        const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
+                        viewerWrapper.appendChild(errorMsg);
+                        setTimeout(() => errorMsg.remove(), 3000);
+                      }
+                      if (result.fallbackImageId) {
+                        const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500);
+                        if (fallbackResult.success) {
+                          setImageId(result.fallbackImageId);
+                        } else {
+                          alert('Failed to load fallback image.');
+                        }
+                      } else {
+                        alert('Failed to load image.');
+                      }
                     }
                   } else {
-                    console.warn('MapContainer: Viewer not initialized, setting imageId');
+                    console.log('MapContainer: Viewer not initialized, setting imageId');
                     setImageId(imageId);
                   }
                 })(),
@@ -189,7 +218,12 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
               console.timeEnd('MapClick');
             } catch (error) {
               console.error('MapContainer: Click handler error:', error);
-              alert('Failed to load image.');
+              const viewerWrapper = container.querySelector('.viewer-wrapper');
+              if (viewerWrapper) {
+                const errorMsg = makeErrorMessage('Failed to load image.');
+                viewerWrapper.appendChild(errorMsg);
+                setTimeout(() => errorMsg.remove(), 3000);
+              }
             }
           }, 50));
 
@@ -214,13 +248,13 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
       sourceCache.current = null;
       console.log('MapContainer: Cleanup complete');
     };
-  }, [mapboxAccessToken, container, viewerRef, positionMarkerRef, setImageId]);
+  }, [mapboxAccessToken, mapStyle, container, viewerRef, positionMarkerRef, setImageId]);
 
   return (
     <>
       {isMapLoaded && (
         <>
-          <Geocoder
+          <GeocoderContainer
             mapboxAccessToken={mapboxAccessToken}
             map={mapRef.current}
             container={container}
