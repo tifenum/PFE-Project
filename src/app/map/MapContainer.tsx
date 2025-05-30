@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { makeContainers, makeMapboxMarker, makeMessage, makeLoadingIndicator, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
+import { makeContainers, makeMessage, makeLoadingIndicator, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
 import GeocoderContainer from './mapbox/Geocoder';
 import MapButtons from './mapbox/MapButtons';
 import { MapContainerProps, MapStyle } from './mapbox/types';
@@ -18,6 +18,14 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
+    console.log('MapContainer: Mounted');
+    return () => {
+      console.log('MapContainer: Unmounted');
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('MapContainer: useEffect called');
     if (!container || initializedRef.current) {
       console.warn('MapContainer: container is null or already initialized, skipping', { initialized: initializedRef.current });
       return;
@@ -139,6 +147,21 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
             });
           }
 
+          if (!mapRef.current!.getLayer('selected-point')) {
+            mapRef.current!.addLayer({
+              id: 'selected-point',
+              type: 'circle',
+              source: 'images',
+              paint: {
+                'circle-radius': 10,
+                'circle-color': '#FF0000',
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 2,
+              },
+              filter: ['==', 'imageId', ''],
+            });
+          }
+
           mapRef.current!.on('click', debounce(async (event: mapboxgl.MapMouseEvent) => {
             console.time('MapClick');
             try {
@@ -162,58 +185,43 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
                 return;
               }
 
-              const updateMap = async () => {
-                const newSourceData: GeoJSON.FeatureCollection = {
-                  type: 'FeatureCollection',
-                  features: [{
-                    type: 'Feature',
-                    properties: { imageId, thumbUrl: closest.properties.thumbUrl || '' },
-                    geometry: { type: 'Point', coordinates },
-                  }],
-                };
-                (mapRef.current!.getSource('images') as mapboxgl.GeoJSONSource).setData(newSourceData);
-                mapRef.current!.easeTo({ center: coordinates, zoom: 12 });
-              };
+              // Update map: highlight selected point
+              mapRef.current!.setFilter('selected-point', ['==', 'imageId', imageId]);
+              mapRef.current!.easeTo({ center: coordinates });
 
-              await Promise.all([
-                (async () => {
-                  if (viewerRef.current?.isInitialized) {
-                    const indicator = makeLoadingIndicator();
-                    const viewerWrapper = container.querySelector('.viewer-wrapper');
-                    if (viewerWrapper) {
-                      viewerWrapper.appendChild(indicator);
-                    }
-                    const result = await moveToWithRetry(viewerRef.current, imageId, 3, 500);
-                    if (viewerWrapper) {
-                      viewerWrapper.querySelector('.loading-indicator')?.remove();
-                    }
-                    if (result.success) {
-                      setImageId(imageId);
-                    } else {
-                      console.warn('MapContainer: Failed to load image', imageId, result.error);
-                      if (viewerWrapper) {
-                        const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
-                        viewerWrapper.appendChild(errorMsg);
-                        setTimeout(() => errorMsg.remove(), 3000);
-                      }
-                      if (result.fallbackImageId) {
-                        const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500);
-                        if (fallbackResult.success) {
-                          setImageId(result.fallbackImageId);
-                        } else {
-                          alert('Failed to load fallback image.');
-                        }
-                      } else {
-                        alert('Failed to load image.');
-                      }
+              // Update viewer
+              if (viewerRef.current?.isInitialized) {
+                const indicator = makeLoadingIndicator();
+                const viewerWrapper = container.querySelector('.viewer-wrapper');
+                if (viewerWrapper) {
+                  viewerWrapper.appendChild(indicator);
+                }
+                const result = await moveToWithRetry(viewerRef.current, imageId, 3, 500);
+                if (viewerWrapper) {
+                  viewerWrapper.querySelector('.loading-indicator')?.remove();
+                }
+                if (!result.success) {
+                  console.warn('MapContainer: Failed to load image', imageId, result.error);
+                  if (viewerWrapper) {
+                    const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
+                    viewerWrapper.appendChild(errorMsg);
+                    setTimeout(() => errorMsg.remove(), 3000);
+                  }
+                  if (result.fallbackImageId) {
+                    const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500);
+                    if (!fallbackResult.success) {
+                      alert('Failed to load fallback image.');
                     }
                   } else {
-                    console.log('MapContainer: Viewer not initialized, setting imageId');
-                    setImageId(imageId);
+                    alert('Failed to load image.');
                   }
-                })(),
-                updateMap(),
-              ]);
+                }
+              }
+
+              // Only set imageId if viewer isn't initialized to avoid triggering unmount
+              if (!viewerRef.current?.isInitialized) {
+                setImageId(imageId);
+              }
 
               console.timeEnd('MapClick');
             } catch (error) {
@@ -248,7 +256,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
       sourceCache.current = null;
       console.log('MapContainer: Cleanup complete');
     };
-  }, [mapboxAccessToken, mapStyle, container, viewerRef, positionMarkerRef, setImageId]);
+  }, [mapboxAccessToken, mapStyle, container]);
 
   return (
     <>

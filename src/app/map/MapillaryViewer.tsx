@@ -22,6 +22,13 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
   const [initialImageId, setInitialImageId] = useState<string>(countryCoordinates[0]?.image_id || '2804284936568031');
   const [isContainerReady, setIsContainerReady] = useState(false);
 
+  useEffect(() => {
+    console.log('MapillaryViewer: Mounted');
+    return () => {
+      console.log('MapillaryViewer: Unmounted');
+    };
+  }, []);
+
   useLayoutEffect(() => {
     if (containerRef.current) {
       setIsContainerReady(true);

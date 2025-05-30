@@ -20,6 +20,13 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
   const viewerWrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    console.log('ViewerContainer: Mounted');
+    return () => {
+      console.log('ViewerContainer: Unmounted');
+    };
+  }, []);
+
+  useEffect(() => {
     countryCoordinates.forEach(({ image_id, coords }) => {
       if (image_id && coords && !coordinateCache.has(image_id)) {
         coordinateCache.set(image_id, coords as [number, number]);
@@ -28,8 +35,9 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     });
   }, []);
 
+  // Initialize viewer
   useEffect(() => {
-    console.log('ViewerContainer: useEffect', { container, initialImageId });
+    console.log('ViewerContainer: useEffect for initialization', { container });
     if (!container || viewerInitialized.current) {
       console.warn('ViewerContainer: Missing container or already initialized', { container, initialized: viewerInitialized.current });
       return;
@@ -43,7 +51,6 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     const viewerOptions = {
       accessToken: mapillaryAccessToken,
       container: viewer,
-      imageId: initialImageId,
       cameraControls: CameraControls.Street,
       component: {
         cover: false,
@@ -123,59 +130,41 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       }
     };
 
-const handleContextLoss = () => {
-  console.warn('ViewerContainer: WebGL context lost, attempting to recover');
-  if (viewerWrapperRef.current) {
-    const errorMsg = makeErrorMessage('Graphics error. Recovering...');
-    viewerWrapperRef.current.appendChild(errorMsg);
-    try {
-      viewerRef.current?.remove();
-      viewerInstance = new Viewer(viewerOptions);
-      viewerRef.current = viewerInstance;
-      viewerRef.current.isInitialized = true;
-      if (initialImageId) {
-        moveToWithRetry(viewerRef.current, initialImageId, 2, 300).then(result => {
-          if (!result.success) {
-            errorMsg.innerHTML = `Recovery failed: ${result.error}`;
-            setTimeout(() => errorMsg.remove(), 3000);
+    const handleContextLoss = () => {
+      console.warn('ViewerContainer: WebGL context lost, attempting to recover');
+      if (viewerWrapperRef.current) {
+        const errorMsg = makeErrorMessage('Graphics error. Recovering...');
+        viewerWrapperRef.current.appendChild(errorMsg);
+        try {
+          viewerRef.current?.remove();
+          viewerInstance = new Viewer(viewerOptions);
+          viewerRef.current = viewerInstance;
+          viewerRef.current.isInitialized = true;
+          if (initialImageId) {
+            moveToWithRetry(viewerRef.current, initialImageId, 2, 300).then(result => {
+              if (!result.success) {
+                errorMsg.innerHTML = `Recovery failed: ${result.error}`;
+                setTimeout(() => errorMsg.remove(), 3000);
+              } else {
+                errorMsg.remove();
+              }
+            });
           } else {
             errorMsg.remove();
           }
-        });
-      } else {
-        errorMsg.remove();
+        } catch (error) {
+          console.error('ViewerContainer: Failed to recover context', error);
+          errorMsg.innerHTML = 'Failed to recover viewer. Please refresh.';
+          setTimeout(() => errorMsg.remove(), 5000);
+        }
       }
-    } catch (error) {
-      console.error('ViewerContainer: Failed to recover context', error);
-      errorMsg.innerHTML = 'Failed to recover viewer. Please refresh.';
-      setTimeout(() => errorMsg.remove(), 5000);
-    }
-  }
-};
+    };
+
     viewerRef.current.on('load', async () => {
       if (!isMounted.current || !viewerRef.current) return;
       console.log('ViewerContainer: Viewer loaded', { initialImageId });
       try {
         viewerRef.current.isInitialized = true;
-        if (initialImageId) {
-          const result = await moveToWithRetry(viewerRef.current, initialImageId, 2, 300);
-          if (!result.success) {
-            console.warn('ViewerContainer: Failed to load initial image:', initialImageId, result.error);
-            const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
-            viewerWrapperRef.current?.appendChild(errorMsg);
-            setTimeout(() => errorMsg.remove(), 3000);
-            if (result.fallbackImageId) {
-              await moveToWithRetry(viewerRef.current, result.fallbackImageId, 2, 300);
-            }
-            return;
-          }
-          const image = await viewerRef.current.getImage();
-          if (image) {
-            await onImage(image);
-            await onPosition();
-            console.log('ViewerContainer: Initial image loaded', image.id);
-          }
-        }
         container.removeChild(message);
       } catch (error) {
         console.error('ViewerContainer: Load handler error:', error);
@@ -252,11 +241,22 @@ const handleContextLoss = () => {
       viewerWrapperRef.current?.querySelector('.error-message')?.remove();
       console.log('ViewerContainer: Cleanup complete');
     };
-  }, [mapillaryAccessToken, headerHeight, container, initialImageId]);
+  }, [mapillaryAccessToken, headerHeight, container]);
 
+  // Handle image updates
   useEffect(() => {
     if (viewerRef.current && initialImageId && viewerInitialized.current) {
-      moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false);
+      console.log('ViewerContainer: Updating image to', initialImageId);
+      moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false).then(result => {
+        if (!result.success) {
+          console.warn('ViewerContainer: Failed to update image', initialImageId, result.error);
+          if (viewerWrapperRef.current) {
+            const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
+            viewerWrapperRef.current.appendChild(errorMsg);
+            setTimeout(() => errorMsg.remove(), 3000);
+          }
+        }
+      });
     }
   }, [initialImageId]);
 
