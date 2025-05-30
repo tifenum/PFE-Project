@@ -23,7 +23,7 @@ export default function RootLayout({
   const pathname = usePathname(); // Get current pathname
 const hideFooter = pathname === "/chatbot" || pathname === "/map";
 const hideHeader = pathname === "/map";
- // Get current pathname
+ // Get current pathn
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
