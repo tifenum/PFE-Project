@@ -234,27 +234,40 @@ export function makeErrorMessage(content: string): HTMLDivElement {
   return message;
 }
 
-export function makeLoadingIndicator(): HTMLDivElement {
+export function makeSpinnerLoader(): HTMLDivElement {
   const startTime = performance.now();
-  console.time('makeLoadingIndicator');
+  console.time('makeSpinnerLoader');
 
-  const indicator = document.createElement('div');
-  indicator.className = 'loading-indicator';
-  indicator.style.position = 'absolute';
-  indicator.style.top = '50%';
-  indicator.style.left = '50%';
-  indicator.style.transform = 'translate(-50%, -50%)';
-  indicator.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-  indicator.style.color = 'white';
-  indicator.style.padding = '8px 16px';
-  indicator.style.borderRadius = '6px';
-  indicator.style.zIndex = '1000';
-  indicator.style.fontFamily = 'Arial, sans-serif';
-  indicator.innerText = 'Loading image...';
+  const loader = document.createElement('div');
+  loader.className = 'spinner-loader';
+  loader.style.position = 'absolute';
+  loader.style.top = '50%';
+  loader.style.left = '50%';
+  loader.style.transform = 'translate(-50%, -50%)';
+  loader.style.width = '40px';
+  loader.style.height = '40px';
+  loader.style.border = '4px solid rgba(255, 255, 255, 0.3)';
+  loader.style.borderTop = '4px solid #05CB63';
+  loader.style.borderRadius = '50%';
+  loader.style.animation = 'spin 1s linear infinite';
+  loader.style.zIndex = '1000';
+  loader.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+  loader.style.padding = '8px';
+  loader.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
 
-  console.timeEnd('makeLoadingIndicator');
-  console.log(`makeLoadingIndicator took ${(performance.now() - startTime).toFixed(2)} ms`);
-  return indicator;
+  // Inject CSS keyframes for spinning animation
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  console.timeEnd('makeSpinnerLoader');
+  console.log(`makeSpinnerLoader took ${(performance.now() - startTime).toFixed(2)} ms`);
+  return loader;
 }
 
 export function debounce<T extends (...args: any[]) => void>(fn: T, wait: number): (...args: Parameters<T>) => void {
@@ -277,7 +290,8 @@ export async function moveToWithRetry(
   imageId: string,
   retries: number = 3,
   delay: number = 500,
-  isInitialLoad: boolean = false
+  isInitialLoad: boolean = false,
+  viewerWrapper?: HTMLDivElement | null
 ): Promise<{ success: boolean; error?: string; fallbackImageId?: string }> {
   const startTime = performance.now();
   console.time(`moveToWithRetry-${imageId}`);
@@ -286,15 +300,18 @@ export async function moveToWithRetry(
     console.warn('moveToWithRetry: Viewer is null');
     console.timeEnd(`moveToWithRetry-${imageId}`);
     console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer null)`);
+    viewerWrapper?.querySelector('.spinner-loader')?.remove();
     return { success: false, error: 'Viewer is null' };
   }
   if (viewer.isLoading) {
     viewer.pendingImageId = imageId;
     console.timeEnd(`moveToWithRetry-${imageId}`);
     console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (viewer loading)`);
+    viewerWrapper?.querySelector('.spinner-loader')?.remove();
     return { success: false, error: 'Viewer is already loading' };
   }
   viewer.isLoading = true;
+  viewer.pendingImageId = null; // Clear any pending image ID to avoid conflicts
 
   const maxAttempts = isInitialLoad ? 1 : retries;
 
@@ -309,6 +326,7 @@ export async function moveToWithRetry(
         const imageDetails = await fetchMapillaryImageDetails(imageId);
         if (!imageDetails?.id) {
           viewer.isLoading = false;
+          viewerWrapper?.querySelector('.spinner-loader')?.remove();
           console.timeEnd(`moveToWithRetry-${imageId}`);
           console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (no image details)`);
           return { success: false, error: 'No image details found' };
@@ -319,11 +337,6 @@ export async function moveToWithRetry(
       }
       await viewer.moveTo(imageId);
       viewer.isLoading = false;
-      if (viewer.pendingImageId) {
-        const nextImageId = viewer.pendingImageId;
-        viewer.pendingImageId = null;
-        setTimeout(() => moveToWithRetry(viewer, nextImageId, retries, delay), 0);
-      }
       console.timeEnd(`moveToWithRetry-${imageId}`);
       console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms`);
       return { success: true };
@@ -331,17 +344,19 @@ export async function moveToWithRetry(
       console.error('moveToWithRetry: Error on attempt', attempt, error);
       if (error.name === 'CancelMapillaryError' || error.message.includes('Request aborted by a subsequent request')) {
         viewer.isLoading = false;
+        viewerWrapper?.querySelector('.spinner-loader')?.remove();
         if (viewer.pendingImageId) {
           const nextImageId = viewer.pendingImageId;
           viewer.pendingImageId = null;
-          setTimeout(() => moveToWithRetry(viewer, nextImageId, retries, delay), 0);
+          setTimeout(() => moveToWithRetry(viewer, nextImageId, retries, delay, false, viewerWrapper), 0);
         }
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (cancelled)`);
         return { success: false, error: 'Request cancelled' };
       }
-      if (error.message.includes('Failed to fetch data') || error.message.includes('Context Lost')) {
+      if (error.message.includes('Failed to fetch data') || error.message.includes('Context Lost') || error.message.includes('Incorrect mesh URL')) {
         viewer.isLoading = false;
+        viewerWrapper?.querySelector('.spinner-loader')?.remove();
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (fetch or context error)`);
         const fallback = countryCoordinates.find(c => c.image_id !== imageId && coordinateCache.has(c.image_id))?.image_id;
@@ -349,6 +364,7 @@ export async function moveToWithRetry(
       }
       if (attempt === maxAttempts) {
         viewer.isLoading = false;
+        viewerWrapper?.querySelector('.spinner-loader')?.remove();
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (max attempts reached)`);
         return { success: false, error: error.message };
@@ -357,6 +373,7 @@ export async function moveToWithRetry(
     }
   }
   viewer.isLoading = false;
+  viewerWrapper?.querySelector('.spinner-loader')?.remove();
   console.timeEnd(`moveToWithRetry-${imageId}`);
   console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (failed after retries)`);
   return { success: false, error: 'Unknown error after retries' };

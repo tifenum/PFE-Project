@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Viewer, CameraControls } from 'mapillary-js';
-import { makeContainers, makeMessage, makeLoadingIndicator, makeErrorMessage, moveToWithRetry, coordinateCache } from './mapUtils';
+import { makeContainers, makeSpinnerLoader, makeErrorMessage, moveToWithRetry, coordinateCache } from './mapUtils';
 import mapboxgl from 'mapbox-gl';
 import countryCoordinates from './countryCoordinates';
 
@@ -18,11 +18,13 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
   const isMounted = useRef(true);
   const viewerInitialized = useRef(false);
   const viewerWrapperRef = useRef<HTMLDivElement | null>(null);
+  const spinnerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     console.log('ViewerContainer: Mounted');
     return () => {
       console.log('ViewerContainer: Unmounted');
+      isMounted.current = false;
     };
   }, []);
 
@@ -35,7 +37,6 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     });
   }, []);
 
-  // Initialize viewer
   useEffect(() => {
     console.log('ViewerContainer: useEffect for initialization', { container });
     if (!container || viewerInitialized.current) {
@@ -57,69 +58,95 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
         navigation: true,
         direction: true,
         pointer: { scrollZoom: false },
-        sequence: { visible: false, playing: false },
+        sequence: false,
         zoom: true,
       },
       trackResize: true,
     };
 
-    const message = makeMessage('Loading Mapillary Viewer...');
-    container.appendChild(message);
-
     let viewerInstance: Viewer;
     try {
       viewerInstance = new Viewer(viewerOptions);
       viewerRef.current = viewerInstance;
+      viewerRef.current.isLoading = false;
       viewerInitialized.current = true;
       console.log('ViewerContainer: Viewer created');
     } catch (error) {
       console.error('ViewerContainer: Failed to create Viewer', error);
-      message.innerHTML = 'Failed to initialize viewer. Please refresh.';
-      container.removeChild(message);
+      spinnerRef.current?.remove();
+      spinnerRef.current = null;
       return;
     }
 
     const onImage = async (image: any) => {
       if (!isMounted.current || !viewerRef.current) return;
+
+      // Remove spinner immediately, checking both spinnerRef and DOM
+      if (spinnerRef.current) {
+        spinnerRef.current.remove();
+        spinnerRef.current = null;
+        console.log('ViewerContainer: Spinner removed in onImage via spinnerRef');
+      } else {
+        const spinner = viewerWrapperRef.current?.querySelector('.spinner-loader');
+        if (spinner) {
+          spinner.remove();
+          console.log('ViewerContainer: Spinner removed in onImage via DOM query');
+        }
+      }
+
+      console.log('ViewerContainer: Image changed:', image.id);
       let lngLat: [number, number] | undefined;
 
-      if (coordinateCache.has(image.id)) {
-        lngLat = coordinateCache.get(image.id);
-      } else {
-        lngLat = image?.computed_geometry?.coordinates as [number, number];
-        if (lngLat && Array.isArray(lngLat) && lngLat.length === 2 && !isNaN(lngLat[0]) && !isNaN(lngLat[1])) {
-          coordinateCache.set(image.id, lngLat);
+      try {
+        if (coordinateCache.has(image.id)) {
+          lngLat = coordinateCache.get(image.id);
         } else {
-          console.warn('ViewerContainer: Invalid lngLat from image', lngLat);
+          lngLat = image?.computed_geometry?.coordinates as [number, number];
+          if (lngLat && Array.isArray(lngLat) && lngLat.length === 2 && !isNaN(lngLat[0]) && !isNaN(lngLat[1])) {
+            coordinateCache.set(image.id, lngLat);
+          } else {
+            console.warn('ViewerContainer: Invalid lngLat from image', lngLat);
+            return;
+          }
+        }
+
+        if (!lngLat || isNaN(lngLat[0]) || isNaN(lngLat[1])) {
+          console.warn('ViewerContainer: Invalid lngLat', lngLat);
           return;
         }
-      }
 
-      if (!lngLat || isNaN(lngLat[0]) || isNaN(lngLat[1])) {
-        console.warn('ViewerContainer: Invalid lngLat', lngLat);
-        return;
-      }
-
-      if (mapRef.current && positionMarkerRef.current) {
-        try {
-          if (!mapRef.current.getBounds().contains(lngLat)) {
-            mapRef.current.setCenter(lngLat);
+        if (mapRef.current && positionMarkerRef.current) {
+          try {
+            if (!mapRef.current.getBounds().contains(lngLat)) {
+              mapRef.current.setCenter(lngLat);
+            }
+            if (!positionMarkerRef.current!._map) {
+              positionMarkerRef.current!.addTo(mapRef.current!);
+            }
+            positionMarkerRef.current!.setLngLat(lngLat);
+          } catch (error) {
+            console.error('ViewerContainer: Error updating map', error);
           }
-          if (!positionMarkerRef.current._map) {
-            positionMarkerRef.current.addTo(mapRef.current);
-          }
-          positionMarkerRef.current.setLngLat(lngLat);
-        } catch (error) {
-          console.error('ViewerContainer: Error updating map', error);
         }
+      } catch (error) {
+        console.error('ViewerContainer: onImage error', error);
       }
+    };
+
+    const onImageryLoaded = () => {
+      if (!isMounted.current || !viewerWrapperRef.current) return;
+      // No need to remove spinner here since onImage handles it
+      console.log('ViewerContainer: Imagery fully loaded');
     };
 
     const onPosition = async () => {
       if (!isMounted.current || !viewerRef.current) return;
       try {
         const position = await viewerRef.current.getPosition();
-        if (!position || typeof position.lng !== 'number' || typeof position.lat !== 'number') return;
+        if (!position || typeof position.lng !== 'number' || typeof position.lat !== 'number') {
+          console.warn('ViewerContainer: Invalid position', position);
+          return;
+        }
         const pos: [number, number] = [position.lng, position.lat];
         if (mapRef.current && positionMarkerRef.current && !positionMarkerRef.current._map) {
           positionMarkerRef.current.addTo(mapRef.current);
@@ -135,47 +162,84 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       if (viewerWrapperRef.current) {
         const errorMsg = makeErrorMessage('Graphics error. Recovering...');
         viewerWrapperRef.current.appendChild(errorMsg);
+        const spinner = makeSpinnerLoader();
+        viewerWrapperRef.current.appendChild(spinner);
+        spinnerRef.current = spinner; // Track spinner
         try {
           viewerRef.current?.remove();
           viewerInstance = new Viewer(viewerOptions);
           viewerRef.current = viewerInstance;
           viewerRef.current.isInitialized = true;
+          viewerRef.current.isLoading = false;
           if (initialImageId) {
-            moveToWithRetry(viewerRef.current, initialImageId, 2, 300).then(result => {
+            const spinner = makeSpinnerLoader();
+            viewerWrapperRef.current.appendChild(spinner);
+            spinnerRef.current = spinner; // Track spinner
+            moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(result => {
               if (!result.success) {
                 errorMsg.innerHTML = `Recovery failed: ${result.error}`;
-                setTimeout(() => errorMsg.remove(), 3000);
+                setTimeout(() => {
+                  errorMsg.remove();
+                  spinnerRef.current?.remove();
+                  spinnerRef.current = null;
+                }, 3000);
               } else {
                 errorMsg.remove();
               }
             });
           } else {
             errorMsg.remove();
+            spinnerRef.current?.remove();
+            spinnerRef.current = null;
           }
         } catch (error) {
           console.error('ViewerContainer: Failed to recover context', error);
           errorMsg.innerHTML = 'Failed to recover viewer. Please refresh.';
-          setTimeout(() => errorMsg.remove(), 5000);
+          setTimeout(() => {
+            errorMsg.remove();
+            spinnerRef.current?.remove();
+            spinnerRef.current = null;
+          }, 5000);
         }
       }
     };
 
-    viewerRef.current.on('load', async () => {
+    viewerRef.current?.on('load', async () => {
       if (!isMounted.current || !viewerRef.current) return;
       console.log('ViewerContainer: Viewer loaded', { initialImageId });
       try {
         viewerRef.current.isInitialized = true;
-        container.removeChild(message);
+        if (initialImageId) {
+          if (!viewerWrapperRef.current?.querySelector('.spinner-loader')) {
+            const spinner = makeSpinnerLoader();
+            viewerWrapperRef.current?.appendChild(spinner);
+            spinnerRef.current = spinner; // Track spinner
+          }
+          moveToWithRetry(viewerRef.current, initialImageId, 2, 300, true, viewerWrapperRef.current).then(result => {
+            if (!result.success) {
+              spinnerRef.current?.remove();
+              spinnerRef.current = null;
+              console.warn('ViewerContainer: Failed to load initial image', initialImageId, result.error);
+              if (viewerWrapperRef.current) {
+                const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
+                viewerWrapperRef.current.appendChild(errorMsg);
+                setTimeout(() => errorMsg.remove(), 3000);
+              }
+            }
+          });
+        } else {
+          spinnerRef.current?.remove();
+          spinnerRef.current = null;
+        }
       } catch (error) {
         console.error('ViewerContainer: Load handler error:', error);
-        message.innerHTML = 'Error loading viewer. Please refresh.';
-        setTimeout(() => container.removeChild(message), 2000);
+        spinnerRef.current?.remove();
+        spinnerRef.current = null;
       }
     });
 
-    viewerRef.current.on('image', async (event: any) => {
+    viewerRef.current?.on('image', async (event: any) => {
       if (!isMounted.current || !viewerRef.current) return;
-      console.log('ViewerContainer: Image changed:', event.image.id);
       try {
         await onImage(event.image);
       } catch (error) {
@@ -183,32 +247,20 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       }
     });
 
-    viewerRef.current.on('position', onPosition);
+    viewerRef.current?.on('imageryloaded', onImageryLoaded);
 
-    viewerRef.current.on('error', (error: any) => {
+    viewerRef.current?.on('position', onPosition);
+
+    viewerRef.current?.on('error', (error: any) => {
       console.error('ViewerContainer: Viewer error:', error);
-      if (error.message.includes('Context Lost')) {
+      if (error.message.includes('Context Lost') || error.message.includes('Incorrect mesh URL')) {
         handleContextLoss();
-      } else {
-        const errorMsg = viewerWrapperRef.current;
-        if (errorMsg) {
-          const errorElement = makeErrorMessage(`Error: ${error.message}`);
-          errorMsg.appendChild(errorElement);
-          setTimeout(() => errorElement.remove(), 3000);
-        }
-      }
-    });
-
-    viewerRef.current.on('dataloading', () => {
-      if (isMounted.current && viewerWrapperRef.current) {
-        const indicator = makeLoadingIndicator();
-        viewerWrapperRef.current.appendChild(indicator);
-      }
-    });
-
-    viewerRef.current.on('dataloaded', () => {
-      if (isMounted.current && viewerWrapperRef.current) {
-        viewerWrapperRef.current?.querySelector('.loading-indicator')?.remove();
+      } else if (viewerWrapperRef.current) {
+        const errorMsg = makeErrorMessage(`Error: ${error.message}`);
+        viewerWrapperRef.current.appendChild(errorMsg);
+        spinnerRef.current?.remove();
+        spinnerRef.current = null;
+        setTimeout(() => errorMsg.remove(), 3000);
       }
     });
 
@@ -223,33 +275,40 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
         try {
           viewerRef.current.off('load');
           viewerRef.current.off('image');
+          viewerRef.current.off('imageryloaded');
           viewerRef.current.off('position');
           viewerRef.current.off('error');
-          viewerRef.current.off('dataloading');
           viewerRef.current.off('data');
           if (canvas) {
             canvas.removeEventListener('webglcontextlost', handleContextLoss);
           }
-          viewerRef.current?.remove();
+          viewerRef.current.remove();
           viewerRef.current = null;
           viewerInitialized.current = false;
         } catch (error) {
           console.error('ViewerContainer: Cleanup error:', error);
         }
       }
-      viewerWrapperRef.current?.querySelector('.loading-indicator')?.remove();
+      spinnerRef.current?.remove();
+      spinnerRef.current = null;
       viewerWrapperRef.current?.querySelector('.error-message')?.remove();
       console.log('ViewerContainer: Cleanup complete');
     };
   }, [mapillaryAccessToken, headerHeight, container]);
 
-  // Handle image updates
   useEffect(() => {
     if (viewerRef.current && initialImageId && viewerInitialized.current) {
       console.log('ViewerContainer: Updating image to', initialImageId);
-      moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false).then(result => {
+      if (!viewerWrapperRef.current?.querySelector('.spinner-loader')) {
+        const spinner = makeSpinnerLoader();
+        viewerWrapperRef.current?.appendChild(spinner);
+        spinnerRef.current = spinner; // Track spinner
+      }
+      moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(result => {
         if (!result.success) {
-          console.warn('ViewerContainer: Failed to update image', initialImageId, result.error);
+          spinnerRef.current?.remove();
+          spinnerRef.current = null;
+          console.warn('ViewerContainer: Failed to load image', initialImageId, result.error);
           if (viewerWrapperRef.current) {
             const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
             viewerWrapperRef.current.appendChild(errorMsg);

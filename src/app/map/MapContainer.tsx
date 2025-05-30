@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { makeContainers, makeMessage, makeLoadingIndicator, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
+import { makeContainers, makeSpinnerLoader, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
 import GeocoderContainer from './mapbox/Geocoder';
 import MapButtons from './mapbox/MapButtons';
 import { MapContainerProps, MapStyle } from './mapbox/types';
@@ -62,7 +62,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
           console.log(`MapContainer: Initial source features: ${initialSource.data.features.length}`);
         }
         if (!initialSource.data.features.length) {
-          const message = makeMessage('No locations available.');
+          const message = makeErrorMessage('No locations available.');
           container.appendChild(message);
           console.warn('MapContainer: no source features, showing message');
           return;
@@ -191,24 +191,22 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
 
               // Update viewer
               if (viewerRef.current?.isInitialized) {
-                const indicator = makeLoadingIndicator();
-                const viewerWrapper = container.querySelector('.viewer-wrapper');
-                if (viewerWrapper) {
+                const viewerWrapper = container.querySelector('.viewer-wrapper') as HTMLDivElement | null;
+                if (viewerWrapper && !viewerWrapper.querySelector('.spinner-loader')) {
+                  const indicator = makeSpinnerLoader();
                   viewerWrapper.appendChild(indicator);
                 }
-                const result = await moveToWithRetry(viewerRef.current, imageId, 3, 500);
-                if (viewerWrapper) {
-                  viewerWrapper.querySelector('.loading-indicator')?.remove();
-                }
+                const result = await moveToWithRetry(viewerRef.current, imageId, 3, 500, false, viewerWrapper);
                 if (!result.success) {
                   console.warn('MapContainer: Failed to load image', imageId, result.error);
                   if (viewerWrapper) {
+                    viewerWrapper.querySelector('.spinner-loader')?.remove();
                     const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
                     viewerWrapper.appendChild(errorMsg);
                     setTimeout(() => errorMsg.remove(), 3000);
                   }
                   if (result.fallbackImageId) {
-                    const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500);
+                    const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500, false, viewerWrapper);
                     if (!fallbackResult.success) {
                       alert('Failed to load fallback image.');
                     }
@@ -228,6 +226,7 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
               console.error('MapContainer: Click handler error:', error);
               const viewerWrapper = container.querySelector('.viewer-wrapper');
               if (viewerWrapper) {
+                viewerWrapper.querySelector('.spinner-loader')?.remove();
                 const errorMsg = makeErrorMessage('Failed to load image.');
                 viewerWrapper.appendChild(errorMsg);
                 setTimeout(() => errorMsg.remove(), 3000);

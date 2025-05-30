@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import mapboxgl from 'mapbox-gl';
-import { makeLoadingIndicator, fetchImages, moveToWithRetry } from '../mapUtils';
+import { makeSpinnerLoader, makeErrorMessage, fetchImages, moveToWithRetry } from '../mapUtils';
 import countryCoordinates from '../countryCoordinates';
 import { MapContainerProps } from './types';
 
@@ -23,29 +23,15 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
       types: 'place,country',
       clearOnBlur: true,
     });
-    
+
     let geocoderHTMLElement: HTMLElement | null = null;
     let input: HTMLInputElement | null = null;
 
-    const handleResize = () => {
-      if (geocoderHTMLElement && input) {
-        if (window.innerWidth <= 600) {
-          geocoderHTMLElement.style.width = '300px';
-          geocoderHTMLElement.style.top = '10px';
-          input.style.fontSize = '14px';
-          input.style.padding = '10px 40px 10px 40px';
-        } else {
-          geocoderHTMLElement.style.width = '500px';
-          geocoderHTMLElement.style.top = '10px';
-          input.style.fontSize = '16px';
-          input.style.padding = '12px 45px 12px 45px';
-        }
-      }
-    };
     map.addControl(geocoder, 'top-left');
     console.log('Geocoder: geocoder added');
 
     const geocoderEl = document.querySelector('.mapboxgl-ctrl-geocoder');
+    let handleResize = () => {};
     if (geocoderEl) {
       geocoderHTMLElement = geocoderEl as HTMLElement;
       geocoderHTMLElement.className = 'custom-geocoder';
@@ -133,17 +119,17 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
         });
       });
 
-      const handleResize = () => {
+      handleResize = () => {
         if (window.innerWidth <= 600) {
           geocoderHTMLElement.style.width = '300px';
           geocoderHTMLElement.style.top = '10px';
-          input.style.fontSize = '14px';
-          input.style.padding = '10px 40px 10px 40px';
+          input && (input.style.fontSize = '14px');
+          input && (input.style.padding = '10px 40px 10px 40px');
         } else {
           geocoderHTMLElement.style.width = '500px';
           geocoderHTMLElement.style.top = '10px';
-          input.style.fontSize = '16px';
-          input.style.padding = '12px 45px 12px 45px';
+          input && (input.style.fontSize = '16px');
+          input && (input.style.padding = '12px 45px 12px 45px');
         }
       };
       handleResize();
@@ -183,8 +169,11 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
           countryCenter = center as [number, number];
         }
 
-        const indicator = makeLoadingIndicator();
-        container.appendChild(indicator);
+        const viewerWrapper = container.querySelector('.viewer-wrapper');
+        if (viewerWrapper && !viewerWrapper.querySelector('.spinner-loader')) {
+          const indicator = makeSpinnerLoader();
+          viewerWrapper.appendChild(indicator);
+        }
         try {
           const features = await fetchImages(countryBbox, 1);
           let imageId: string | null = null;
@@ -194,19 +183,6 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
             coordinates = features[0].geometry.coordinates as [number, number];
           }
 
-    const handleResize = () => {
-          if (window.innerWidth <= 600) {
-            geocoderHTMLElement.style.width = '300px';
-            geocoderHTMLElement.style.top = '10px';
-            input.style.fontSize = '14px';
-            input.style.padding = '10px 40px 10px 40px';
-          } else {
-            geocoderHTMLElement.style.width = '500px';
-            geocoderHTMLElement.style.top = '10px';
-            input.style.fontSize = '16px';
-            input.style.padding = '12px 45px 12px 45px';
-          }
-        };
           const newSourceData: GeoJSON.FeatureCollection<GeoJSON.Geometry, { [name: string]: any }> = {
             type: 'FeatureCollection',
             features: [{
@@ -227,20 +203,33 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
           if (imageId && viewerRef.current && viewerRef.current.isInitialized) {
             await moveToWithRetry(viewerRef.current, imageId);
           } else {
-            alert('No images found for this location. Showing fallback marker.');
+            if (viewerWrapper) {
+              viewerWrapper.querySelector('.spinner-loader')?.remove();
+              const errorMsg = makeErrorMessage('No images found for this location.');
+              viewerWrapper.appendChild(errorMsg);
+              setTimeout(() => errorMsg.remove(), 3000);
+            }
           }
         } catch (error) {
           console.error('Geocoder: Geocoder error:', error);
-          alert('Failed to load images for this location.');
-        } finally {
-          const indicator2 = container.querySelector('.loading-indicator');
-          if (indicator2) container.removeChild(indicator2);
+          if (viewerWrapper) {
+            viewerWrapper.querySelector('.spinner-loader')?.remove();
+            const errorMsg = makeErrorMessage('Failed to load images for this location.');
+            viewerWrapper.appendChild(errorMsg);
+            setTimeout(() => errorMsg.remove(), 3000);
+          }
         }
       });
 
       geocoder.on('error', () => {
         console.error('Geocoder: Geocoder search failed');
-        alert('Search failed. Please try a valid city, country, or coordinates.');
+        const viewerWrapper = container.querySelector('.viewer-wrapper');
+        if (viewerWrapper) {
+          viewerWrapper.querySelector('.spinner-loader')?.remove();
+          const errorMsg = makeErrorMessage('Search failed. Please try a valid city, country, or coordinates.');
+          viewerWrapper.appendChild(errorMsg);
+          setTimeout(() => errorMsg.remove(), 3000);
+        }
       });
 
       return () => {
@@ -258,4 +247,3 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
 
   return null;
 }
-
