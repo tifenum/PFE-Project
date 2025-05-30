@@ -23,21 +23,21 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
       return;
     }
 
-    const containers = makeContainers(container, 0);
-    console.log('MapContainer: containers created:', containers);
+    const { map } = makeContainers(container, 0);
+    console.log('MapContainer: containers created:', map);
 
-    containers.map.style.position = 'absolute';
-    containers.map.style.top = '0';
-    containers.map.style.left = '0';
-    containers.map.style.width = '100%';
-    containers.map.style.height = '100vh';
-    containers.map.style.zIndex = '10';
+    map.style.position = 'absolute';
+    map.style.top = '0';
+    map.style.left = '0';
+    map.style.width = '100%';
+    map.style.height = '100vh';
+    map.style.zIndex = '10';
     console.log('MapContainer: map container size', {
-      width: containers.map.offsetWidth,
-      height: containers.map.offsetHeight
+      width: map.offsetWidth,
+      height: map.offsetHeight
     });
 
-    if (containers.map.offsetWidth === 0 || containers.map.offsetHeight === 0) {
+    if (map.offsetWidth === 0 || map.offsetHeight === 0) {
       console.error('MapContainer: map container has zero size, map will not render');
       return;
     }
@@ -61,12 +61,12 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
         }
 
         mapboxgl.accessToken = mapboxAccessToken;
-        containers.map.innerHTML = '';
+        map.innerHTML = '';
         if (mapRef.current) {
           mapRef.current.remove();
         }
         mapRef.current = new mapboxgl.Map({
-          container: containers.map,
+          container: map,
           style: mapStyles[currentStyleIndex].url,
           zoom: 2,
           center: [0, 20],
@@ -156,9 +156,6 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
                 return;
               }
 
-              const indicator = makeLoadingIndicator();
-              container.appendChild(indicator);
-
               const updateMap = async () => {
                 const newSourceData: GeoJSON.FeatureCollection = {
                   type: 'FeatureCollection',
@@ -189,14 +186,12 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
                 updateMap(),
               ]);
 
-              container.querySelector('.loading-indicator')?.remove();
               console.timeEnd('MapClick');
             } catch (error) {
               console.error('MapContainer: Click handler error:', error);
               alert('Failed to load image.');
-              container.querySelector('.loading-indicator')?.remove();
             }
-          }, 50)); // Shorter debounce for responsiveness
+          }, 50));
 
           mapRef.current!.getCanvas().style.cursor = 'grab';
           setIsMapLoaded(true);

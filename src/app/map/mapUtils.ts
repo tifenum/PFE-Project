@@ -101,7 +101,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
       type: 'FeatureCollection',
       features: allFeatures,
     },
-    cluster: false, // Disable clustering for testing
+    cluster: false,
     clusterMaxZoom: 14,
     clusterRadius: 50,
   };
@@ -110,13 +110,12 @@ export async function getSource(searchBbox?: string): Promise<any> {
   console.log(`getSource total time: ${(performance.now() - globalStartTime).toFixed(2)} ms`);
   return result;
 }
+
 export function makeContainers(container: HTMLDivElement, headerHeight: number) {
   const startTime = performance.now();
   console.time('makeContainers');
 
   let map = container.querySelector('.map-container') as HTMLDivElement | null;
-  let viewer = container.querySelector('.viewer') as HTMLDivElement | null;
-
   if (!map) {
     map = document.createElement('div');
     map.className = 'map-container';
@@ -130,8 +129,9 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
     console.log('makeContainers: Created map container');
   }
 
-  if (!viewer) {
-    const viewerWrapper = document.createElement('div');
+  let viewerWrapper = container.querySelector('.viewer-wrapper') as HTMLDivElement | null;
+  if (!viewerWrapper) {
+    viewerWrapper = document.createElement('div');
     viewerWrapper.className = 'viewer-wrapper';
     viewerWrapper.style.position = 'absolute';
     viewerWrapper.style.bottom = '20px';
@@ -143,12 +143,17 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
     viewerWrapper.style.overflow = 'hidden';
     viewerWrapper.style.background = '#fff';
     viewerWrapper.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    container.appendChild(viewerWrapper);
+    console.log('makeContainers: Created viewer wrapper');
+  }
+
+  let viewer = viewerWrapper.querySelector('.viewer') as HTMLDivElement | null;
+  if (!viewer) {
     viewer = document.createElement('div');
-    viewer.className = 'viewer mapillary-interactive';
+    viewer.className = 'viewer mapillary-interactive物の';
     viewer.style.width = '100%';
     viewer.style.height = '100%';
     viewerWrapper.appendChild(viewer);
-    container.appendChild(viewerWrapper);
     console.log('makeContainers: Created viewer container');
   }
 
@@ -158,7 +163,7 @@ export function makeContainers(container: HTMLDivElement, headerHeight: number) 
   });
   console.timeEnd('makeContainers');
   console.log(`makeContainers took ${(performance.now() - startTime).toFixed(2)} ms`);
-  return { map, viewer };
+  return { map, viewer, viewerWrapper };
 }
 
 export function makeMapboxMarker(options: { radius: number; color: string }, thumbUrl: string): mapboxgl.Marker {
@@ -210,10 +215,10 @@ export function makeLoadingIndicator(): HTMLDivElement {
 
   const indicator = document.createElement('div');
   indicator.className = 'loading-indicator';
-  indicator.style.position = 'fixed';
-  indicator.style.bottom = '20px';
+  indicator.style.position = 'absolute';
+  indicator.style.top = '50%';
   indicator.style.left = '50%';
-  indicator.style.transform = 'translateX(-50%)';
+  indicator.style.transform = 'translate(-50%, -50%)';
   indicator.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
   indicator.style.color = 'white';
   indicator.style.padding = '8px 16px';

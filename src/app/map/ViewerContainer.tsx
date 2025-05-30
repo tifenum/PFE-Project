@@ -35,12 +35,12 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     }
 
     isMounted.current = true;
-    const containers = makeContainers(container, headerHeight);
-    console.log('ViewerContainer: Containers created', containers.viewer);
+    const { viewer, viewerWrapper } = makeContainers(container, headerHeight);
+    console.log('ViewerContainer: Containers created', viewer, viewerWrapper);
 
     const viewerOptions = {
       accessToken: mapillaryAccessToken,
-      container: containers.viewer,
+      container: viewer,
       imageId: initialImageId,
       cameraControls: CameraControls.Street,
       component: {
@@ -57,10 +57,10 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     const message = makeMessage('Loading Mapillary Viewer...');
     container.appendChild(message);
 
-    let viewer: Viewer;
+    let viewerInstance: Viewer;
     try {
-      viewer = new Viewer(viewerOptions);
-      viewerRef.current = viewer;
+      viewerInstance = new Viewer(viewerOptions);
+      viewerRef.current = viewerInstance;
       viewerInitialized.current = true;
       console.log('ViewerContainer: Viewer created');
     } catch (error) {
@@ -154,7 +154,6 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       console.log('ViewerContainer: Image changed:', event.image.id);
       try {
         await onImage(event.image);
-        container.querySelector('.loading-indicator')?.remove();
       } catch (error) {
         console.error('ViewerContainer: Image event error:', error);
       }
@@ -166,6 +165,19 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       console.error('ViewerContainer: Viewer error:', error);
     });
 
+    viewerRef.current.on('dataloading', () => {
+      if (isMounted.current && viewerWrapper) {
+        const indicator = makeLoadingIndicator();
+        viewerWrapper.appendChild(indicator);
+      }
+    });
+
+    viewerRef.current.on('dataloaded', () => {
+      if (isMounted.current && viewerWrapper) {
+        viewerWrapper.querySelector('.loading-indicator')?.remove();
+      }
+    });
+
     return () => {
       isMounted.current = false;
       if (viewerRef.current) {
@@ -174,6 +186,8 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           viewerRef.current.off('image');
           viewerRef.current.off('position');
           viewerRef.current.off('error');
+          viewerRef.current.off('dataloading');
+          viewerRef.current.off('dataloaded');
           setTimeout(() => {
             try {
               viewerRef.current?.remove();
@@ -187,8 +201,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           console.error('ViewerContainer: Cleanup error:', error);
         }
       }
-      container.querySelector('.loading-indicator')?.remove();
-      container.removeChild(message);
+      viewerWrapper?.querySelector('.loading-indicator')?.remove();
       console.log('ViewerContainer: Cleanup complete');
     };
   }, [mapillaryAccessToken, headerHeight, container, initialImageId, positionMarkerRef, mapRef, viewerRef]);
