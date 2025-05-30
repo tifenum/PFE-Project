@@ -225,6 +225,7 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
           height: '100vh',
         }}
       >
+       
         {isContainerReady && containerRef.current && (
           <MapContainer
             mapboxAccessToken={mapboxAccessToken}
