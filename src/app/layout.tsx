@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname(); // Get current pathname
-const hideFooter = pathname === "/chatbot" ;
+const hideFooter = pathname === "/chatbot" || pathname === "/map";
 const hideHeader = pathname === "/map";
  // Get current p
   return (
