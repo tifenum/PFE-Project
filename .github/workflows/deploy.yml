@@ -33,7 +33,7 @@ jobs:
         ssh_options: -o StrictHostKeyChecking=no
         script: |
           set -e
-          cd ~/PFE-Project/frontend
+          cd ~/PFE-Project
           git pull origin main
           npm install --production
           npm ci
