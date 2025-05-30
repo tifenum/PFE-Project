@@ -13,28 +13,56 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
     - name: Test SSH connectivity
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
         port: 22
-        ssh_options: -o StrictHostKeyChecking=no
-        script: echo "SSH OK — $(hostname)"
+        script: |
+          ssh -o StrictHostKeyChecking=no -T ${{ secrets.VM_HOST }}
+          echo "SSH OK — $(hostname)"
+
+    - name: Install Node.js on VM
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        port: 22
+        script: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          node -v
+          npm -v
 
     - name: Pull, build & restart on VM
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USERNAME }}
         key: ${{ secrets.VM_SSH_KEY }}
         port: 22
-        ssh_options: -o StrictHostKeyChecking=no
         script: |
           set -e
-          cd ~/PFE-Project/frontend
-          git pull origin main
+          cd ~/PFE-Project
+          # Ensure repo is clean
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd
+          # Check if frontend/ exists
+          if [ ! -d "frontend" ]; then
+            echo "Error: frontend/ directory not found"
+            exit 1
+          fi
+          cd frontend
           npm install --production
           npm ci
           npm run build
