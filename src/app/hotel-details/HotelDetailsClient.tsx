@@ -161,7 +161,6 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
-  console.log("name", hotelData.name);
 const parseHotelName = (name: string) => {
   if (!name) return "";
   const decodedName = decodeURIComponent(name)

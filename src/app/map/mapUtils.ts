@@ -52,24 +52,48 @@ export async function getSource(searchBbox?: string): Promise<any> {
   let allFeatures: any[] = [];
   const useBbox = searchBbox ? [searchBbox] : countryCoordinates.map(c => c.bbox);
 
-  useBbox.forEach((bbox, index) => {
+  for (let i = 0; i < useBbox.length; i++) {
+    const bbox = useBbox[i];
+    const countryData = searchBbox ? null : countryCoordinates[i];
+    
+    if (!countryData && !searchBbox) {
+      console.warn(`getSource: No country data for index ${i}, skipping`);
+      continue;
+    }
+
     const coords = searchBbox
       ? searchBbox.split(',').slice(0, 2).map(Number) as [number, number]
-      : countryCoordinates[index].coords as [number, number];
+      : countryData?.coords as [number, number];
+
+    if (!coords || isNaN(coords[0]) || isNaN(coords[1])) {
+      console.warn(`getSource: Invalid coordinates for index ${i}`, { coords, country: countryData?.name });
+      continue;
+    }
+
+    const imageId = searchBbox
+      ? `fallback-${bbox}`
+      : countryData?.image_id;
+
+    if (!imageId) {
+      console.warn(`getSource: Missing image_id for index ${i}`, { country: countryData?.name });
+      continue;
+    }
+
     allFeatures.push({
       type: 'Feature',
-      properties: { imageId: `fallback-${searchBbox || bbox}`, thumbUrl: '' },
+      properties: {
+        imageId: imageId,
+        thumbUrl: '',
+        countryName: countryData?.name || 'Unknown',
+      },
       geometry: {
         type: 'Point',
         coordinates: coords,
       },
     });
-  });
-
-  const maxFeatures = searchBbox ? 10 : 100;
-  if (allFeatures.length > maxFeatures) {
-    allFeatures = allFeatures.slice(0, maxFeatures);
   }
+
+  console.log(`getSource: Generated ${allFeatures.length} features`);
 
   const result = {
     type: 'geojson',
@@ -77,7 +101,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
       type: 'FeatureCollection',
       features: allFeatures,
     },
-    cluster: true,
+    cluster: false, // Disable clustering for testing
     clusterMaxZoom: 14,
     clusterRadius: 50,
   };
@@ -86,7 +110,6 @@ export async function getSource(searchBbox?: string): Promise<any> {
   console.log(`getSource total time: ${(performance.now() - globalStartTime).toFixed(2)} ms`);
   return result;
 }
-
 export function makeContainers(container: HTMLDivElement, headerHeight: number) {
   const startTime = performance.now();
   console.time('makeContainers');

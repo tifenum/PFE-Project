@@ -66,7 +66,6 @@ const BlogSidebarPage = () => {
         flightType === "round-trip" ? returnDate : "",
         flightType
       );
-      console.log('Flight Search Data:', data);
       if (!Array.isArray(data) || data.length === 0) {
         setError("No flights found for the selected criteria.");
         setFlightResults([]);
@@ -91,7 +90,6 @@ const BlogSidebarPage = () => {
         const formHeight = formRef.current.getBoundingClientRect().height;
         const globeHeight = Math.max(formHeight - 100, 700);
         globeRef.current.style.height = `${globeHeight}px`;
-        console.log(`Form Height: ${formHeight}px, Globe Height: ${globeHeight}px`);
       } else {
         console.warn('formRef or globeRef is null');
       }

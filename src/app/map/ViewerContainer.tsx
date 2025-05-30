@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Viewer, CameraControls } from 'mapillary-js';
 import { makeContainers, makeMessage, makeLoadingIndicator, moveToWithRetry, coordinateCache } from './mapUtils';
-import { fetchMapillaryImageDetails } from '@/services/userService';
 import mapboxgl from 'mapbox-gl';
+import countryCoordinates from './countryCoordinates';
 
 interface ViewerContainerProps {
   mapillaryAccessToken: string;
@@ -16,16 +16,28 @@ interface ViewerContainerProps {
 
 export default function ViewerContainer({ mapillaryAccessToken, headerHeight, container, initialImageId, positionMarkerRef, mapRef, viewerRef }: ViewerContainerProps) {
   const isMounted = useRef(true);
+  const viewerInitialized = useRef(false);
 
   useEffect(() => {
-    console.log('ViewerContainer: useEffect running', { container, initialImageId });
-    isMounted.current = true;
-    if (!container || !initialImageId) {
-      console.warn('ViewerContainer: Missing container or initialImageId', { container, initialImageId });
+    countryCoordinates.forEach(({ image_id, coords }) => {
+      if (image_id && coords && !coordinateCache.has(image_id)) {
+        coordinateCache.set(image_id, coords as [number, number]);
+        console.log('ViewerContainer: Cached coordinates for image_id', image_id, coords);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    console.log('ViewerContainer: useEffect', { container, initialImageId });
+    if (!container || viewerInitialized.current) {
+      console.warn('ViewerContainer: Missing container or already initialized', { container, initialized: viewerInitialized.current });
       return;
     }
 
+    isMounted.current = true;
     const containers = makeContainers(container, headerHeight);
+    console.log('ViewerContainer: Containers created', containers.viewer);
+
     const viewerOptions = {
       accessToken: mapillaryAccessToken,
       container: containers.viewer,
@@ -45,15 +57,16 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     const message = makeMessage('Loading Mapillary Viewer...');
     container.appendChild(message);
 
+    let viewer: Viewer;
     try {
-      viewerRef.current = new Viewer(viewerOptions);
-      viewerRef.current.isInitialized = false;
-      viewerRef.current.isLoading = false;
-      viewerRef.current.pendingImageId = null;
+      viewer = new Viewer(viewerOptions);
+      viewerRef.current = viewer;
+      viewerInitialized.current = true;
       console.log('ViewerContainer: Viewer created');
     } catch (error) {
       console.error('ViewerContainer: Failed to create Viewer', error);
       message.innerHTML = 'Failed to initialize viewer. Please refresh.';
+      container.removeChild(message);
       return;
     }
 
@@ -63,18 +76,12 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
 
       if (coordinateCache.has(image.id)) {
         lngLat = coordinateCache.get(image.id);
-      } else if (image?.computed_geometry?.coordinates && Array.isArray(image.computed_geometry.coordinates) && image.computed_geometry.coordinates.length === 2) {
-        lngLat = image.computed_geometry.coordinates as [number, number];
-        coordinateCache.set(image.id, lngLat);
       } else {
-        try {
-          const imageDetails = await fetchMapillaryImageDetails(image.id);
-          if (imageDetails?.coordinates && Array.isArray(imageDetails.coordinates) && imageDetails.coordinates.length === 2) {
-            lngLat = imageDetails.coordinates as [number, number];
-            coordinateCache.set(image.id, lngLat);
-          }
-        } catch (error) {
-          console.error('ViewerContainer: Failed to fetch image details', error);
+        lngLat = image?.computed_geometry?.coordinates as [number, number];
+        if (lngLat && Array.isArray(lngLat) && lngLat.length === 2 && !isNaN(lngLat[0]) && !isNaN(lngLat[1])) {
+          coordinateCache.set(image.id, lngLat);
+        } else {
+          console.warn('ViewerContainer: Invalid lngLat from image', lngLat);
           return;
         }
       }
@@ -103,9 +110,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       if (!isMounted.current || !viewerRef.current) return;
       try {
         const position = await viewerRef.current.getPosition();
-        if (!position || typeof position.lng !== 'number' || typeof position.lat !== 'number') {
-          return;
-        }
+        if (!position || typeof position.lng !== 'number' || typeof position.lat !== 'number') return;
         const pos: [number, number] = [position.lng, position.lat];
         if (mapRef.current && positionMarkerRef.current && !positionMarkerRef.current._map) {
           positionMarkerRef.current.addTo(mapRef.current);
@@ -116,56 +121,31 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       }
     };
 
-    let loadTimeout = setTimeout(() => {
-      if (!viewerRef.current?.isInitialized) {
-        console.warn('ViewerContainer: Viewer load timed out after 10s');
-        message.innerHTML = 'Failed to load viewer. Please refresh.';
-      }
-    }, 10000);
-
     viewerRef.current.on('load', async () => {
-      if (!isMounted.current) return;
-      console.log('ViewerContainer: Viewer loaded, initializing image');
-      clearTimeout(loadTimeout);
+      if (!isMounted.current || !viewerRef.current) return;
+      console.log('ViewerContainer: Viewer loaded', { initialImageId });
       try {
         viewerRef.current.isInitialized = true;
-        const success = await moveToWithRetry(viewerRef.current, initialImageId, 1, 500, true);
-        if (!success) {
-          console.warn('ViewerContainer: Failed to load initial image:', initialImageId);
-          message.innerHTML = 'Failed to load initial image. Please try again.';
-          setTimeout(() => {
-            if (container.contains(message)) {
-              container.removeChild(message);
-            }
-          }, 3000);
-          return;
-        }
-        const image = await viewerRef.current.getImage();
-        if (image) {
-          await onImage(image);
-          await onPosition();
-          console.log('ViewerContainer: Initial image loaded successfully');
-        } else {
-          console.warn('ViewerContainer: No image returned after load');
-          message.innerHTML = 'Failed to load initial image.';
-          setTimeout(() => {
-            if (container.contains(message)) {
-              container.removeChild(message);
-            }
-          }, 3000);
-          return;
-        }
-        if (container.contains(message)) {
-          container.removeChild(message);
-        }
-      } catch (error) {
-        console.error('ViewerContainer: Error in load handler:', error);
-        message.innerHTML = 'Error loading viewer. Please refresh.';
-        setTimeout(() => {
-          if (container.contains(message)) {
-            container.removeChild(message);
+        if (initialImageId) {
+          const success = await moveToWithRetry(viewerRef.current, initialImageId, 2, 300);
+          if (!success) {
+            console.warn('ViewerContainer: Failed to load initial image:', initialImageId);
+            message.innerHTML = 'Failed to load initial image.';
+            setTimeout(() => container.removeChild(message), 2000);
+            return;
           }
-        }, 2000);
+          const image = await viewerRef.current.getImage();
+          if (image) {
+            await onImage(image);
+            await onPosition();
+            console.log('ViewerContainer: Initial image loaded', image.id);
+          }
+        }
+        container.removeChild(message);
+      } catch (error) {
+        console.error('ViewerContainer: Load handler error:', error);
+        message.innerHTML = 'Error loading viewer. Please refresh.';
+        setTimeout(() => container.removeChild(message), 2000);
       }
     });
 
@@ -174,12 +154,9 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
       console.log('ViewerContainer: Image changed:', event.image.id);
       try {
         await onImage(event.image);
-        const indicator = container.querySelector('.loading-indicator');
-        if (indicator) {
-          container.removeChild(indicator);
-        }
+        container.querySelector('.loading-indicator')?.remove();
       } catch (error) {
-        console.error('ViewerContainer: Error handling image event:', error);
+        console.error('ViewerContainer: Image event error:', error);
       }
     });
 
@@ -192,19 +169,27 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     return () => {
       isMounted.current = false;
       if (viewerRef.current) {
-        setTimeout(() => {
-          try {
-            viewerRef.current.remove();
-            viewerRef.current = null;
-          } catch (error) {
-            console.error('ViewerContainer: Error during cleanup:', error);
-          }
-        }, 500);
+        try {
+          viewerRef.current.off('load');
+          viewerRef.current.off('image');
+          viewerRef.current.off('position');
+          viewerRef.current.off('error');
+          setTimeout(() => {
+            try {
+              viewerRef.current?.remove();
+              viewerRef.current = null;
+              viewerInitialized.current = false;
+            } catch (error) {
+              console.error('ViewerContainer: Cleanup error:', error);
+            }
+          }, 1000);
+        } catch (error) {
+          console.error('ViewerContainer: Cleanup error:', error);
+        }
       }
-      if (container.contains(message)) {
-        container.removeChild(message);
-      }
-      clearTimeout(loadTimeout);
+      container.querySelector('.loading-indicator')?.remove();
+      container.removeChild(message);
+      console.log('ViewerContainer: Cleanup complete');
     };
   }, [mapillaryAccessToken, headerHeight, container, initialImageId, positionMarkerRef, mapRef, viewerRef]);
 
