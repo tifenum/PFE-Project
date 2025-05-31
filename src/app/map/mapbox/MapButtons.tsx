@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { makeMapboxMarker } from '../mapUtils';
+import { makeMapboxMarker, getSource } from '../mapUtils';
 import { MapStyle } from './types';
 import { mapStyles } from './mapStyles';
 
@@ -12,6 +12,7 @@ interface MapButtonsProps {
   setProjection: (projection: 'mercator' | 'globe') => void;
   positionMarkerRef: React.MutableRefObject<mapboxgl.Marker | null>;
   container: HTMLDivElement | null;
+  sourceCache: React.MutableRefObject<any>;
 }
 
 export default function MapButtons({
@@ -22,6 +23,7 @@ export default function MapButtons({
   setProjection,
   positionMarkerRef,
   container,
+  sourceCache,
 }: MapButtonsProps) {
   useEffect(() => {
     if (!map || !container) return;
@@ -145,8 +147,19 @@ export default function MapButtons({
     handleButtonResize();
     window.addEventListener('resize', handleButtonResize);
 
-    const applyMapStyle = (styleIndex: number) => {
+    const applyMapStyle = async (styleIndex: number) => {
       if (!map) return;
+      
+      // Get the current source data from cache or fetch anew
+      let sourceData = sourceCache.current;
+      if (!sourceData) {
+        sourceData = await getSource();
+        sourceCache.current = sourceData;
+      }
+
+      // Get the current selected point filter (if any)
+      const currentFilter = map.getLayer('selected-point')?.filter || ['==', 'imageId', ''];
+
       map.setStyle(mapStyles[styleIndex].url);
       viewButton.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
@@ -157,58 +170,105 @@ export default function MapButtons({
       `;
       map.once('style.load', () => {
         if (map) {
-          map.addSource('images', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-          });
-          map.addLayer({
-            id: 'unclustered-point',
-            type: 'circle',
-            source: 'images',
-            filter: ['!', ['has', 'point_count']],
-            paint: {
-              'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 8, 10, 12],
-              'circle-opacity': ['interpolate', ['linear'], ['zoom'], 2, 0.7, 10, 0.5],
-              'circle-color': '#05CB63',
-              'circle-stroke-color': '#05cb63',
-              'circle-stroke-width': 2,
-            },
-          });
-          map.addSource('place-labels', {
-            type: 'vector',
-            url: 'mapbox://mapbox.mapbox-streets-v8',
-          });
-          map.addLayer({
-            id: 'place-labels',
-            type: 'symbol',
-            source: 'place-labels',
-            'source-layer': 'place_label',
-            layout: {
-              'text-field': ['get', 'name'],
-              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-              'text-size': ['interpolate', ['linear'], ['zoom'], 0, 10, 8, 16],
-              'text-max-width': 8,
-              'text-justify': 'center',
-              'text-anchor': 'center',
-              'text-transform': ['match', ['get', 'type'], ['country'], 'uppercase', 'none'],
-              'text-writing-mode': ['horizontal'],
-            },
-            paint: {
-              'text-color': [
-                'match',
-                ['get', 'type'],
-                'country',
-                '#333333',
-                'city',
-                '#444444',
-                '#555555',
-              ],
-              'text-halo-color': '#FFFFFF',
-              'text-halo-width': 1,
-              'text-halo-blur': 1,
-            },
-            filter: ['in', ['get', 'type'], ['literal', ['country', 'state', 'city', 'town']]],
-          });
+          // Re-add the images source with actual data
+          if (!map.getSource('images')) {
+            map.addSource('images', sourceData);
+          } else {
+            (map.getSource('images') as mapboxgl.GeoJSONSource).setData(sourceData.data);
+          }
+
+          // Re-add unclustered-point layer
+          if (!map.getLayer('unclustered-point')) {
+            map.addLayer({
+              id: 'unclustered-point',
+              type: 'circle',
+              source: 'images',
+              filter: ['!', ['has', 'point_count']],
+              paint: {
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4,
+                  10, 8,
+                  15, 12
+                ],
+                'circle-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.3,
+                  10, 0.6,
+                  15, 0.8
+                ],
+                'circle-color': '#05CB63',
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 1.5,
+                'circle-stroke-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.5,
+                  15, 1
+                ]
+              }
+            });
+          }
+
+          // Re-add selected-point layer with the same filter
+          if (!map.getLayer('selected-point')) {
+            map.addLayer({
+              id: 'selected-point',
+              type: 'circle',
+              source: 'images',
+              paint: {
+                'circle-radius': 10,
+                'circle-color': 'rgba(148, 0, 211, 0.5)',
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 2,
+              },
+              filter: currentFilter,
+            });
+          }
+
+          // Re-add place-labels source and layer
+          if (!map.getSource('place-labels')) {
+            map.addSource('place-labels', {
+              type: 'vector',
+              url: 'mapbox://mapbox.mapbox-streets-v8',
+            });
+            map.addLayer({
+              id: 'place-labels',
+              type: 'symbol',
+              source: 'place-labels',
+              'source-layer': 'place_label',
+              layout: {
+                'text-field': ['get', 'name'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': ['interpolate', ['linear'], ['zoom'], 0, 10, 8, 16],
+                'text-max-width': 8,
+                'text-justify': 'center',
+                'text-anchor': 'center',
+                'text-transform': ['match', ['get', 'type'], ['country'], 'uppercase', 'none'],
+                'text-writing-mode': ['horizontal'],
+              },
+              paint: {
+                'text-color': [
+                  'match',
+                  ['get', 'type'],
+                  'country',
+                  '#333333',
+                  'city',
+                  '#444444',
+                  '#555555',
+                ],
+                'text-halo-color': '#FFFFFF',
+                'text-halo-width': 1,
+                'text-halo-blur': 1,
+              },
+              filter: ['in', ['get', 'type'], ['literal', ['country', 'state', 'city', 'town']]],
+            });
+          }
         }
       });
     };
@@ -219,11 +279,80 @@ export default function MapButtons({
       applyMapStyle(nextIndex);
     });
 
-    projectionButton.addEventListener('click', () => {
+    projectionButton.addEventListener('click', async () => {
       const newProjection = projection === 'mercator' ? 'globe' : 'mercator';
       setProjection(newProjection);
       if (map) {
+        // Get the current source data
+        let sourceData = sourceCache.current;
+        if (!sourceData) {
+          sourceData = await getSource();
+          sourceCache.current = sourceData;
+        }
+
+        // Get the current selected point filter
+        const currentFilter = map.getLayer('selected-point')?.filter || ['==', 'imageId', ''];
+
         map.setProjection(newProjection);
+
+        // Ensure the images source and layers are present
+        if (!map.getSource('images')) {
+          map.addSource('images', sourceData);
+        } else {
+          (map.getSource('images') as mapboxgl.GeoJSONSource).setData(sourceData.data);
+        }
+
+        if (!map.getLayer('unclustered-point')) {
+          map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'images',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 4,
+                10, 8,
+                15, 12
+              ],
+              'circle-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 0.3,
+                10, 0.6,
+                15, 0.8
+              ],
+              'circle-color': '#05CB63',
+              'circle-stroke-color': '#FFFFFF',
+              'circle-stroke-width': 1.5,
+              'circle-stroke-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 0.5,
+                15, 1
+              ]
+            }
+          });
+        }
+
+        if (!map.getLayer('selected-point')) {
+          map.addLayer({
+            id: 'selected-point',
+            type: 'circle',
+            source: 'images',
+            paint: {
+              'circle-radius': 10,
+              'circle-color': 'rgba(148, 0, 211, 0.5)',
+              'circle-stroke-color': '#FFFFFF',
+              'circle-stroke-width': 2,
+            },
+            filter: currentFilter,
+          });
+        }
       }
       projectionButton.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
@@ -269,7 +398,7 @@ export default function MapButtons({
           locateButton.style.cursor = 'pointer';
           locateButton.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-              <path d="M21  Ascertainable
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13 a9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
             Locate
@@ -298,7 +427,7 @@ export default function MapButtons({
       buttonContainer.remove();
       window.removeEventListener('resize', handleButtonResize);
     };
-  }, [map, currentStyleIndex, setCurrentStyleIndex, projection, setProjection, positionMarkerRef, container]);
+  }, [map, currentStyleIndex, setCurrentStyleIndex, projection, setProjection, positionMarkerRef, container, sourceCache]);
 
   return null;
 }

@@ -6,6 +6,7 @@ import GeocoderContainer from './mapbox/Geocoder';
 import MapButtons from './mapbox/MapButtons';
 import { MapContainerProps, MapStyle } from './mapbox/types';
 import { mapStyles } from './mapbox/mapStyles';
+import 'mapillary-js/dist/mapillary.css';
 
 export default function MapContainer({
   mapboxAccessToken,
@@ -141,57 +142,57 @@ export default function MapContainer({
             });
           }
 
-if (!mapRef.current!.getLayer('unclustered-point')) {
-  mapRef.current!.addLayer({
-    id: 'unclustered-point',
-    type: 'circle',
-    source: 'images',
-    filter: ['!', ['has', 'point_count']],
-    paint: {
-      'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        0, 4, // 4px at zoom 0
-        10, 8, // 8px at zoom 10
-        15, 12 // 12px at zoom 15
-      ],
-      'circle-opacity': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        0, 0.3, // 30% opacity at zoom 0
-        10, 0.6, // 60% at zoom 10
-        15, 0.8 // 80% at zoom 15
-      ],
-      'circle-color': '#05CB63', // Keep green
-      'circle-stroke-color': '#FFFFFF', // White stroke for contrast
-      'circle-stroke-width': 1.5,
-      'circle-stroke-opacity': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        0, 0.5,
-        15, 1
-      ]
-    }
-  });
-}
+          if (!mapRef.current!.getLayer('unclustered-point')) {
+            mapRef.current!.addLayer({
+              id: 'unclustered-point',
+              type: 'circle',
+              source: 'images',
+              filter: ['!', ['has', 'point_count']],
+              paint: {
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4, // 4px at zoom 0
+                  10, 8, // 8px at zoom 10
+                  15, 12 // 12px at zoom 15
+                ],
+                'circle-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.3, // 30% opacity at zoom 0
+                  10, 0.6, // 60% at zoom 10
+                  15, 0.8 // 80% at zoom 15
+                ],
+                'circle-color': '#05CB63', // Keep green
+                'circle-stroke-color': '#FFFFFF', // White stroke for contrast
+                'circle-stroke-width': 1.5,
+                'circle-stroke-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.5,
+                  15, 1
+                ]
+              }
+            });
+          }
 
-        if (!mapRef.current!.getLayer('selected-point')) {
-          mapRef.current!.addLayer({
-            id: 'selected-point',
-            type: 'circle',
-            source: 'images',
-            paint: {
-              'circle-radius': 10,
-              'circle-color': 'rgba(148, 0, 211, 0.5)', // Lighter, more transparent purple
-              'circle-stroke-color': '#FFFFFF',
-              'circle-stroke-width': 2,
-            },
-            filter: ['==', 'imageId', ''],
-          });
-        }
+          if (!mapRef.current!.getLayer('selected-point')) {
+            mapRef.current!.addLayer({
+              id: 'selected-point',
+              type: 'circle',
+              source: 'images',
+              paint: {
+                'circle-radius': 10,
+                'circle-color': 'rgba(148, 0, 211, 0.5)', // Lighter, more transparent purple
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 2,
+              },
+              filter: ['==', 'imageId', ''],
+            });
+          }
 
           mapRef.current!.on('click', debounce(async (event: mapboxgl.MapMouseEvent) => {
             console.time('MapClick');
@@ -315,6 +316,7 @@ if (!mapRef.current!.getLayer('unclustered-point')) {
             setProjection={setProjection}
             positionMarkerRef={positionMarkerRef}
             container={container}
+            sourceCache={sourceCache} // Pass sourceCache to MapButtons
           />
         </>
       )}
