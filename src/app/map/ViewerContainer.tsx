@@ -201,8 +201,6 @@ export default function ViewerContainer({
     const handleContextLoss = () => {
       console.warn('ViewerContainer: WebGL context lost, attempting to recover');
       if (viewerWrapperRef.current) {
-        const errorMsg = makeErrorMessage('Graphics error. Recovering...');
-        viewerWrapperRef.current.appendChild(errorMsg);
         const spinner = makeSpinnerLoader();
         viewerWrapperRef.current.appendChild(spinner);
         spinnerRef.current = spinner;
@@ -219,27 +217,24 @@ export default function ViewerContainer({
             moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(
               result => {
                 if (!result.success) {
-                  errorMsg.innerHTML = `Recovery failed: ${result.error}`;
                   setTimeout(() => {
-                    errorMsg.remove();
                     spinnerRef.current?.remove();
                     spinnerRef.current = null;
                   }, 3000);
-                } else {
-                  errorMsg.remove();
                 }
+                spinnerRef.current?.remove();
+                spinnerRef.current = null;
               }
             );
           } else {
-            errorMsg.remove();
-            spinnerRef.current?.remove();
-            spinnerRef.current = null;
+            setTimeout(() => {
+              spinnerRef.current?.remove();
+              spinnerRef.current = null;
+            }, 3000);
           }
         } catch (error) {
           console.error('ViewerContainer: Failed to recover context', error);
-          errorMsg.innerHTML = 'Failed to recover viewer. Please refresh.';
           setTimeout(() => {
-            errorMsg.remove();
             spinnerRef.current?.remove();
             spinnerRef.current = null;
           }, 5000);
@@ -265,9 +260,9 @@ export default function ViewerContainer({
                 spinnerRef.current = null;
                 console.warn('ViewerContainer: Failed to load initial image', initialImageId, result.error);
                 if (viewerWrapperRef.current) {
-                  const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
-                  viewerWrapperRef.current.appendChild(errorMsg);
-                  setTimeout(() => errorMsg.remove(), 3000);
+                  const spinner = makeSpinnerLoader();
+                  viewerWrapperRef.current.appendChild(spinner);
+                  setTimeout(() => spinner.remove(), 3000);
                 }
               }
             }
@@ -301,11 +296,11 @@ export default function ViewerContainer({
       if (error.message.includes('Context Lost') || error.message.includes('Incorrect mesh URL')) {
         handleContextLoss();
       } else if (viewerWrapperRef.current) {
-        const errorMsg = makeErrorMessage(`Error: ${error.message}`);
-        viewerWrapperRef.current.appendChild(errorMsg);
+        const spinner = makeSpinnerLoader();
+        viewerWrapperRef.current.appendChild(spinner);
         spinnerRef.current?.remove();
         spinnerRef.current = null;
-        setTimeout(() => errorMsg.remove(), 3000);
+        setTimeout(() => spinner.remove(), 3000);
       }
     });
 
@@ -355,9 +350,9 @@ export default function ViewerContainer({
           spinnerRef.current = null;
           console.warn('ViewerContainer: Failed to load image', initialImageId, result.error);
           if (viewerWrapperRef.current) {
-            const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
-            viewerWrapperRef.current.appendChild(errorMsg);
-            setTimeout(() => errorMsg.remove(), 3000);
+            const spinner = makeSpinnerLoader();
+            viewerWrapperRef.current.appendChild(spinner);
+            setTimeout(() => spinner.remove(), 3000);
           }
         }
       });
