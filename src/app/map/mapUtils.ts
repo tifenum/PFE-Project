@@ -102,8 +102,8 @@ export async function getSource(searchBbox?: string): Promise<any> {
       features: allFeatures,
     },
     cluster: false,
-    clusterMaxZoom: 14,
-    clusterRadius: 50,
+    clusterMaxZoom: 12,
+    clusterRadius: 30,
   };
 
   console.timeEnd('getSource');
