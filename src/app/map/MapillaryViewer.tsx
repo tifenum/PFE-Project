@@ -4,7 +4,7 @@ import MapContainer from './MapContainer';
 import ViewerContainer from './ViewerContainer';
 import mapboxgl from 'mapbox-gl';
 import countryCoordinates from './countryCoordinates';
-
+import 'mapillary-js/dist/mapillary.css';
 export interface MapillaryViewerProps {
   mapillaryAccessToken: string;
   mapboxAccessToken: string;
@@ -23,8 +23,8 @@ export default function MapillaryViewer({
   const [viewMode, setViewMode] = useState<string>('default');
   const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/satellite-v9');
   const [actualHeaderHeight, setActualHeaderHeight] = useState(headerHeight);
-  const [initialImageId, setInitialImageId] = useState<string>(countryCoordinates[0]?.image_id);
-  const [initialSequenceKey, setInitialSequenceKey] = useState<string>(countryCoordinates[0]?.sequence_key || '');
+  const [initialImageId, setInitialImageId] = useState<string>("9914836918642212");
+  const [initialSequenceKey, setInitialSequenceKey] = useState<string>("ws0E4KRpYoCr1WySn7xhJV");
   const [isContainerReady, setIsContainerReady] = useState(false);
 
   useEffect(() => {
@@ -94,12 +94,11 @@ export default function MapillaryViewer({
     viewerContainer.style.transition = 'none';
     mapContainer.style.transition = 'none';
     mapContainer.style.zIndex = '10';
-
     switch (viewMode) {
       case 'default':
         viewerWrapper.style.display = 'block';
         viewerWrapper.style.width = '350px';
-        viewerWrapper.style.height = '200px';
+        viewerWrapper.style.height = '250px';
         viewerWrapper.style.bottom = '20px';
         viewerWrapper.style.left = '20px';
         viewerWrapper.style.zIndex = '100';
