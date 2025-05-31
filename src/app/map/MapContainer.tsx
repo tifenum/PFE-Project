@@ -113,7 +113,6 @@ export default function MapContainer({
               url: 'mapbox://mapbox.mapbox-streets-v8',
             });
 
-
             mapRef.current!.addLayer({
               id: 'place-labels',
               type: 'symbol',
@@ -158,20 +157,20 @@ export default function MapContainer({
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  0, 4, // 4px at zoom 0
-                  10, 8, // 8px at zoom 10
-                  15, 12 // 12px at zoom 15
+                  0, 4,
+                  10, 8,
+                  15, 12
                 ],
                 'circle-opacity': [
                   'interpolate',
                   ['linear'],
                   ['zoom'],
-                  0, 0.3, // 30% opacity at zoom 0
-                  10, 0.6, // 60% at zoom 10
-                  15, 0.8 // 80% at zoom 15
+                  0, 0.3,
+                  10, 0.6,
+                  15, 0.8
                 ],
-                'circle-color': '#05CB63', // Keep green
-                'circle-stroke-color': '#FFFFFF', // White stroke for contrast
+                'circle-color': '#05CB63',
+                'circle-stroke-color': '#FFFFFF',
                 'circle-stroke-width': 1.5,
                 'circle-stroke-opacity': [
                   'interpolate',
@@ -191,13 +190,21 @@ export default function MapContainer({
               source: 'images',
               paint: {
                 'circle-radius': 10,
-                'circle-color': 'rgba(148, 0, 211, 0.5)', // Lighter, more transparent purple
+                'circle-color': 'rgba(148, 0, 211, 0.5)',
                 'circle-stroke-color': '#FFFFFF',
                 'circle-stroke-width': 2,
               },
               filter: ['==', 'imageId', ''],
             });
           }
+
+          // Add hover effect for unclustered points
+          mapRef.current!.on('mouseenter', 'unclustered-point', () => {
+            mapRef.current!.getCanvas().style.cursor = 'pointer';
+          });
+          mapRef.current!.on('mouseleave', 'unclustered-point', () => {
+            mapRef.current!.getCanvas().style.cursor = 'grab';
+          });
 
           mapRef.current!.on('click', debounce(async (event: mapboxgl.MapMouseEvent) => {
             console.time('MapClick');
@@ -210,7 +217,7 @@ export default function MapContainer({
                 return;
               }
               const closest = features[0];
-              const { imageId, sequence } = closest.properties; // Get sequence_key (named 'sequence' in getSource)
+              const { imageId, sequence } = closest.properties;
               const coordinates = (closest.geometry as GeoJSON.Point).coordinates as [number, number];
 
               if (!imageId || imageId.startsWith('fallback-')) {
@@ -224,11 +231,9 @@ export default function MapContainer({
                 return;
               }
 
-              // Update map: highlight selected point
               mapRef.current!.setFilter('selected-point', ['==', 'imageId', imageId]);
               mapRef.current!.easeTo({ center: coordinates });
 
-              // Update viewer
               if (viewerRef.current?.isInitialized) {
                 const viewerWrapper = container.querySelector('.viewer-wrapper') as HTMLDivElement | null;
                 if (viewerWrapper && !viewerWrapper.querySelector('.spinner-loader')) {
@@ -262,7 +267,6 @@ export default function MapContainer({
                 }
               }
 
-              // Pass both imageId and sequenceKey to parent
               setImageId({ imageId, sequenceKey: sequence || '' });
 
               console.timeEnd('MapClick');

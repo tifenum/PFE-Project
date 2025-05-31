@@ -11,4 +11,5 @@ export interface MapContainerProps {
 export interface MapStyle {
   name: string;
   url: string;
+  thumbnail: string;
 }
