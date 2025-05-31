@@ -77,7 +77,10 @@ export default function ViewerContainer({
         cover: false,
         navigation: true,
         direction: true,
-        pointer: { scrollZoom: false },
+        pointer: {
+        scrollZoom: true, // Enable mouse wheel zoom
+        pinchZoom: true, // Enable pinch-to-zoom on touch devices
+        },
         sequence: { enabled: true, visible: true, playing: false }, // Enable sequence navigation arrows
         zoom: true,
       },
