@@ -5,6 +5,7 @@ import ViewerContainer from './ViewerContainer';
 import mapboxgl from 'mapbox-gl';
 import countryCoordinates from './countryCoordinates';
 import 'mapillary-js/dist/mapillary.css';
+
 export interface MapillaryViewerProps {
   mapillaryAccessToken: string;
   mapboxAccessToken: string;
@@ -63,12 +64,10 @@ export default function MapillaryViewer({
     };
   }, []);
 
-  // Listen for imageId updates from ViewerContainer
   useEffect(() => {
     const handleUpdateImageId = (event: Event) => {
       const customEvent = event as CustomEvent<{ imageId: string }>;
       setInitialImageId(customEvent.detail.imageId);
-      // Look up sequence_key from countryCoordinates
       const countryData = countryCoordinates.find(c => c.image_id === customEvent.detail.imageId);
       setInitialSequenceKey(countryData?.sequence_key || '');
       console.log('MapillaryViewer: Updated initialImageId to', customEvent.detail.imageId, 'sequenceKey', countryData?.sequence_key || '');
@@ -90,10 +89,23 @@ export default function MapillaryViewer({
 
     if (!viewerWrapper || !viewerContainer || !mapContainer) return;
 
-    viewerWrapper.style.transition = 'transform 0.2s ease';
+    viewerWrapper.style.transition = 'all 0.2s ease';
     viewerContainer.style.transition = 'none';
-    mapContainer.style.transition = 'none';
-    mapContainer.style.zIndex = '10';
+    mapContainer.style.transition = 'all 0.2s ease';
+    mapContainer.style.position = 'absolute';
+
+    // Define SVG icons for toggle buttons
+    const expandIcon = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+      </svg>
+    `;
+    const restoreIcon = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 8V5a2 2 0 0 1 2-2h3m13 0h3a2 2 0 0 1 2 2v3m0 13v3a2 2 0 0 1-2 2h-3m-13 0H5a2 2 0 0 1-2-2v-3"></path>
+      </svg>
+    `;
+
     switch (viewMode) {
       case 'default':
         viewerWrapper.style.display = 'block';
@@ -103,27 +115,17 @@ export default function MapillaryViewer({
         viewerWrapper.style.left = '20px';
         viewerWrapper.style.zIndex = '100';
         viewerWrapper.style.transform = 'scale(1)';
+        viewerWrapper.style.borderRadius = '8px';
+        viewerWrapper.style.overflow = 'hidden';
+        viewerWrapper.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
         mapContainer.style.display = 'block';
+        mapContainer.style.top = '0';
+        mapContainer.style.left = '0';
         mapContainer.style.width = '100vw';
         mapContainer.style.height = '100vh';
         mapContainer.style.zIndex = '10';
-        break;
-      case 'map':
-        viewerWrapper.style.display = 'none';
-        mapContainer.style.display = 'block';
-        mapContainer.style.width = '100vw';
-        mapContainer.style.height = '100vh';
-        mapContainer.style.zIndex = '10';
-        break;
-      case 'viewer':
-        viewerWrapper.style.display = 'block';
-        viewerWrapper.style.width = '100vw';
-        viewerWrapper.style.height = '100vh';
-        viewerWrapper.style.bottom = '0';
-        viewerWrapper.style.left = '0';
-        viewerWrapper.style.zIndex = '100';
-        viewerWrapper.style.transform = 'scale(1)';
-        mapContainer.style.display = 'none';
+        mapContainer.style.borderRadius = '0';
+        mapContainer.style.boxShadow = 'none';
         break;
       case 'swapped':
         viewerWrapper.style.display = 'block';
@@ -133,40 +135,114 @@ export default function MapillaryViewer({
         viewerWrapper.style.left = '0';
         viewerWrapper.style.zIndex = '10';
         viewerWrapper.style.transform = 'scale(1)';
+        viewerWrapper.style.borderRadius = '0';
+        viewerWrapper.style.overflow = 'hidden';
+        viewerWrapper.style.boxShadow = 'none';
         mapContainer.style.display = 'block';
-        mapContainer.style.width = '350px';
-        mapContainer.style.height = '200px';
-        mapContainer.style.bottom = '80px';
+        mapContainer.style.top = '';
+        mapContainer.style.bottom = '20px';
         mapContainer.style.left = '20px';
+        mapContainer.style.width = '350px';
+        mapContainer.style.height = '250px';
         mapContainer.style.zIndex = '100';
+        mapContainer.style.borderRadius = '8px';
+        mapContainer.style.overflow = 'hidden';
+        mapContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
         break;
     }
 
+    // Remove existing toggle buttons
+    const existingButtons = containerRef.current.querySelectorAll('.toggle-button');
+    existingButtons.forEach(btn => btn.remove());
+
+    // Add toggle button based on viewMode
+    if (viewMode === 'default' && viewerWrapper) {
+      const button = document.createElement('button');
+      button.innerHTML = expandIcon;
+      button.style.position = 'absolute';
+      button.style.top = '10px';
+      button.style.right = '10px';
+      button.style.zIndex = '101';
+      button.style.backgroundColor = 'white';
+      button.style.border = '1px solid #ccc';
+      button.style.borderRadius = '4px';
+      button.style.padding = '5px';
+      button.style.cursor = 'pointer';
+      button.className = 'toggle-button';
+      button.addEventListener('click', () => setViewMode('swapped'));
+      viewerWrapper.appendChild(button);
+    } else if (viewMode === 'swapped' && mapContainer) {
+      const button = document.createElement('button');
+      button.innerHTML = restoreIcon;
+      button.style.position = 'absolute';
+      button.style.top = '10px';
+      button.style.right = '10px';
+      button.style.zIndex = '101';
+      button.style.backgroundColor = 'white';
+      button.style.border = '1px solid #ccc';
+      button.style.borderRadius = '4px';
+      button.style.padding = '5px';
+      button.style.cursor = 'pointer';
+      button.className = 'toggle-button';
+      button.addEventListener('click', () => setViewMode('default'));
+      mapContainer.appendChild(button);
+    }
+
+    // Resize map and viewer after layout change
+    setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.resize();
+      }
+      if (viewerRef.current) {
+        viewerRef.current.resize();
+      }
+    }, 200);
+
     const handleHover = () => {
-      if (viewMode === 'default' || viewMode === 'swapped') {
+      if (viewMode === 'default') {
         viewerWrapper.style.transform = 'scale(1.1)';
+      } else if (viewMode === 'swapped') {
+        mapContainer.style.transform = 'scale(1.1)';
       }
     };
     const handleHoverOut = () => {
-      if (viewMode === 'default' || viewMode === 'swapped') {
+      if (viewMode === 'default') {
         viewerWrapper.style.transform = 'scale(1)';
+      } else if (viewMode === 'swapped') {
+        mapContainer.style.transform = 'scale(1)';
       }
     };
 
     viewerWrapper.addEventListener('mouseenter', handleHover);
     viewerWrapper.addEventListener('mouseleave', handleHoverOut);
+    mapContainer.addEventListener('mouseenter', handleHover);
+    mapContainer.addEventListener('mouseleave', handleHoverOut);
 
     const handleResize = () => {
-      if (window.innerWidth <= 600 && (viewMode === 'default' || viewMode === 'swapped')) {
-        viewerWrapper.style.width = viewMode === 'default' ? '200px' : '100vw';
-        viewerWrapper.style.height = viewMode === 'default' ? '150px' : '100vh';
-        mapContainer.style.width = viewMode === 'swapped' ? '200px' : '100vw';
-        mapContainer.style.height = viewMode === 'swapped' ? '150px' : '100vh';
-      } else if (viewMode === 'default' || viewMode === 'swapped') {
-        viewerWrapper.style.width = viewMode === 'default' ? '350px' : '100vw';
-        viewerWrapper.style.height = viewMode === 'default' ? '200px' : '100vh';
-        mapContainer.style.width = viewMode === 'swapped' ? '350px' : '100vw';
-        mapContainer.style.height = viewMode === 'swapped' ? '200px' : '100vh';
+      if (window.innerWidth <= 600) {
+        if (viewMode === 'default') {
+          viewerWrapper.style.width = '200px';
+          viewerWrapper.style.height = '150px';
+          mapContainer.style.width = '100vw';
+          mapContainer.style.height = '100vh';
+        } else if (viewMode === 'swapped') {
+          viewerWrapper.style.width = '100vw';
+          viewerWrapper.style.height = '100vh';
+          mapContainer.style.width = '200px';
+          mapContainer.style.height = '150px';
+        }
+      } else {
+        if (viewMode === 'default') {
+          viewerWrapper.style.width = '350px';
+          viewerWrapper.style.height = '250px';
+          mapContainer.style.width = '100vw';
+          mapContainer.style.height = '100vh';
+        } else if (viewMode === 'swapped') {
+          viewerWrapper.style.width = '100vw';
+          viewerWrapper.style.height = '100vh';
+          mapContainer.style.width = '350px';
+          mapContainer.style.height = '250px';
+        }
       }
     };
 
@@ -176,26 +252,11 @@ export default function MapillaryViewer({
     return () => {
       viewerWrapper.removeEventListener('mouseenter', handleHover);
       viewerWrapper.removeEventListener('mouseleave', handleHoverOut);
+      mapContainer.removeEventListener('mouseenter', handleHover);
+      mapContainer.removeEventListener('mouseleave', handleHoverOut);
       window.removeEventListener('resize', handleResize);
     };
   }, [viewMode, actualHeaderHeight, isContainerReady]);
-
-  const toggleView = () => {
-    setViewMode(prevMode => {
-      switch (prevMode) {
-        case 'default':
-          return 'map';
-        case 'map':
-          return 'viewer';
-        case 'viewer':
-          return 'swapped';
-        case 'swapped':
-          return 'default';
-        default:
-          return 'default';
-      }
-    });
-  };
 
   const handleSetImageId = ({ imageId, sequenceKey }: { imageId: string; sequenceKey: string }) => {
     setInitialImageId(imageId);
