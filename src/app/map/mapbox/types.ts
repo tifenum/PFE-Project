@@ -6,8 +6,7 @@ export interface MapContainerProps {
   container: HTMLDivElement | null;
   viewerRef: React.MutableRefObject<any>;
   positionMarkerRef: React.MutableRefObject<mapboxgl.Marker | null>;
-  setImageId: (imageId: string) => void;
-}
+  setImageId: ({ imageId, sequenceKey }: { imageId: string; sequenceKey: string }) => void;}
 
 export interface MapStyle {
   name: string;

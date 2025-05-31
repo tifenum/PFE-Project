@@ -11,7 +11,11 @@ export interface MapillaryViewerProps {
   headerHeight?: number;
 }
 
-export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToken, headerHeight = 0 }: MapillaryViewerProps) {
+export default function MapillaryViewer({
+  mapillaryAccessToken,
+  mapboxAccessToken,
+  headerHeight = 0,
+}: MapillaryViewerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<any>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -19,7 +23,8 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
   const [viewMode, setViewMode] = useState<string>('default');
   const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/satellite-v9');
   const [actualHeaderHeight, setActualHeaderHeight] = useState(headerHeight);
-  const [initialImageId, setInitialImageId] = useState<string>(countryCoordinates[0]?.image_id || '2804284936568031');
+  const [initialImageId, setInitialImageId] = useState<string>(countryCoordinates[0]?.image_id);
+  const [initialSequenceKey, setInitialSequenceKey] = useState<string>(countryCoordinates[0]?.sequence_key || '');
   const [isContainerReady, setIsContainerReady] = useState(false);
 
   useEffect(() => {
@@ -55,6 +60,24 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
     return () => {
       window.removeEventListener('resize', updateHeaderHeight);
       window.removeEventListener('scroll', updateHeaderHeight);
+    };
+  }, []);
+
+  // Listen for imageId updates from ViewerContainer
+  useEffect(() => {
+    const handleUpdateImageId = (event: Event) => {
+      const customEvent = event as CustomEvent<{ imageId: string }>;
+      setInitialImageId(customEvent.detail.imageId);
+      // Look up sequence_key from countryCoordinates
+      const countryData = countryCoordinates.find(c => c.image_id === customEvent.detail.imageId);
+      setInitialSequenceKey(countryData?.sequence_key || '');
+      console.log('MapillaryViewer: Updated initialImageId to', customEvent.detail.imageId, 'sequenceKey', countryData?.sequence_key || '');
+    };
+
+    containerRef.current?.addEventListener('updateImageId', handleUpdateImageId);
+
+    return () => {
+      containerRef.current?.removeEventListener('updateImageId', handleUpdateImageId);
     };
   }, []);
 
@@ -161,17 +184,24 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
   const toggleView = () => {
     setViewMode(prevMode => {
       switch (prevMode) {
-        case 'default': return 'map';
-        case 'map': return 'viewer';
-        case 'viewer': return 'swapped';
-        case 'swapped': return 'default';
-        default: return 'default';
+        case 'default':
+          return 'map';
+        case 'map':
+          return 'viewer';
+        case 'viewer':
+          return 'swapped';
+        case 'swapped':
+          return 'default';
+        default:
+          return 'default';
       }
     });
   };
 
-  const handleSetImageId = (imageId: string) => {
+  const handleSetImageId = ({ imageId, sequenceKey }: { imageId: string; sequenceKey: string }) => {
     setInitialImageId(imageId);
+    setInitialSequenceKey(sequenceKey);
+    console.log('MapillaryViewer: Set imageId', imageId, 'sequenceKey', sequenceKey);
   };
 
   return (
@@ -214,6 +244,7 @@ export default function MapillaryViewer({ mapillaryAccessToken, mapboxAccessToke
             headerHeight={actualHeaderHeight}
             container={containerRef.current}
             initialImageId={initialImageId}
+            initialSequenceKey={initialSequenceKey}
             positionMarkerRef={positionMarkerRef}
             mapRef={mapRef}
             viewerRef={viewerRef}

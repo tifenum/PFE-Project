@@ -1,12 +1,20 @@
+"use client";
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { makeContainers, makeSpinnerLoader, makeErrorMessage, debounce, moveToWithRetry, getSource, fetchImages } from './mapUtils';
+import { makeContainers, makeSpinnerLoader, makeErrorMessage, debounce, moveToWithRetry, getSource } from './mapUtils';
 import GeocoderContainer from './mapbox/Geocoder';
 import MapButtons from './mapbox/MapButtons';
 import { MapContainerProps, MapStyle } from './mapbox/types';
 import { mapStyles } from './mapbox/mapStyles';
 
-export default function MapContainer({ mapboxAccessToken, mapStyle, container, viewerRef, positionMarkerRef, setImageId }: MapContainerProps) {
+export default function MapContainer({
+  mapboxAccessToken,
+  mapStyle,
+  container,
+  viewerRef,
+  positionMarkerRef,
+  setImageId,
+}: MapContainerProps) {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const initializedRef = useRef(false);
   const sourceCache = useRef<any>(null);
@@ -27,7 +35,9 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
   useEffect(() => {
     console.log('MapContainer: useEffect called');
     if (!container || initializedRef.current) {
-      console.warn('MapContainer: container is null or already initialized, skipping', { initialized: initializedRef.current });
+      console.warn('MapContainer: container is null or already initialized, skipping', {
+        initialized: initializedRef.current,
+      });
       return;
     }
 
@@ -165,13 +175,15 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
           mapRef.current!.on('click', debounce(async (event: mapboxgl.MapMouseEvent) => {
             console.time('MapClick');
             try {
-              const features = mapRef.current!.queryRenderedFeatures(event.point, { layers: ['unclustered-point'] });
+              const features = mapRef.current!.queryRenderedFeatures(event.point, {
+                layers: ['unclustered-point'],
+              });
               if (!features.length) {
                 console.log('MapContainer: No features clicked');
                 return;
               }
               const closest = features[0];
-              const { imageId } = closest.properties;
+              const { imageId, sequence } = closest.properties; // Get sequence_key (named 'sequence' in getSource)
               const coordinates = (closest.geometry as GeoJSON.Point).coordinates as [number, number];
 
               if (!imageId || imageId.startsWith('fallback-')) {
@@ -206,7 +218,14 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
                     setTimeout(() => errorMsg.remove(), 3000);
                   }
                   if (result.fallbackImageId) {
-                    const fallbackResult = await moveToWithRetry(viewerRef.current, result.fallbackImageId, 3, 500, false, viewerWrapper);
+                    const fallbackResult = await moveToWithRetry(
+                      viewerRef.current,
+                      result.fallbackImageId,
+                      3,
+                      500,
+                      false,
+                      viewerWrapper
+                    );
                     if (!fallbackResult.success) {
                       alert('Failed to load fallback image.');
                     }
@@ -216,10 +235,8 @@ export default function MapContainer({ mapboxAccessToken, mapStyle, container, v
                 }
               }
 
-              // Only set imageId if viewer isn't initialized to avoid triggering unmount
-              if (!viewerRef.current?.isInitialized) {
-                setImageId(imageId);
-              }
+              // Pass both imageId and sequenceKey to parent
+              setImageId({ imageId, sequenceKey: sequence || '' });
 
               console.timeEnd('MapClick');
             } catch (error) {

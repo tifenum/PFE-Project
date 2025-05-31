@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useRef } from 'react';
 import { Viewer, CameraControls } from 'mapillary-js';
 import { makeContainers, makeSpinnerLoader, makeErrorMessage, moveToWithRetry, coordinateCache } from './mapUtils';
@@ -9,16 +10,27 @@ interface ViewerContainerProps {
   headerHeight: number;
   container: HTMLDivElement | null;
   initialImageId?: string | null;
+  initialSequenceKey?: string;
   positionMarkerRef: React.MutableRefObject<mapboxgl.Marker | null>;
   mapRef: React.MutableRefObject<mapboxgl.Map | null>;
   viewerRef: React.MutableRefObject<any>;
 }
 
-export default function ViewerContainer({ mapillaryAccessToken, headerHeight, container, initialImageId, positionMarkerRef, mapRef, viewerRef }: ViewerContainerProps) {
+export default function ViewerContainer({
+  mapillaryAccessToken,
+  headerHeight,
+  container,
+  initialImageId,
+  initialSequenceKey,
+  positionMarkerRef,
+  mapRef,
+  viewerRef,
+}: ViewerContainerProps) {
   const isMounted = useRef(true);
   const viewerInitialized = useRef(false);
   const viewerWrapperRef = useRef<HTMLDivElement | null>(null);
   const spinnerRef = useRef<HTMLDivElement | null>(null);
+  const sequenceCache = useRef<Map<string, string>>(new Map()); // Cache imageId to sequenceKey
 
   useEffect(() => {
     console.log('ViewerContainer: Mounted');
@@ -29,10 +41,15 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
   }, []);
 
   useEffect(() => {
-    countryCoordinates.forEach(({ image_id, coords }) => {
+    // Cache coordinates and sequence keys from countryCoordinates
+    countryCoordinates.forEach(({ image_id, coords, sequence_key }) => {
       if (image_id && coords && !coordinateCache.has(image_id)) {
         coordinateCache.set(image_id, coords as [number, number]);
         console.log('ViewerContainer: Cached coordinates for image_id', image_id, coords);
+      }
+      if (image_id && sequence_key && !sequenceCache.current.has(image_id)) {
+        sequenceCache.current.set(image_id, sequence_key);
+        console.log('ViewerContainer: Cached sequence_key for image_id', image_id, sequence_key);
       }
     });
   }, []);
@@ -40,7 +57,10 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
   useEffect(() => {
     console.log('ViewerContainer: useEffect for initialization', { container });
     if (!container || viewerInitialized.current) {
-      console.warn('ViewerContainer: Missing container or already initialized', { container, initialized: viewerInitialized.current });
+      console.warn('ViewerContainer: Missing container or already initialized', {
+        container,
+        initialized: viewerInitialized.current,
+      });
       return;
     }
 
@@ -58,7 +78,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
         navigation: true,
         direction: true,
         pointer: { scrollZoom: false },
-        sequence: false,
+        sequence: { enabled: true, visible: true, playing: false }, // Enable sequence navigation arrows
         zoom: true,
       },
       trackResize: true,
@@ -81,7 +101,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
     const onImage = async (image: any) => {
       if (!isMounted.current || !viewerRef.current) return;
 
-      // Remove spinner immediately, checking both spinnerRef and DOM
+      // Remove spinner
       if (spinnerRef.current) {
         spinnerRef.current.remove();
         spinnerRef.current = null;
@@ -94,7 +114,10 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
         }
       }
 
-      console.log('ViewerContainer: Image changed:', image.id);
+      // Get sequence key from cache or image
+      const sequenceKey = sequenceCache.current.get(image.id) || image.sequence || '';
+      console.log('ViewerContainer: Image changed:', image.id, 'Sequence key:', sequenceKey);
+
       let lngLat: [number, number] | undefined;
 
       try {
@@ -102,7 +125,13 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           lngLat = coordinateCache.get(image.id);
         } else {
           lngLat = image?.computed_geometry?.coordinates as [number, number];
-          if (lngLat && Array.isArray(lngLat) && lngLat.length === 2 && !isNaN(lngLat[0]) && !isNaN(lngLat[1])) {
+          if (
+            lngLat &&
+            Array.isArray(lngLat) &&
+            lngLat.length === 2 &&
+            !isNaN(lngLat[0]) &&
+            !isNaN(lngLat[1])
+          ) {
             coordinateCache.set(image.id, lngLat);
           } else {
             console.warn('ViewerContainer: Invalid lngLat from image', lngLat);
@@ -120,13 +149,26 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
             if (!mapRef.current.getBounds().contains(lngLat)) {
               mapRef.current.setCenter(lngLat);
             }
-            if (!positionMarkerRef.current!._map) {
-              positionMarkerRef.current!.addTo(mapRef.current!);
+            if (!positionMarkerRef.current._map) {
+              positionMarkerRef.current.addTo(mapRef.current);
             }
-            positionMarkerRef.current!.setLngLat(lngLat);
+            positionMarkerRef.current.setLngLat(lngLat);
+            // Update initialImageId to keep parent in sync
+            const parent = container?.parentElement;
+            if (parent) {
+              parent.dispatchEvent(
+                new CustomEvent('updateImageId', { detail: { imageId: image.id, sequenceKey } })
+              );
+            }
           } catch (error) {
             console.error('ViewerContainer: Error updating map', error);
           }
+        }
+
+        // Cache sequence key if available
+        if (image.sequence && !sequenceCache.current.has(image.id)) {
+          sequenceCache.current.set(image.id, image.sequence);
+          console.log('ViewerContainer: Cached new sequence_key for image_id', image.id, image.sequence);
         }
       } catch (error) {
         console.error('ViewerContainer: onImage error', error);
@@ -135,7 +177,6 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
 
     const onImageryLoaded = () => {
       if (!isMounted.current || !viewerWrapperRef.current) return;
-      // No need to remove spinner here since onImage handles it
       console.log('ViewerContainer: Imagery fully loaded');
     };
 
@@ -164,7 +205,7 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
         viewerWrapperRef.current.appendChild(errorMsg);
         const spinner = makeSpinnerLoader();
         viewerWrapperRef.current.appendChild(spinner);
-        spinnerRef.current = spinner; // Track spinner
+        spinnerRef.current = spinner;
         try {
           viewerRef.current?.remove();
           viewerInstance = new Viewer(viewerOptions);
@@ -174,19 +215,21 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           if (initialImageId) {
             const spinner = makeSpinnerLoader();
             viewerWrapperRef.current.appendChild(spinner);
-            spinnerRef.current = spinner; // Track spinner
-            moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(result => {
-              if (!result.success) {
-                errorMsg.innerHTML = `Recovery failed: ${result.error}`;
-                setTimeout(() => {
+            spinnerRef.current = spinner;
+            moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(
+              result => {
+                if (!result.success) {
+                  errorMsg.innerHTML = `Recovery failed: ${result.error}`;
+                  setTimeout(() => {
+                    errorMsg.remove();
+                    spinnerRef.current?.remove();
+                    spinnerRef.current = null;
+                  }, 3000);
+                } else {
                   errorMsg.remove();
-                  spinnerRef.current?.remove();
-                  spinnerRef.current = null;
-                }, 3000);
-              } else {
-                errorMsg.remove();
+                }
               }
-            });
+            );
           } else {
             errorMsg.remove();
             spinnerRef.current?.remove();
@@ -206,27 +249,29 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
 
     viewerRef.current?.on('load', async () => {
       if (!isMounted.current || !viewerRef.current) return;
-      console.log('ViewerContainer: Viewer loaded', { initialImageId });
+      console.log('ViewerContainer: Viewer loaded', { initialImageId, initialSequenceKey });
       try {
         viewerRef.current.isInitialized = true;
         if (initialImageId) {
           if (!viewerWrapperRef.current?.querySelector('.spinner-loader')) {
             const spinner = makeSpinnerLoader();
             viewerWrapperRef.current?.appendChild(spinner);
-            spinnerRef.current = spinner; // Track spinner
+            spinnerRef.current = spinner;
           }
-          moveToWithRetry(viewerRef.current, initialImageId, 2, 300, true, viewerWrapperRef.current).then(result => {
-            if (!result.success) {
-              spinnerRef.current?.remove();
-              spinnerRef.current = null;
-              console.warn('ViewerContainer: Failed to load initial image', initialImageId, result.error);
-              if (viewerWrapperRef.current) {
-                const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
-                viewerWrapperRef.current.appendChild(errorMsg);
-                setTimeout(() => errorMsg.remove(), 3000);
+          moveToWithRetry(viewerRef.current, initialImageId, 2, 300, true, viewerWrapperRef.current).then(
+            result => {
+              if (!result.success) {
+                spinnerRef.current?.remove();
+                spinnerRef.current = null;
+                console.warn('ViewerContainer: Failed to load initial image', initialImageId, result.error);
+                if (viewerWrapperRef.current) {
+                  const errorMsg = makeErrorMessage(`Failed to load image: ${result.error}`);
+                  viewerWrapperRef.current.appendChild(errorMsg);
+                  setTimeout(() => errorMsg.remove(), 3000);
+                }
               }
             }
-          });
+          );
         } else {
           spinnerRef.current?.remove();
           spinnerRef.current = null;
@@ -298,11 +343,11 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
 
   useEffect(() => {
     if (viewerRef.current && initialImageId && viewerInitialized.current) {
-      console.log('ViewerContainer: Updating image to', initialImageId);
+      console.log('ViewerContainer: Updating image to', initialImageId, 'sequenceKey', initialSequenceKey);
       if (!viewerWrapperRef.current?.querySelector('.spinner-loader')) {
         const spinner = makeSpinnerLoader();
         viewerWrapperRef.current?.appendChild(spinner);
-        spinnerRef.current = spinner; // Track spinner
+        spinnerRef.current = spinner;
       }
       moveToWithRetry(viewerRef.current, initialImageId, 2, 300, false, viewerWrapperRef.current).then(result => {
         if (!result.success) {
@@ -316,8 +361,13 @@ export default function ViewerContainer({ mapillaryAccessToken, headerHeight, co
           }
         }
       });
+      // Cache initialSequenceKey
+      if (initialSequenceKey && !sequenceCache.current.has(initialImageId)) {
+        sequenceCache.current.set(initialImageId, initialSequenceKey);
+        console.log('ViewerContainer: Cached initial sequence_key', initialSequenceKey, 'for image_id', initialImageId);
+      }
     }
-  }, [initialImageId]);
+  }, [initialImageId, initialSequenceKey]);
 
   return null;
 }

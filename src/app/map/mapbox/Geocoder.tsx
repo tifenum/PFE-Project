@@ -199,7 +199,10 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
             center: coordinates,
             zoom: 5,
           });
-          setImageId(imageId || `fallback-${countryBbox}`);
+          setImageId({
+            imageId: imageId || `fallback-${countryBbox}`,
+            sequenceKey: features[0]?.properties.sequenceKey || ''
+          });
           if (imageId && viewerRef.current && viewerRef.current.isInitialized) {
             await moveToWithRetry(viewerRef.current, imageId);
           } else {

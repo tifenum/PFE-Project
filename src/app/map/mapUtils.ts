@@ -29,7 +29,7 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
       coordinateCache.set(item.id, coordinates);
       return {
         type: 'Feature',
-        properties: { imageId: item.id, thumbUrl: item.thumbUrl || '' },
+        properties: { imageId: item.id, thumbUrl: item.thumbUrl || '', sequenceKey: item.sequenceKey || '' }, // Added sequenceKey
         geometry: {
           type: 'Point',
           coordinates,
@@ -45,6 +45,7 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
   }
 }
 
+// Rest of the file remains unchanged
 export async function getSource(searchBbox?: string): Promise<any> {
   const globalStartTime = performance.now();
   console.time('getSource');
@@ -55,7 +56,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
   for (let i = 0; i < useBbox.length; i++) {
     const bbox = useBbox[i];
     const countryData = searchBbox ? null : countryCoordinates[i];
-    
+
     if (!countryData && !searchBbox) {
       console.warn(`getSource: No country data for index ${i}, skipping`);
       continue;
@@ -70,9 +71,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
       continue;
     }
 
-    const imageId = searchBbox
-      ? `fallback-${bbox}`
-      : countryData?.image_id;
+    const imageId = searchBbox ? `fallback-${bbox}` : countryData?.image_id;
 
     if (!imageId) {
       console.warn(`getSource: Missing image_id for index ${i}`, { country: countryData?.name });
@@ -84,6 +83,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
       properties: {
         imageId: imageId,
         thumbUrl: '',
+        sequence: countryData?.sequence_key || '',
         countryName: countryData?.name || 'Unknown',
       },
       geometry: {
@@ -311,7 +311,7 @@ export async function moveToWithRetry(
     return { success: false, error: 'Viewer is already loading' };
   }
   viewer.isLoading = true;
-  viewer.pendingImageId = null; // Clear any pending image ID to avoid conflicts
+  viewer.pendingImageId = null;
 
   const maxAttempts = isInitialLoad ? 1 : retries;
 
@@ -322,27 +322,16 @@ export async function moveToWithRetry(
       continue;
     }
     try {
-      if (!coordinateCache.has(imageId)) {
-        const imageDetails = await fetchMapillaryImageDetails(imageId);
-        if (!imageDetails?.id) {
-          viewer.isLoading = false;
-          viewerWrapper?.querySelector('.spinner-loader')?.remove();
-          console.timeEnd(`moveToWithRetry-${imageId}`);
-          console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (no image details)`);
-          return { success: false, error: 'No image details found' };
-        }
-        if (imageDetails.coordinates && Array.isArray(imageDetails.coordinates) && imageDetails.coordinates.length === 2) {
-          coordinateCache.set(imageId, imageDetails.coordinates as [number, number]);
-        }
-      }
       await viewer.moveTo(imageId);
       viewer.isLoading = false;
       console.timeEnd(`moveToWithRetry-${imageId}`);
       console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms`);
       return { success: true };
     } catch (error: any) {
-      console.error('moveToWithRetry: Error on attempt', attempt, error);
-      if (error.name === 'CancelMapillaryError' || error.message.includes('Request aborted by a subsequent request')) {
+      if (
+        error.name === 'CancelMapillaryError' ||
+        error.message.includes('Request aborted by a subsequent request')
+      ) {
         viewer.isLoading = false;
         viewerWrapper?.querySelector('.spinner-loader')?.remove();
         if (viewer.pendingImageId) {
@@ -354,12 +343,18 @@ export async function moveToWithRetry(
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (cancelled)`);
         return { success: false, error: 'Request cancelled' };
       }
-      if (error.message.includes('Failed to fetch data') || error.message.includes('Context Lost') || error.message.includes('Incorrect mesh URL')) {
+      if (
+        error.message.includes('Failed to fetch data') ||
+        error.message.includes('Context Lost') ||
+        error.message.includes('Incorrect mesh URL')
+      ) {
         viewer.isLoading = false;
         viewerWrapper?.querySelector('.spinner-loader')?.remove();
         console.timeEnd(`moveToWithRetry-${imageId}`);
         console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (fetch or context error)`);
-        const fallback = countryCoordinates.find(c => c.image_id !== imageId && coordinateCache.has(c.image_id))?.image_id;
+        const fallback = countryCoordinates.find(
+          c => c.image_id !== imageId && coordinateCache.has(c.image_id)
+        )?.image_id;
         return { success: false, error: error.message, fallbackImageId: fallback };
       }
       if (attempt === maxAttempts) {
