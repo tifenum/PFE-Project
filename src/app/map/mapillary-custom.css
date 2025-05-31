@@ -39,7 +39,7 @@ html, body {
 }
 
 .mapillary-viewer div {
-  box-sizing: border-box; /* Changed to border-box for consistent sizing */
+  box-sizing: border-box;
 }
 
 .mapillary-viewer input:focus {
@@ -65,12 +65,8 @@ html, body {
 }
 
 .viewer-wrapper {
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
   position: absolute;
-}
-
-.viewer-wrapper:hover {
-  transform: scale(1.1);
 }
 
 .mapboxgl-ctrl-geocoder {

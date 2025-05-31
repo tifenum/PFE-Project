@@ -126,6 +126,7 @@ export default function MapillaryViewer({
         mapContainer.style.zIndex = '10';
         mapContainer.style.borderRadius = '0';
         mapContainer.style.boxShadow = 'none';
+        mapContainer.style.transform = 'scale(1)';
         break;
       case 'swapped':
         viewerWrapper.style.display = 'block';
@@ -148,6 +149,7 @@ export default function MapillaryViewer({
         mapContainer.style.borderRadius = '8px';
         mapContainer.style.overflow = 'hidden';
         mapContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        mapContainer.style.transform = 'scale(1)';
         break;
     }
 
@@ -198,25 +200,38 @@ export default function MapillaryViewer({
       }
     }, 200);
 
-    const handleHover = () => {
+    const handleViewerHover = () => {
       if (viewMode === 'default') {
         viewerWrapper.style.transform = 'scale(1.1)';
-      } else if (viewMode === 'swapped') {
+      }
+    };
+    const handleViewerHoverOut = () => {
+      if (viewMode === 'default') {
+        viewerWrapper.style.transform = 'scale(1)';
+      }
+    };
+    const handleMapHover = () => {
+      if (viewMode === 'swapped') {
         mapContainer.style.transform = 'scale(1.1)';
       }
     };
-    const handleHoverOut = () => {
-      if (viewMode === 'default') {
-        viewerWrapper.style.transform = 'scale(1)';
-      } else if (viewMode === 'swapped') {
+    const handleMapHoverOut = () => {
+      if (viewMode === 'swapped') {
         mapContainer.style.transform = 'scale(1)';
       }
     };
 
-    viewerWrapper.addEventListener('mouseenter', handleHover);
-    viewerWrapper.addEventListener('mouseleave', handleHoverOut);
-    mapContainer.addEventListener('mouseenter', handleHover);
-    mapContainer.addEventListener('mouseleave', handleHoverOut);
+    // Remove existing event listeners to prevent duplicates
+    viewerWrapper.removeEventListener('mouseenter', handleViewerHover);
+    viewerWrapper.removeEventListener('mouseleave', handleViewerHoverOut);
+    mapContainer.removeEventListener('mouseenter', handleMapHover);
+    mapContainer.removeEventListener('mouseleave', handleMapHoverOut);
+
+    // Add new event listeners
+    viewerWrapper.addEventListener('mouseenter', handleViewerHover);
+    viewerWrapper.addEventListener('mouseleave', handleViewerHoverOut);
+    mapContainer.addEventListener('mouseenter', handleMapHover);
+    mapContainer.addEventListener('mouseleave', handleMapHoverOut);
 
     const handleResize = () => {
       if (window.innerWidth <= 600) {
@@ -244,16 +259,19 @@ export default function MapillaryViewer({
           mapContainer.style.height = '250px';
         }
       }
+      // Ensure transform is reset after resize
+      viewerWrapper.style.transform = viewMode === 'default' ? 'scale(1)' : 'scale(1)';
+      mapContainer.style.transform = viewMode === 'swapped' ? 'scale(1)' : 'scale(1)';
     };
 
     window.addEventListener('resize', handleResize);
     handleResize();
 
     return () => {
-      viewerWrapper.removeEventListener('mouseenter', handleHover);
-      viewerWrapper.removeEventListener('mouseleave', handleHoverOut);
-      mapContainer.removeEventListener('mouseenter', handleHover);
-      mapContainer.removeEventListener('mouseleave', handleHoverOut);
+      viewerWrapper.removeEventListener('mouseenter', handleViewerHover);
+      viewerWrapper.removeEventListener('mouseleave', handleViewerHoverOut);
+      mapContainer.removeEventListener('mouseenter', handleMapHover);
+      mapContainer.removeEventListener('mouseleave', handleMapHoverOut);
       window.removeEventListener('resize', handleResize);
     };
   }, [viewMode, actualHeaderHeight, isContainerReady]);
