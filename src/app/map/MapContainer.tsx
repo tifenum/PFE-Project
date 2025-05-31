@@ -93,6 +93,10 @@ export default function MapContainer({
           minZoom: 1,
           projection: projection,
         });
+
+        // Disable right-click drag rotation
+        mapRef.current.dragRotate.disable();
+
         console.log('MapContainer: map initialized');
 
         mapRef.current.on('load', () => {
@@ -316,7 +320,7 @@ export default function MapContainer({
             setProjection={setProjection}
             positionMarkerRef={positionMarkerRef}
             container={container}
-            sourceCache={sourceCache} // Pass sourceCache to MapButtons
+            sourceCache={sourceCache}
           />
         </>
       )}
