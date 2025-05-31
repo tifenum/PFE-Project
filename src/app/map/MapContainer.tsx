@@ -113,13 +113,14 @@ export default function MapContainer({
               url: 'mapbox://mapbox.mapbox-streets-v8',
             });
 
+
             mapRef.current!.addLayer({
               id: 'place-labels',
               type: 'symbol',
               source: 'place-labels',
               'source-layer': 'place_label',
               layout: {
-                'text-field': ['get', 'name'],
+                'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
                 'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
                 'text-size': ['interpolate', ['linear'], ['zoom'], 0, 10, 8, 16],
                 'text-max-width': 8,
