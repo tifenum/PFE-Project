@@ -1,11 +1,52 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { submitContactRequest } from "@/services/userService"; // Adjust path to your service file
+import { toast } from "sonner";
+import { useState } from "react";
 
 // Dynamically import NewsLatterBox with SSR disabled
 const NewsLatterBox = dynamic(() => import("./NewsLatterBox"), { ssr: false });
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await submitContactRequest(
+        formData.name,
+        formData.email,
+        formData.message
+      );
+
+      if (response.success) {
+        toast.success(response.message || "Your request has been submitted successfully!");
+        setFormData({ name: "", email: "", message: "" });
+      } else {
+        toast.error(response.error || "Failed to submit request.");
+      }
+    } catch (error: any) {
+      toast.error("An unexpected error occurred. Please try again.");
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="overflow-hidden py-16 md:py-20 lg:py-28">
       <div className="container">
@@ -19,9 +60,11 @@ const Contact = () => {
                 Get Travel Support
               </h2>
               <p className="mb-12 text-base font-medium text-body-color">
-                Need help with your booking or planning a trip? Our travel experts will respond via email to assist with flights, hotels, car rentals, or itinerary tips.
+                Need help with your booking or planning a trip? Our travel experts
+                will respond via email to assist with flights, hotels, car rentals,
+                or itinerary tips.
               </p>
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="-mx-4 flex flex-wrap">
                   <div className="w-full px-4 md:w-1/2">
                     <div className="mb-8">
@@ -33,8 +76,12 @@ const Contact = () => {
                       </label>
                       <input
                         type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
                         placeholder="Enter your name"
                         className="border-stroke w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        required
                       />
                     </div>
                   </div>
@@ -48,8 +95,12 @@ const Contact = () => {
                       </label>
                       <input
                         type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
                         placeholder="Enter your email"
                         className="border-stroke w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        required
                       />
                     </div>
                   </div>
@@ -64,14 +115,21 @@ const Contact = () => {
                       <textarea
                         name="message"
                         rows={5}
+                        value={formData.message}
+                        onChange={handleChange}
                         placeholder="Tell us about your trip or any booking questions"
                         className="border-stroke w-full resize-none rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                        required
                       ></textarea>
                     </div>
                   </div>
                   <div className="w-full px-4">
-                    <button className="rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark">
-                      Send Your Request
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark disabled:opacity-50"
+                    >
+                      {isSubmitting ? "Submitting..." : "Send Your Request"}
                     </button>
                   </div>
                 </div>

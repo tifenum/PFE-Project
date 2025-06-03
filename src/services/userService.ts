@@ -179,3 +179,43 @@ const getUserId = () => {
     return null;
   }
 };
+
+export const subscribeNewsletter = async (name: string, email: string) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/users/newsletter/subscribe`,
+      { name, email },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (response.status === 200) {
+      return { success: true, message: response.data.message };
+    }
+    return { success: false, error: response.data.error || "Subscription failed." };
+  } catch (error: any) {
+    console.error("Newsletter subscription failed:", error);
+    return { success: false, error: error.response?.data?.error || "An error occurred during subscription." };
+  }
+};
+
+export const submitContactRequest = async (name: string, email: string, message: string) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/users/contact/submit`,
+      { name, email, message },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (response.status === 200) {
+      return { success: true, message: response.data };
+    }
+    return { success: false, error: response.data.error || "Contact request failed." };
+  } catch (error: any) {
+    console.error("Contact request failed:", error);
+    return { success: false, error: error.response?.data?.error || "An error occurred during contact request submission." };
+  }
+};

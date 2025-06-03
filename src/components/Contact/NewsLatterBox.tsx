@@ -1,9 +1,38 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useState } from "react";
+import { toast } from "sonner";
+import { subscribeNewsletter } from "@/services/userService"; // Adjust path to your service file
 
 const NewsLatterBox = () => {
   const { theme } = useTheme();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name || !email) {
+      toast.error("Please fill in both name and email fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await subscribeNewsletter(name, email);
+      if (response.success) {
+        toast.success("Alright bro, your email has been sent! Check your inbox for exclusive travel deals.");
+        setName("");
+        setEmail("");
+      } else {
+        toast.error(response.error || "Failed to subscribe. Please try again.");
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11">
@@ -17,20 +46,26 @@ const NewsLatterBox = () => {
         <input
           type="text"
           name="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Your name for trip updates"
           className="border-stroke mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
         />
         <input
           type="email"
           name="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Your email for deals"
           className="border-stroke mb-4 w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
         />
-        <input
-          type="submit"
-          value="Discover Deals"
-          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark"
-        />
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark disabled:opacity-50"
+        >
+          {isSubmitting ? "Subscribing..." : "Discover Deals"}
+        </button>
         <p className="text-center text-base leading-relaxed text-body-color dark:text-body-color-dark">
           We only send the best travel deals, no spam guaranteed!
         </p>
