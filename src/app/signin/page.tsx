@@ -11,12 +11,13 @@ const SigninPage = () => {
   const [password, setPassword] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const result = await login(email, password);
+    const result = await login(email, password, keepSignedIn);
     if (result.success) {
       window.dispatchEvent(new Event("authChange"));
       const params = new URLSearchParams(window.location.search);
@@ -103,9 +104,15 @@ const SigninPage = () => {
                             className="flex cursor-pointer select-none items-center text-sm font-medium text-body-color"
                           >
                             <div className="relative">
-                              <input type="checkbox" id="checkboxLabel" className="sr-only" />
+                              <input
+                                type="checkbox"
+                                id="checkboxLabel"
+                                checked={keepSignedIn}
+                                onChange={(e) => setKeepSignedIn(e.target.checked)}
+                                className="sr-only"
+                              />
                               <div className="box mr-4 flex h-5 w-5 items-center justify-center rounded border border-body-color border-opacity-20 dark:border-white dark:border-opacity-10">
-                                <span className="opacity-0">
+                                <span className={keepSignedIn ? "opacity-100" : "opacity-0"}>
                                   <svg
                                     width="11"
                                     height="8"

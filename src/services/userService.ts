@@ -4,16 +4,21 @@ import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL1 = `${API_BASE_URL}/auth`;
 
-export const login = async (email: string, password: string) => {
+export const login = async (email: string, password: string, keepSignedIn: boolean) => {
   try {
     const response = await axios.post(`${API_BASE_URL1}/login`, { email, password }, {
       headers: { "Content-Type": "application/json" },
     });
 
     if (response.status === 200) {
-      const token = response.data;
-      localStorage.setItem("jwt_token", token.access_token);
-      return { success: true, token };
+      const { access_token } = response.data;
+      if (keepSignedIn) {
+        localStorage.setItem("jwt_token", access_token);
+      } else {
+        sessionStorage.setItem("jwt_token", access_token);
+      }
+      window.dispatchEvent(new Event("authChange"));
+      return { success: true, token: access_token };
     }
     return { success: false, error: "Invalid credentials" };
   } catch (error: any) {
@@ -22,25 +27,32 @@ export const login = async (email: string, password: string) => {
   }
 };
 
-const getUserId = () => {
-  if (typeof window === "undefined") return null;
-  const token = localStorage.getItem("jwt_token");
-  if (!token) return null;
-  try {
-    const decoded: any = jwtDecode(token);
-    return decoded.sub;
-  } catch {
-    return null;
+export const logout = async () => {
+  const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+  if (token) {
+    try {
+      await axios.post(`${API_BASE_URL1}/logout`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      localStorage.removeItem("jwt_token");
+      sessionStorage.removeItem("jwt_token");
+    }
   }
 };
 
-export const askAssistant = async (
-  message: string,
-  sessionId: string,
-) => {
+// Other functions (askAssistant, signup, etc.) remain unchanged
+export const askAssistant = async (message: string, sessionId: string) => {
   const userId = getUserId();
   const response = await axios.get(`${API_BASE_URL}/users/ask`, {
     params: { message, sessionId, userId },
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
+    },
   });
   return response.data;
 };
@@ -56,22 +68,23 @@ export const signup = async (username: string, email: string, password: string) 
     );
 
     if (response.status === 200) {
-      return { success: true, message: response.data }; // Forward the backend message
+      return { success: true, message: response.data };
     }
     return { success: false, error: 'Signup failed. Please try again.' };
   } catch (error: any) {
     console.error('Signup failed:', error);
     if (error.response && error.response.status === 400) {
-      return { success: false, error: error.response.data }; // Forward specific error
+      return { success: false, error: error.response.data };
     }
     return { success: false, error: 'Signup failed. Please try again.' };
   }
 };
+
 export const fetchAllClients = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/users/clients`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
+        Authorization: `Bearer ${localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token')}`,
       },
     });
 
@@ -112,7 +125,7 @@ export const deleteUser = async (userId: string) => {
   try {
     const response = await axios.delete(`${API_BASE_URL}/users/${userId}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('jwt_token')}`,
+        Authorization: `Bearer ${localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token')}`,
       },
     });
 
@@ -125,28 +138,6 @@ export const deleteUser = async (userId: string) => {
     throw error;
   }
 };
-
-export const logout = async () => {
-  const token = localStorage.getItem("jwt_token");
-  if (token) {
-    try {
-      await axios.post(`${API_BASE_URL1}/logout`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      localStorage.removeItem("jwt_token");
-      localStorage.removeItem("user");
-    }
-  } else {
-    localStorage.removeItem("jwt_token");
-    localStorage.removeItem("user");
-  }
-};
-
 
 export const fetchMapillaryImages = async (bbox: string, limit: number = 2) => {
   try {
@@ -173,6 +164,18 @@ export const fetchMapillaryImageDetails = async (imageId: string) => {
     throw new Error('Failed to fetch image details');
   } catch (error) {
     console.error('Error fetching image details:', error.response?.data || error.message);
+    return null;
+  }
+};
+
+const getUserId = () => {
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+  if (!token) return null;
+  try {
+    const decoded: any = jwtDecode(token);
+    return decoded.sub;
+  } catch {
     return null;
   }
 };

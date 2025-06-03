@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import adminMenuData from "./adminMenuData";
 import { logout } from "@/services/userService";
 import { toast } from "sonner";
+import { jwtDecode } from "jwt-decode";
 
 const Header = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
@@ -18,18 +19,32 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const pathname = usePathname();
+  const router = useRouter();
 
   const checkAuth = () => {
-    const token = localStorage.getItem("jwt_token");
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (token) {
-      setIsLoggedIn(true);
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const payload: any = jwtDecode(token);
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (isExpired) {
+          localStorage.removeItem("jwt_token");
+          sessionStorage.removeItem("jwt_token");
+          setIsLoggedIn(false);
+          setIsAdmin(false);
+          router.push("/signin");
+          return;
+        }
+        setIsLoggedIn(true);
         const roles = payload?.realm_access?.roles || [];
         setIsAdmin(roles.includes("admin"));
       } catch (error) {
         console.error("Error decoding token:", error);
+        setIsLoggedIn(false);
         setIsAdmin(false);
+        localStorage.removeItem("jwt_token");
+        sessionStorage.removeItem("jwt_token");
+        router.push("/signin");
       }
     } else {
       setIsLoggedIn(false);
@@ -60,12 +75,11 @@ const Header = () => {
       setIsAdmin(false);
       window.dispatchEvent(new Event("authChange"));
       toast.success("Logged out successfully!");
-      window.location.href = "/";
+      router.push("/");
     } catch (err) {
       toast.error("Something went wrong while logging out.");
     }
   };
-  
 
   const navbarToggleHandler = () => setNavbarOpen(!navbarOpen);
   const handleSubmenuId = (id: number) => setOpenSubmenuId(openSubmenuId === id ? null : id);

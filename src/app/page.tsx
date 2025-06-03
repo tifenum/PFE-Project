@@ -10,7 +10,7 @@ import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import LoginNotifier from "@/components/Loginotf/LoginNotifier";
-
+import './axiosSetup';
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
