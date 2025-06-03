@@ -49,7 +49,7 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
 
   // Fetch hotel data
   useEffect(() => {
-    const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) {
       toast.error("No auth token, please login.");
       setLoading(false);
@@ -74,7 +74,7 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
   const closeBooking = () => setRoomToBook(null);
 
   const getUserIdFromToken = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token") : null;
     if (token) {
       try {
         const decodedToken = jwtDecode(token);

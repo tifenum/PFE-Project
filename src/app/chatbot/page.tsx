@@ -173,7 +173,7 @@ export default function ChatPage() {
 
   const handleBookNow1 = (url: string) => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('jwt_token');
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     let relativeUrl;
     try {
       const parsedUrl = new URL(url, window.location.origin);
@@ -191,7 +191,7 @@ export default function ChatPage() {
 
   const handleBookNow = (url: string) => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('jwt_token');
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     let relativeUrl;
     try {
       const parsedUrl = new URL(url, window.location.origin);

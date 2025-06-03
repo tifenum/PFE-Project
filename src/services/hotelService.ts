@@ -1,5 +1,3 @@
-// services/hotelService.js
-
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { API_BASE_URL } from "./config";
@@ -11,13 +9,13 @@ export async function searchCities({ countryCode, keyword, max = 10 }) {
     if (!res.ok) {
       throw new Error("Failed to fetch cities");
     }
-    // The API returns a JSON array of city objects
     return await res.json();
   } catch (error) {
     console.error("Error searching cities:", error);
     return [];
   }
 }
+
 export const searchHotels = async ({ cityCode }) => {
   const response = await fetch(`${API_BASE_URL}/hotels/search?cityCode=${cityCode}`);
   if (!response.ok) {
@@ -25,6 +23,7 @@ export const searchHotels = async ({ cityCode }) => {
   }
   return response.json();
 };
+
 export const searchHotelsByGeocode = async ({ latitude, longitude, radius }) => {
   const response = await fetch(`${API_BASE_URL}/hotels/by-geocode?latitude=${latitude}&longitude=${longitude}&radius=${radius}`);
   if (!response.ok) {
@@ -32,6 +31,7 @@ export const searchHotelsByGeocode = async ({ latitude, longitude, radius }) => 
   }
   return response.json();
 };
+
 export const searchHotelsByKeyword = async ({ keyword }) => {
   try {
     const queryParams = new URLSearchParams({ keyword });
@@ -45,6 +45,7 @@ export const searchHotelsByKeyword = async ({ keyword }) => {
     return [];
   }
 };
+
 export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
   try {
     const queryParams = new URLSearchParams({
@@ -52,7 +53,7 @@ export const fetchFakeHotel = async ({ latitude, longitude, hotelName }) => {
       longitude,
       hotelName: encodeURIComponent(hotelName),
     });
-    const token = localStorage.getItem("jwt_token");
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) throw new Error("No token found");
 
     const res = await fetch(`${API_BASE_URL}/hotels/fake?${queryParams.toString()}`, {
@@ -77,8 +78,7 @@ export const createBooking = async (bookingData) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
-
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
       body: JSON.stringify(bookingData),
     });
@@ -94,22 +94,20 @@ export const createBooking = async (bookingData) => {
   }
 };
 
-
 export const fetchHotelReservations = async () => {
   try {
-    const token = localStorage.getItem("jwt_token");
-
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) throw new Error("No token found");
 
     interface DecodedToken {
-      sub: string; // Adjust the type of 'sub' based on your JWT structure
+      sub: string;
     }
     const decoded: DecodedToken = jwtDecode(token);
     const userId = decoded.sub;
 
     const res = await fetch(`${API_BASE_URL}/hotels/reservations?userId=${userId}`, {
       headers: {
-        Authorization: `Bearer ${token}`, // optional, remove if your API doesn't expect it
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -124,14 +122,11 @@ export const fetchHotelReservations = async () => {
   }
 };
 
-// services/flightService.ts
-
-
 export const fetchAllPendingHotelReservations = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/hotels/all-reservations`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
     });
 
@@ -146,7 +141,6 @@ export const fetchAllPendingHotelReservations = async () => {
   }
 };
 
-
 export const updateHotelReservationStatus = async (reservationId: string, status: "Accepted" | "Refused") => {
   try {
     const response = await axios.put(
@@ -154,24 +148,24 @@ export const updateHotelReservationStatus = async (reservationId: string, status
       { status },
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
           "Content-Type": "application/json",
         },
       }
     );
-    return response.data; // Assuming it returns the updated reservation
+    return response.data;
   } catch (error) {
     console.error("Error updating reservation status:", error);
     throw error;
   }
-  
-}
+};
+
 export const deleteHotelReservation = async (reservationId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/hotels/reservations/${reservationId}`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
     });
 
@@ -179,7 +173,7 @@ export const deleteHotelReservation = async (reservationId) => {
       throw new Error("Failed to delete hotel reservation");
     }
 
-    return true; // Return true to indicate success
+    return true;
   } catch (error) {
     console.error("Error deleting hotel reservation:", error);
     throw error;

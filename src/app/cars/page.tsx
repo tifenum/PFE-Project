@@ -42,7 +42,7 @@ const CarRentalSearchPage = () => {
 
   useEffect(() => {
     const getUserIdFromToken = () => {
-      const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
       if (token) {
         try {
           const decoded: { sub: string } = jwtDecode(token);
@@ -458,7 +458,7 @@ const CarDetailsClient = ({
     };
 
     const queryParams = new URLSearchParams(bookingData).toString();
-    const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
 
     if (!token) {
       router.push(

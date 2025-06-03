@@ -24,13 +24,14 @@ export async function searchFlights(
   console.log("Flight offers response:", response);
   return response.json();
 }
+
 export async function bookFlight(bookingData) {
   try {
     const response = await fetch(`${API_BASE_URL}/flights/book-flight`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
       body: JSON.stringify(bookingData),
     });
@@ -45,9 +46,10 @@ export async function bookFlight(bookingData) {
     throw error;
   }
 }
+
 export const fetchFlightReservations = async () => {
   try {
-    const token = localStorage.getItem("jwt_token");
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) throw new Error("No token found");
 
     interface DecodedToken {
@@ -75,9 +77,10 @@ export const fetchFlightReservations = async () => {
     return [];
   }
 };
+
 export async function getPendingBookings() {
   const url = `${API_BASE_URL}/flights/all-bookings`;
-  const token = localStorage.getItem("jwt_token");
+  const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
   if (!token) {
     throw new Error("No token found");
   }
@@ -100,23 +103,24 @@ export const updateBookingStatus = async (bookingId: string, status: "Accepted" 
       { status },
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
           "Content-Type": "application/json",
         },
       }
     );
-    return response.data; // Assuming it returns the updated booking
+    return response.data;
   } catch (error) {
     console.error("Error updating booking status:", error);
     throw error;
   }
 };
+
 export const deleteFlightReservation = async (bookingId) => {
   try {
     const response = await fetch(`${API_BASE_URL}/flights/bookings/${bookingId}`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
     });
 
@@ -124,7 +128,7 @@ export const deleteFlightReservation = async (bookingId) => {
       throw new Error("Failed to delete flight reservation");
     }
 
-    return true; // Return true to indicate success
+    return true;
   } catch (error) {
     console.error("Error deleting flight reservation:", error);
     throw error;

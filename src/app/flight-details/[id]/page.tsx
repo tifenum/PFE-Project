@@ -229,7 +229,7 @@ export default function FlightDetails() {
 
   const getUserId = () => {
     if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) return null;
     try {
       const decoded: any = jwtDecode(token);

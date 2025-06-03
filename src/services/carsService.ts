@@ -16,7 +16,7 @@ export async function searchCities({ countryCode, keyword, max = 10 }) {
   }
 }
 
-export async function searchCars({ pickupCountry, pickupCity, carType, passengers}) {
+export async function searchCars({ pickupCountry, pickupCity, carType, passengers }) {
   try {
     const queryParams = new URLSearchParams({
       pickupCountry,
@@ -41,9 +41,9 @@ export async function createBooking(bookingData) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
       },
-      body: JSON.stringify(bookingData)
+      body: JSON.stringify(bookingData),
     });
 
     if (!res.ok) {
@@ -59,7 +59,7 @@ export async function createBooking(bookingData) {
 
 export async function fetchCarReservations() {
   try {
-    const token = localStorage.getItem("jwt_token");
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) throw new Error("No token found");
 
     const decoded = jwtDecode(token);
@@ -67,8 +67,8 @@ export async function fetchCarReservations() {
 
     const res = await fetch(`${API_BASE_URL}/cars/reservations?userId=${userId}`, {
       headers: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!res.ok) {
@@ -86,8 +86,8 @@ export async function fetchAllPendingCarReservations() {
   try {
     const res = await fetch(`${API_BASE_URL}/cars/all-reservations`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
+      },
     });
 
     if (!res.ok) {
@@ -108,9 +108,9 @@ export async function updateCarReservationStatus(reservationId: string, status: 
       { status },
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt_token")}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
@@ -125,8 +125,8 @@ export async function deleteCarReservation(reservationId: string) {
     const res = await fetch(`${API_BASE_URL}/cars/reservations/${reservationId}`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("jwt_token")}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
+      },
     });
 
     if (!res.ok) {

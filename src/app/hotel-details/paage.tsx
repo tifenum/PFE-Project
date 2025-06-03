@@ -29,7 +29,7 @@ const [rawHotelName, setRawHotelName] = useState(initialRawName);
 
 
   const getUserIdFromToken = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token") : null;
     if (token) {
       try {
         const decodedToken = jwtDecode(token);

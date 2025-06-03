@@ -244,8 +244,7 @@ const ClientBookingPage = () => {
                                 style={{ width: "100%", height: "auto" }}
                                 onError={(e) => (e.target.src = "/images/hotel-images/fallback.jpg")}
                               />
-                              { typeof window !== "undefined" && localStorage.getItem("jwt_token") ? (
-                                <Link
+                                { typeof window !== "undefined" && (localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")) ? (                                <Link
                                   href={{
                                     pathname: "/hotel-details",
                                     query: {

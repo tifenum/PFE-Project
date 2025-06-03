@@ -77,7 +77,7 @@ const CarsDetailsContent = () => {
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (!token) {
       const destinationPath = `/cars-details?${searchParams.toString()}`;
       router.push(`/signin?redirect=${encodeURIComponent(destinationPath)}`);
@@ -103,7 +103,7 @@ const CarsDetailsContent = () => {
   }, [searchParams, router]);
 
   const getUserIdFromToken = () => {
-    const token = localStorage.getItem("jwt_token");
+      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
     if (token) {
       try {
         const decoded: { sub: string } = jwtDecode(token);

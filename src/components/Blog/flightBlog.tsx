@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 const FlightBlog = ({ flights }: { flights: any[] }) => {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
-
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setToken(localStorage.getItem("jwt_token"));
+      setToken(localStorage.getItem("jwt_token")|| sessionStorage.getItem("jwt_token") );
     }
   }, []);
 
