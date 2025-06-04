@@ -36,7 +36,7 @@ const NavigationHandler = () => {
     window.addEventListener('popstate', handlePopState);
 
     // Assume route change completes after a short delay (since no direct event)
-    const timeout = setTimeout(() => deferUpdate(hideLoader), 2000); // Adjust as needed
+    const timeout = setTimeout(() => deferUpdate(hideLoader), 1000); // Adjust as needed
 
     return () => {
       window.history.pushState = originalPushState;

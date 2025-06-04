@@ -2,9 +2,8 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from "react";
-import CityAutocomplete from "@/components/globe/city";
-import AutocompleteCountry from "@/components/globe/countries";
-import SectionTitle from "@/components/Common/SectionTitle";
+import airportsData from "@/components/globe/airports_by_country.json";
+import countries from "@/components/globe/contries.json"; // Fixed typo in 'countries'
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { searchCars } from "@/services/carsService";
@@ -13,6 +12,28 @@ import { jwtDecode } from "jwt-decode";
 interface CityOption {
   name: string;
   code: string;
+}
+
+interface Country {
+  name: string;
+  code: string;
+}
+
+interface Airport {
+  code: string;
+  lat: string;
+  lon: string;
+  name: string;
+  city: string;
+  state: string;
+  icao: string;
+  direct_flights: string;
+  carriers: string;
+}
+
+interface CountryAirports {
+  country: string;
+  airports: Airport[];
 }
 
 interface CarType {
@@ -28,6 +49,263 @@ interface CarData {
 }
 
 type CarResults = CarData[];
+
+const CityAutocomplete = ({
+  value,
+  onChange,
+  country,
+}: {
+  value: CityOption | null;
+  onChange: (value: CityOption) => void;
+  country: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const citiesWithCode = React.useMemo<CityOption[]>(() => {
+    if (!country) return [];
+    const countryEntry = (airportsData as CountryAirports[]).find(
+      (c) => c.country.toLowerCase() === country.toLowerCase()
+    );
+    if (!countryEntry) return [];
+    const uniqueCities: CityOption[] = [];
+    const seen = new Set<string>();
+    countryEntry.airports.forEach((airport) => {
+      if (!seen.has(airport.name)) {
+        seen.add(airport.name);
+        uniqueCities.push({ name: airport.name, code: airport.code });
+      }
+    });
+    return uniqueCities;
+  }, [country]);
+
+  const filteredCities = citiesWithCode.filter((city) =>
+    city.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full h-12 rounded-lg border bg-[#f8f8f8] px-4 py-3 text-left text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary"
+          aria-expanded={isOpen}
+          aria-label="Select pickup city"
+        >
+          {value ? value.name : "Select Pickup City"}
+        </button>
+        {isOpen && (
+          <div className="absolute z-20 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-[#2C303B] max-h-48 overflow-y-auto">
+            <input
+              type="text"
+              placeholder="Search city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 text-sm border-b border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none"
+            />
+            {filteredCities.map((city) => (
+              <div
+                key={city.code}
+                className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  onChange(city);
+                  setIsOpen(false);
+                  setSearchQuery("");
+                }}
+                role="option"
+                aria-selected={value?.code === city.code}
+              >
+                {city.name}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const AutocompleteCountry = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (country: Country) => void;
+}) => {
+  const [suggestions, setSuggestions] = useState<Country[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (value.length > 0) {
+      const searchTerm = value.toLowerCase();
+      const filtered = countries.filter(
+        (country) =>
+          country.name.toLowerCase().startsWith(searchTerm) &&
+          country.name.toLowerCase() !== searchTerm
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [value]);
+
+  const handleCountrySelect = (country: Country) => {
+    onChange(country);
+    setShowSuggestions(false);
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        placeholder="Enter Pickup Country"
+        value={value}
+        onChange={(e) => onChange({ name: e.target.value, code: "" })}
+        className="w-full h-12 rounded-lg border bg-[#f8f8f8] px-4 py-3 text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary"
+        aria-label="Enter pickup country"
+      />
+      {showSuggestions && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-[#2C303B] max-h-48 overflow-y-auto">
+          {suggestions.map((country) => (
+            <div
+              key={country.code}
+              className="cursor-pointer px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => handleCountrySelect(country)}
+              role="option"
+              aria-selected={value === country.name}
+            >
+              {country.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SectionTitle = ({ title, paragraph, center, width = "1000px" }) => (
+  <div className={`mx-auto ${center ? "text-center" : ""}`} style={{ maxWidth: width }}>
+    <h2 className="mb-4 text-3xl font-bold text-dark dark:text-white">{title}</h2>
+    <p className="text-base text-body-color dark:text-gray-400">{paragraph}</p>
+  </div>
+);
+
+const CarDetailsClient = ({
+  carData,
+  carTypeFilter,
+  passengers,
+  userId,
+}: {
+  carData: CarResults;
+  carTypeFilter: string;
+  passengers: string;
+  userId: string | null;
+}) => {
+  const router = useRouter();
+
+  const allCarTypes = carData.flatMap((car) => car.carTypes);
+
+  const parseProviderName = (name: string) => {
+    if (!name) return "";
+    const cleanedName = name.toLowerCase().trim();
+    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const getRandomCarImage = (index: number): string => {
+    const imageNumber = Math.floor(Math.random() * 14) + 1;
+    return `/images/car-images/car${imageNumber}.jpg`;
+  };
+
+  const handleBookNow = (carType: CarType, car: CarData) => {
+    const bookingData = {
+      pickupCountry: String(car.pickupCountry ?? ""),
+      pickupCity: String(car.pickupCity ?? ""),
+      carType: String(carType.type ?? ""),
+      carFeatures: carType.features.join(","),
+      pricePerDay: String(carType.pricePerDay ?? ""),
+      carTypeFilter: String(carTypeFilter ?? ""),
+      passengers: String(passengers ?? ""),
+    };
+
+    const queryParams = new URLSearchParams(bookingData).toString();
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+
+    if (!token) {
+      router.push(`/signin?redirect=${encodeURIComponent(`/cars-details?${queryParams}`)}`);
+      return;
+    }
+
+    router.push(`/cars-details?${queryParams}`);
+  };
+
+  if (!allCarTypes.length) {
+    return <p className="text-center text-red-500">No car data found.</p>;
+  }
+
+  return (
+    <div className="mt-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">
+          Available Cars
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {allCarTypes.map((carType, idx) => {
+            const parentCar = carData.find((car) => car.carTypes.includes(carType))!;
+            return (
+              <div
+                key={idx}
+                className="group relative overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105"
+              >
+                <img
+                  src={getRandomCarImage(idx)}
+                  alt={`${carType.type} Image`}
+                  className="w-full h-64 object-cover rounded-xl"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/images/car-images/car1.jpg";
+                  }}
+                />
+                <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
+                  <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">
+                    {carType.type}
+                  </h3>
+                  <p className="mb-3 text-gray-600 dark:text-gray-300">
+                    Price: ${carType.pricePerDay} / day
+                  </p>
+                  <ul className="list-none mb-4 space-y-2 flex-grow">
+                    {[...new Set(carType.features)].slice(0, 4).map((f, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center text-gray-600 dark:text-gray-300"
+                      >
+                        <svg
+                          className="w-4 h-4 mr-2 text-blue-500"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 6.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                        </svg>
+                        {String(f)}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    onClick={() => handleBookNow(carType, parentCar)}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-auto"
+                  >
+                    Book Now
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CarRentalSearchPage = () => {
   const [pickupCountry, setPickupCountry] = useState("");
@@ -97,7 +375,7 @@ const CarRentalSearchPage = () => {
 
   return (
     <section className="overflow-hidden pt-32 pb-16 min-h-screen">
-      <div className="container">
+      <div className="container mx-auto px-4">
         <div className="mt-12">
           <SectionTitle
             title="The Best Car Rental Deals"
@@ -106,29 +384,31 @@ const CarRentalSearchPage = () => {
             width="1000px"
           />
         </div>
-        <div className="mt-8 px-4">
-          <div className="shadow-three dark:bg-gray-dark rounded-2xl bg-white p-4 dark:shadow-none max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center gap-2">
-              <div className="flex-1 min-w-[150px]">
+        <div className="mt-8">
+          <div className="shadow-three dark:bg-gray-dark rounded-2xl bg-white p-6 dark:shadow-none max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              <div>
                 <AutocompleteCountry
                   value={pickupCountry}
-                  onChange={(value) => setPickupCountry(value.name)}
-                  label=""
+                  onChange={(value) => {
+                    setPickupCountry(value.name);
+                    setPickupCity(null); // Reset city when country changes
+                  }}
                 />
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <CityAutocomplete
                   value={pickupCity}
                   onChange={setPickupCity}
                   country={pickupCountry}
-                  label=""
                 />
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <select
                   value={carType}
                   onChange={(e) => setCarType(e.target.value)}
-                  className="border-stroke dark:focus:border-primary w-full h-12 rounded-lg border bg-[#f8f8f8] px-3 py-2 text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
+                  className="w-full h-12 rounded-lg border bg-[#f8f8f8] px-4 py-3 text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary"
+                  aria-label="Select car type"
                 >
                   <option value="">Select Car Type</option>
                   <option value="Economy">Economy</option>
@@ -137,11 +417,12 @@ const CarRentalSearchPage = () => {
                   <option value="Luxury">Luxury</option>
                 </select>
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <select
                   value={passengers}
                   onChange={(e) => setPassengers(e.target.value)}
-                  className="border-stroke dark:focus:border-primary w-full h-12 rounded-lg border bg-[#f8f8f8] px-3 py-2 text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B]"
+                  className="w-full h-12 rounded-lg border bg-[#f8f8f8] px-4 py-3 text-sm text-body-color outline-none transition focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary"
+                  aria-label="Select number of passengers"
                 >
                   <option value="">Select Passengers</option>
                   <option value="1-2">1-2 Passengers</option>
@@ -149,11 +430,12 @@ const CarRentalSearchPage = () => {
                   <option value="5+">5+ Passengers</option>
                 </select>
               </div>
-              <div className="flex-1 min-w-[150px]">
+              <div>
                 <button
                   onClick={handleSearchCars}
-                  className="flex w-full h-12 items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm text-white transition hover:bg-opacity-90 mt-6 md:mt-0"
+                  className="w-full h-12 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-white transition hover:bg-opacity-90"
                   disabled={loading}
+                  aria-label="Search for cars"
                 >
                   {loading ? "Searching..." : "Search Cars"}
                 </button>
@@ -416,129 +698,6 @@ const CarRentalSearchPage = () => {
         </div>
       </div>
     </section>
-  );
-};
-
-const CarDetailsClient = ({
-  carData,
-  carTypeFilter,
-  passengers,
-  userId,
-}: {
-  carData: CarResults;
-  carTypeFilter: string;
-  passengers: string;
-  userId: string | null;
-}) => {
-  const router = useRouter();
-
-  // Flatten carTypes from all CarData objects
-  const allCarTypes = carData.flatMap((car) => car.carTypes);
-
-  const parseProviderName = (name: string) => {
-    if (!name) return "";
-    const cleanedName = name.toLowerCase().trim();
-    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
-  };
-
-  const getRandomCarImage = (index: number): string => {
-    const imageNumber = Math.floor(Math.random() * 14) + 1;
-    return `/images/car-images/car${imageNumber}.jpg`;
-  };
-
-  const handleBookNow = (carType: CarType, car: CarData) => {
-    const bookingData = {
-      pickupCountry: String(car.pickupCountry ?? ""),
-      pickupCity: String(car.pickupCity ?? ""),
-      carType: String(carType.type ?? ""),
-      carFeatures: carType.features.join(","),
-      pricePerDay: String(carType.pricePerDay ?? ""),
-      carTypeFilter: String(carTypeFilter ?? ""),
-      passengers: String(passengers ?? ""),
-    };
-
-    const queryParams = new URLSearchParams(bookingData).toString();
-      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
-
-    if (!token) {
-      router.push(
-        `/signin?redirect=${encodeURIComponent(`/cars-details?${queryParams}`)}`
-      );
-      return;
-    }
-
-    router.push(`/cars-details?${queryParams}`);
-  };
-
-  if (!allCarTypes.length) {
-    return <p className="text-center text-red-500">No car data found.</p>;
-  }
-
-  return (
-    <div className="mt-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">
-          Available Cars
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {allCarTypes.map((carType, idx) => {
-            // Find the parent CarData for this carType
-            const parentCar = carData.find((car) =>
-              car.carTypes.includes(carType)
-            )!;
-            return (
-              <div
-                key={idx}
-                className="group relative overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105"
-              >
-                <img
-                  src={getRandomCarImage(idx)}
-                  alt={`${carType.type} Image`}
-                  className="w-full h-64 object-cover rounded-xl"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "/images/car-images/car1.jpg";
-                  }}
-                />
-                <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
-                  <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">
-                    {carType.type}
-                  </h3>
-                  <p className="mb-3 text-gray-600 dark:text-gray-300">
-                    Price: ${carType.pricePerDay} / day
-                  </p>
-                  <ul className="list-none mb-4 space-y-2 flex-grow">
-                    {[...new Set(carType.features)]
-                      .slice(0, 4)
-                      .map((f, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center text-gray-600 dark:text-gray-300"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-2 text-blue-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 6.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                          </svg>
-                          {String(f)}
-                        </li>
-                      ))}
-                  </ul>
-                  <button
-                    onClick={() => handleBookNow(carType, parentCar)}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-auto"
-                  >
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
   );
 };
 

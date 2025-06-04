@@ -99,10 +99,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     const scrollToBottom = () => {
-      if (containerRef.current) {
-        const { scrollHeight, clientHeight } = containerRef.current;
-        containerRef.current.scrollTop = scrollHeight - clientHeight;
-      }
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
+      });
     };
     const frameId = requestAnimationFrame(() => scrollToBottom());
     const timeoutId = setTimeout(scrollToBottom, 100);

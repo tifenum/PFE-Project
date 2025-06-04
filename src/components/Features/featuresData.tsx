@@ -92,16 +92,16 @@ const featuresData: Feature[] = [
       <svg width="40" height="40" viewBox="0 0 40 40" className="fill-current">
         <path
           opacity="0.5"
-          d="M10 30H30V35H10V30Z"
+          d="M5 30H35V35H5V30Z"
         />
         <path
-          d="M5 5H35V25H5V5ZM15 10L20 15L25 10L30 15L25 20L20 15L15 20L10 15L15 10Z"
+          d="M5 5H35V25H5V5ZM10 10H30V12H10V10ZM10 15H25V17H10V15ZM10 20H20V22H10V20Z"
         />
       </svg>
     ),
-    title: "Secure Payments",
+    title: "Travel Itinerary Planner",
     paragraph:
-      "Book with confidence using our encrypted payment system. Multiple options available for a safe and hassle-free checkout.",
+      "Plan your trip day-by-day with personalized suggestions for activities, dining, and sights, all tailored to your preferences.",
   },
 ];
 

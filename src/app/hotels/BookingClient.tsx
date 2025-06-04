@@ -1,26 +1,24 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { FiArrowRight, FiMapPin, FiPaperclip } from "react-icons/fi";
-import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeyword } from "@/services/hotelService";
-import AutocompleteCountry from "@/components/globe/countries";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import SectionTitle from "@/components/Common/SectionTitle";
+'use client';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { FiArrowRight, FiMapPin, FiPaperclip } from 'react-icons/fi';
+import { searchCities, searchHotels, searchHotelsByGeocode, searchHotelsByKeyword } from '@/services/hotelService';
+import AutocompleteCountry from '@/components/globe/countries';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import SectionTitle from '@/components/Common/SectionTitle';
 
 delete L.Icon.Default.prototype._getIconUrl;
 
 interface Country {
   name: string;
   code: string;
-
 }
 
 const hotelIcon = new L.Icon({
-  iconUrl: "/images/hotel/hotel.svg",
+  iconUrl: '/images/hotel/hotel.svg',
   iconSize: [32, 32],
   iconAnchor: [16, 32],
   popupAnchor: [0, -32],
@@ -35,6 +33,7 @@ const MapUpdater = ({ center }) => {
   }, [center, map]);
   return null;
 };
+
 function resetMapContainer(id) {
   const container = L.DomUtil.get(id);
   if (container && container._leaflet_id) {
@@ -55,43 +54,40 @@ const MapClickHandler = ({ isDrawing, onCircleSet }) => {
 };
 
 const ClientBookingPage = () => {
-  const router = useRouter(); // Add router for navigation
+  const router = useRouter();
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [hotelImage, setHotelImage] = useState(null);
-  const [bookingCountry, setBookingCountry] = useState<Country>({ name: "", code: "" });
+  const [bookingCountry, setBookingCountry] = useState<Country>({ name: '', code: '' });
   type Destination = { name: string; iataCode: string; geoCode?: { latitude: number; longitude: number } } | string;
-  const [destination, setDestination] = useState<Destination>("");
+  const [destination, setDestination] = useState<Destination>('');
   const [citySuggestions, setCitySuggestions] = useState([]);
   const [hotels, setHotels] = useState([]);
-  const [departureDate, setDepartureDate] = useState("");
-  const [duration, setDuration] = useState("");
+  const [departureDate, setDepartureDate] = useState('');
+  const [duration, setDuration] = useState('');
   const [mapCenter, setMapCenter] = useState([51.505, -0.09]);
   const [isSearching, setIsSearching] = useState(false);
   const [circleCenter, setCircleCenter] = useState(null);
   const [radiusKm, setRadiusKm] = useState(100);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [hotelName, setHotelName] = useState("");
+  const [hotelName, setHotelName] = useState('');
 
   const getRandomHotelImage = () => {
     const randomNumber = Math.floor(Math.random() * 63) + 1;
     return `/images/hotel-images/hotel${randomNumber}.jpg`;
   };
+
   const handleBookNow = (hotel) => {
-    const stateName = typeof destination === "object" ? destination.name || "" : destination || "";
-    const url = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&country=${encodeURIComponent(bookingCountry.name)}&state=${encodeURIComponent(stateName)}`;
+    const stateName = typeof destination === 'object' ? destination.name || '' : destination || '';
+    const url = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&country=${encodeURIComponent(
+      bookingCountry.name
+    )}&state=${encodeURIComponent(stateName)}`;
     router.push(url);
   };
-  useEffect(() => {
-  }, [hotels]);
 
-  
+  useEffect(() => {}, [hotels]);
+
   useEffect(() => {
-    if (
-      typeof destination !== "string" ||
-      !destination.trim() ||
-      destination.trim().length < 3 ||
-      !bookingCountry.code
-    ) {
+    if (typeof destination !== 'string' || !destination.trim() || destination.trim().length < 3 || !bookingCountry.code) {
       setCitySuggestions([]);
       return;
     }
@@ -99,7 +95,7 @@ const ClientBookingPage = () => {
     const timer = setTimeout(() => {
       searchCities({ countryCode: bookingCountry.code, keyword: destination, max: 10 })
         .then((cities) => setCitySuggestions(cities))
-        .catch((error) => console.error("Error fetching cities:", error));
+        .catch((error) => console.error('Error fetching cities:', error));
     }, 300);
 
     return () => clearTimeout(timer);
@@ -113,18 +109,18 @@ const ClientBookingPage = () => {
   const handleCitySelect = (city) => {
     setDestination(city);
     setCitySuggestions([]);
-    if (city.geoCode && typeof city.geoCode.latitude === "number" && typeof city.geoCode.longitude === "number") {
+    if (city.geoCode && typeof city.geoCode.latitude === 'number' && typeof city.geoCode.longitude === 'number') {
       setMapCenter([city.geoCode.latitude, city.geoCode.longitude]);
       setCircleCenter([city.geoCode.latitude, city.geoCode.longitude]);
     } else {
-      console.warn("City has no valid geoCode:", city);
+      console.warn('City has no valid geoCode:', city);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (typeof destination !== "object" || !destination.iataCode) {
-      console.error("No valid city selected");
+    if (typeof destination !== 'object' || !destination.iataCode) {
+      console.error('No valid city selected');
       return;
     }
 
@@ -136,7 +132,7 @@ const ClientBookingPage = () => {
         setMapCenter([destination.geoCode.latitude, destination.geoCode.longitude]);
       }
     } catch (error) {
-      console.error("Error fetching hotels:", error);
+      console.error('Error fetching hotels:', error);
     } finally {
       setIsSearching(false);
     }
@@ -152,7 +148,7 @@ const ClientBookingPage = () => {
         setMapCenter([fetchedHotels[0].geoCode.latitude, fetchedHotels[0].geoCode.longitude]);
       }
     } catch (error) {
-      console.error("Error fetching hotels by name:", error);
+      console.error('Error fetching hotels by name:', error);
     } finally {
       setIsSearching(false);
     }
@@ -176,7 +172,7 @@ const ClientBookingPage = () => {
 
   const handleSearchByRadius = async () => {
     if (!circleCenter) {
-      alert("Please select a destination to set the search center.");
+      alert('Please select a destination to set the search center.');
       return;
     }
     setIsSearching(true);
@@ -185,8 +181,8 @@ const ClientBookingPage = () => {
       const fetchedHotels = await searchHotelsByGeocode({ latitude, longitude, radius: radiusKm });
       setHotels(fetchedHotels);
     } catch (error) {
-      console.error("Error fetching hotels by geocode:", error);
-      alert("Failed to fetch hotels. Please try again.");
+      console.error('Error fetching hotels by geocode:', error);
+      alert('Failed to fetch hotels. Please try again.');
     } finally {
       setIsSearching(false);
     }
@@ -197,22 +193,16 @@ const ClientBookingPage = () => {
   return (
     <section className="overflow-hidden pb-8 pt-16 lg:pt-20">
       <div className="container mx-auto">
-        {/* <SectionTitle
-          title="The Best Hotel Deals"
-          paragraph="Find the Best Hotel Deals and offers from all over the world. Book your Hotel now!"
-          center
-          width="650px"
-        /> */}
         <div className="flex flex-wrap lg:flex-nowrap -mx-4">
           <div className="w-full lg:w-8/12 px-4">
-            <div style={{ height: "calc(105vh - 8rem)", overflow: "hidden" }}>
-            <MapContainer
-              key={`${mapCenter[0]}-${mapCenter[1]}`}
-              center={mapCenter}
-              zoom={13}
-              style={{ height: "100%", width: "100%" }}
-            >                
-            <MapUpdater center={mapCenter} />
+            <div style={{ height: 'calc(105vh - 8rem)', overflow: 'hidden' }}>
+              <MapContainer
+                key={`${mapCenter[0]}-${mapCenter[1]}`}
+                center={mapCenter}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+              >
+                <MapUpdater center={mapCenter} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='© <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -222,7 +212,7 @@ const ClientBookingPage = () => {
                   <Circle
                     center={circleCenter}
                     radius={radiusMeters}
-                    pathOptions={{ color: "blue", fillColor: "blue", fillOpacity: 0.2 }}
+                    pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.2 }}
                   />
                 )}
                 {hotels.length > 0 &&
@@ -234,34 +224,43 @@ const ClientBookingPage = () => {
                         icon={hotelIcon}
                         eventHandlers={{ click: () => handleMarkerClick(hotel) }}
                       >
-                        <Popup maxWidth={300} minWidth={200}>
+                        <Popup maxWidth={250} minWidth={250}>
                           {selectedHotel && selectedHotel.hotelId === hotel.hotelId && hotelImage ? (
-                            <div className="text-center">
+                            <div className="text-center p-4">
                               <h3 className="font-bold text-lg mb-2">{hotel.name}</h3>
-                              <img
-                                src={hotelImage}
-                                alt={hotel.name}
-                                style={{ width: "100%", height: "auto" }}
-                                onError={(e) => (e.target.src = "/images/hotel-images/fallback.jpg")}
-                              />
-                                { typeof window !== "undefined" && (localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")) ? (                                <Link
+                              <div className="relative w-full h-[150px] mb-2">
+                                <img
+                                  src={hotelImage}
+                                  alt={hotel.name}
+                                  className="w-full h-full object-cover rounded-lg"
+                                  onError={(e) => (e.target.src = '/images/hotel-images/fallback.jpg')}
+                                />
+                              </div>
+                              {typeof window !== 'undefined' &&
+                              (localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token')) ? (
+                                <Link
                                   href={{
-                                    pathname: "/hotel-details",
+                                    pathname: '/hotel-details',
                                     query: {
                                       lat: hotel.geoCode.latitude,
                                       lng: hotel.geoCode.longitude,
-                                      hotelName: hotel.name, // Added hotelName for the endpoint
+                                      hotelName: hotel.name,
                                     },
                                   }}
                                 >
-                                  <button>Book Now</button>
+                                  <button className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-all duration-200 w-full">
+                                    Book Now
+                                  </button>
                                 </Link>
                               ) : (
                                 <button
                                   onClick={() => {
-                                    const redirectUrl = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&hotelName=${encodeURIComponent(hotel.name)}`;
+                                    const redirectUrl = `/hotel-details?lat=${hotel.geoCode.latitude}&lng=${hotel.geoCode.longitude}&hotelName=${encodeURIComponent(
+                                      hotel.name
+                                    )}`;
                                     router.push(`/signin?redirect=${encodeURIComponent(redirectUrl)}`);
                                   }}
+                                  className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-all duration-200 w-full"
                                 >
                                   Book Now
                                 </button>
@@ -297,7 +296,7 @@ const ClientBookingPage = () => {
                     <input
                       type="text"
                       placeholder="City or country"
-                      value={typeof destination === "object" ? destination.name : destination}
+                      value={typeof destination === 'object' ? destination.name : destination}
                       onChange={(e) => setDestination(e.target.value)}
                       className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       required
@@ -310,7 +309,7 @@ const ClientBookingPage = () => {
                             onClick={() => handleCitySelect(city)}
                             className="px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer text-sm"
                           >
-                            {city.name} {city.iataCode ? `(${city.iataCode})` : ""}
+                            {city.name} {city.iataCode ? `(${city.iataCode})` : ''}
                           </li>
                         ))}
                       </ul>
@@ -321,7 +320,7 @@ const ClientBookingPage = () => {
                   type="submit"
                   disabled={isSearching}
                   className={`w-full flex items-center justify-center space-x-1 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm ${
-                    isSearching ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                    isSearching ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
                   {isSearching ? (
@@ -378,7 +377,7 @@ const ClientBookingPage = () => {
                   onClick={handleHotelNameSearch}
                   disabled={isSearching}
                   className={`w-full flex items-center justify-center space-x-1 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm ${
-                    isSearching ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                    isSearching ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
                   {isSearching ? (
@@ -437,10 +436,10 @@ const ClientBookingPage = () => {
                   <button
                     onClick={toggleDrawing}
                     className={`w-full py-2 px-3 rounded-lg text-white font-semibold transition-all duration-200 text-sm ${
-                      isDrawing ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"
+                      isDrawing ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
-                    {isDrawing ? "Stop Drawing" : "Draw Circle"}
+                    {isDrawing ? 'Stop Drawing' : 'Draw Circle'}
                   </button>
                   <button
                     onClick={clearCircle}
@@ -453,10 +452,10 @@ const ClientBookingPage = () => {
                     onClick={handleSearchByRadius}
                     disabled={!circleCenter || isSearching}
                     className={`w-full flex items-center justify-center space-x-1 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 transform hover:-translate-y-0.5 text-sm ${
-                      isSearching ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                      isSearching ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                     }`}
                   >
-                    {isSearching ? "Searching..." : "Search"}
+                    {isSearching ? 'Searching...' : 'Search'}
                   </button>
                 </div>
               </div>

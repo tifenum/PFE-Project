@@ -1,9 +1,9 @@
-"use client";
-import { useEffect, useState } from "react";
-import { fetchFakeHotel, createBooking } from "@/services/hotelService";
-import { jwtDecode } from "jwt-decode";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+'use client';
+import { useEffect, useState } from 'react';
+import { fetchFakeHotel, createBooking } from '@/services/hotelService';
+import { jwtDecode } from 'jwt-decode';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface Room {
   type: string;
@@ -27,14 +27,15 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
   const [hotelData, setHotelData] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [roomToBook, setRoomToBook] = useState<Room | null>(null);
+  const [hotelImages, setHotelImages] = useState<{ hero: string; rooms: string[] }>({ hero: '', rooms: [] });
   const router = useRouter();
 
   // Parse hotel name: remove ?login=success, replace %20, capitalize first letters
   const parseHotelName = (name: string) => {
-    if (!name) return "";
+    if (!name) return '';
     const cleanedName = name
-      .replace(/\?login=success/g, "")
-      .replace(/%20/g, " ")
+      .replace(/\?login=success/g, '')
+      .replace(/%20/g, ' ')
       .toLowerCase();
     return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
   };
@@ -42,27 +43,34 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
   const displayName = parseHotelName(rawHotelName);
 
   // Generate random hotel image between 1 and 63
-  const getRandomHotelImage = (index: number): string => {
+  const getRandomHotelImage = (): string => {
     const imageNumber = Math.floor(Math.random() * 63) + 1;
     return `/images/hotel-images/hotel${imageNumber}.jpg`;
   };
 
-  // Fetch hotel data
+  // Fetch hotel data and set images
   useEffect(() => {
-      const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+    const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
     if (!token) {
-      toast.error("No auth token, please login.");
+      toast.error('No auth token, please login.');
       setLoading(false);
       return;
     }
 
     fetchFakeHotel({ latitude, longitude, hotelName: rawHotelName })
-      .then(data => {
-        if (data) setHotelData(data);
+      .then((data) => {
+        if (data) {
+          setHotelData(data);
+          // Generate images for hero and rooms
+          setHotelImages({
+            hero: getRandomHotelImage(),
+            rooms: data.rooms.map(() => getRandomHotelImage()),
+          });
+        }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(err);
-        toast.error("Failed to load hotel details.");
+        toast.error('Failed to load hotel details.');
       })
       .finally(() => setLoading(false));
   }, [latitude, longitude, rawHotelName]);
@@ -74,13 +82,13 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
   const closeBooking = () => setRoomToBook(null);
 
   const getUserIdFromToken = () => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token") : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token') : null;
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
         return decodedToken.sub;
       } catch (error) {
-        console.error("Error decoding token", error);
+        console.error('Error decoding token', error);
         return null;
       }
     }
@@ -93,10 +101,12 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
       {/* Hero Section with rounded corners */}
       <div className="relative mb-12 overflow-hidden rounded-2xl">
         <img
-          src={getRandomHotelImage(0)}
+          src={hotelImages.hero}
           alt={`${displayName} Hero`}
           className="w-full h-64 md:h-96 object-cover"
-          onError={(e) => { (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg"; }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/images/hotel-images/hotel1.jpg';
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-6">
           <div>
@@ -115,10 +125,12 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
               className="group relative overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105"
             >
               <img
-                src={getRandomHotelImage(idx)}
+                src={hotelImages.rooms[idx] || '/images/hotel-images/hotel1.jpg'}
                 alt={`${room.type} Image`}
                 className="w-full h-64 object-cover rounded-xl"
-                onError={(e) => { (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg"; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/hotel-images/hotel1.jpg';
+                }}
               />
               <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
                 <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{room.type}</h3>
@@ -154,22 +166,22 @@ export default function HotelDetailsClient({ rawHotelName, latitude, longitude }
 
 const BookingModal = ({ room, hotelData, userId, onClose }) => {
   const router = useRouter();
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [note, setNote] = useState("");
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [note, setNote] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
-const parseHotelName = (name: string) => {
-  if (!name) return "";
-  const decodedName = decodeURIComponent(name)
-    .replace(/\?login=success/gi, "")
-    .replace(/%20/g, " ")
-    .toLowerCase()
-    .trim();
-  return decodedName.replace(/\b\w/g, (char) => char.toUpperCase());
-};
+  const today = new Date().toISOString().split('T')[0];
+  const parseHotelName = (name: string) => {
+    if (!name) return '';
+    const decodedName = decodeURIComponent(name)
+      .replace(/\?login=success/gi, '')
+      .replace(/%20/g, ' ')
+      .toLowerCase()
+      .trim();
+    return decodedName.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   useEffect(() => {
     if (checkIn && checkOut && checkOut > checkIn) {
@@ -187,15 +199,15 @@ const parseHotelName = (name: string) => {
     e.preventDefault();
 
     if (!checkIn || !checkOut) {
-      toast.warning("Yo, pick your check-in and check-out dates!");
+      toast.warning('Yo, pick your check-in and check-out dates!');
       return;
     }
     if (checkIn < today) {
-      toast.error("Check-in can’t be in the past, bro!");
+      toast.error('Check-in can’t be in the past, bro!');
       return;
     }
     if (checkOut <= checkIn) {
-      toast.warning("Check-out’s gotta be after check-in, fam!");
+      toast.warning('Check-out’s gotta be after check-in, fam!');
       return;
     }
 
@@ -215,14 +227,14 @@ const parseHotelName = (name: string) => {
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
-      toast.success("Booking confirmed, dude! Redirecting...");
+      toast.success('Booking confirmed, dude! Redirecting...');
       setTimeout(() => {
-        router.push("/");
+        router.push('/');
       }, 1000);
       onClose();
     } catch (error) {
-      toast.error("Failed to book the room. Try again, man!");
-      console.error("Booking error:", error);
+      toast.error('Failed to book the room. Try again, man!');
+      console.error('Booking error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -319,10 +331,10 @@ const parseHotelName = (name: string) => {
             type="submit"
             disabled={isSubmitting}
             className={`w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
-              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isSubmitting ? "Booking..." : "Confirm Booking"}
+            {isSubmitting ? 'Booking...' : 'Confirm Booking'}
           </button>
         </form>
       </div>
