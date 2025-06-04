@@ -110,10 +110,7 @@ export default function MapButtons({
 
     const viewButton = document.createElement('button');
     viewButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22C6.477 22 2 12 2 12s4.477-10 10-10 10 10 10 10-4.477 10-10 10z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
     `;
     viewButton.style.display = 'flex';
     viewButton.style.alignItems = 'center';
@@ -131,11 +128,7 @@ export default function MapButtons({
 
     const zoomInButton = document.createElement('button');
     zoomInButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="16"></line>
-        <line x1="8" y1="12" x2="16" y2="12"></line>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zoom-in-icon lucide-zoom-in"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
     `;
     zoomInButton.style.display = 'flex';
     zoomInButton.style.alignItems = 'center';
@@ -153,10 +146,7 @@ export default function MapButtons({
 
     const zoomOutButton = document.createElement('button');
     zoomOutButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="8" y1="12" x2="16" y2="12"></line>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zoom-out-icon lucide-zoom-out"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
     `;
     zoomOutButton.style.display = 'flex';
     zoomOutButton.style.alignItems = 'center';
@@ -173,12 +163,11 @@ export default function MapButtons({
     buttonContainer.appendChild(zoomOutButton);
 
     const projectionButton = document.createElement('button');
-    projectionButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a10 10 0 0 0-9.95 9.95A10 0 0 0 12 22a10 0 0 0 9.95-9.95A10 0 0 0 12 2z"></path>
-        <path d="M12 2v20"></path>
-        <path d="M2 12h20"></path>
-      </svg>
+    // Set initial icon based on projection state
+    projectionButton.innerHTML = projection === 'mercator' ? `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+    ` : `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/></svg>
     `;
     projectionButton.style.display = 'flex';
     projectionButton.style.alignItems = 'center';
@@ -191,15 +180,12 @@ export default function MapButtons({
     projectionButton.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
     projectionButton.style.cursor = 'pointer';
     projectionButton.style.transition = 'all 0.3s ease';
-    projectionButton.title = 'Toggle projection';
+    projectionButton.title = projection === 'mercator' ? 'Switch to globe view' : 'Switch to map view';
     buttonContainer.appendChild(projectionButton);
 
     const locateButton = document.createElement('button');
     locateButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13 a9 0 0 1 18 0z"></path>
-        <circle cx="12" cy="10" r="3"></circle>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
     `;
     locateButton.style.display = 'flex';
     locateButton.style.alignItems = 'center';
@@ -217,10 +203,7 @@ export default function MapButtons({
 
     const homeButton = document.createElement('button');
     homeButton.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home-icon lucide-home"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     `;
     homeButton.style.display = 'flex';
     homeButton.style.alignItems = 'center';
@@ -238,6 +221,10 @@ export default function MapButtons({
 
     const buttons = [viewButton, zoomInButton, zoomOutButton, projectionButton, locateButton, homeButton];
     buttons.forEach(button => {
+      // Ensure initial SVG visibility
+      const svg = button.querySelector('svg');
+      if (svg) svg.style.stroke = '#333333';
+
       button.addEventListener('mouseenter', () => {
         if (!button.disabled) {
           button.style.borderColor = '#05CB63';
@@ -331,7 +318,7 @@ export default function MapButtons({
 
     const applyMapStyle = async (styleIndex: number) => {
       if (!map) return;
-      
+
       let sourceData = sourceCache.current;
       if (!sourceData) {
         sourceData = await getSource();
@@ -557,13 +544,13 @@ export default function MapButtons({
           });
         }
       }
-      projectionButton.innerHTML = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 0 0-9.95 9.95A10 0 0 0 12 22a10 0 0 0 9.95-9.95A10 0 0 0 12 2z"></path>
-          <path d="M12 2v20"></path>
-          <path d="M2 12h20"></path>
-        </svg>
+      // Update projection button icon and title based on new projection
+      projectionButton.innerHTML = newProjection === 'mercator' ? `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+      ` : `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16"/><path d="M16 6v16"/></svg>
       `;
+      projectionButton.title = newProjection === 'mercator' ? 'Switch to globe view' : 'Switch to map view';
     });
 
     locateButton.addEventListener('click', () => {
@@ -576,10 +563,7 @@ export default function MapButtons({
       locateButton.style.borderColor = '#E0E0E0';
       locateButton.style.cursor = 'not-allowed';
       locateButton.innerHTML = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <circle cx="12" cy="12" r="4" fill="#333333"></circle>
-        </svg>
+        <svg xmlns="http://www.w3.org/200 artrf/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-icon lucide-loader"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#333333"/></svg>
       `;
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -598,10 +582,7 @@ export default function MapButtons({
           locateButton.style.borderColor = '#E0E0E0';
           locateButton.style.cursor = 'pointer';
           locateButton.innerHTML = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13 a9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
           `;
         },
         (error) => {
@@ -612,10 +593,7 @@ export default function MapButtons({
           locateButton.style.borderColor = '#E0E0E0';
           locateButton.style.cursor = 'pointer';
           locateButton.innerHTML = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13 a9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-icon lucide-map-pin"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
           `;
         },
         { enableHighAccuracy: true, timeout: 10000 }

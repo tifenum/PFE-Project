@@ -106,24 +106,17 @@ export default function MapillaryViewer({
 
     // Define SVG icons
     const expandIcon = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 0 0 0 2 2h3"></path>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-expand-icon lucide-expand"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></svg>
     `;
     const restoreIcon = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 8V5a2 2 0 0 1 2-2h3m13 0h3a2 2 0 0 1 2 2v3m0 13v3a2 2 0 0 1-2 2h-3m-13 0H5a2 2 0 0 1-2-2v-3"></path>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-expand-icon lucide-expand"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></svg>
+
     `;
     const minimizeIcon = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minimize-icon lucide-minimize"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>
     `;
     const minimizedIcon = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3l18 18M3 21l18-18M9 3v18M15 3v18M3 9h18M3 15h18"></path>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mountain-icon lucide-mountain"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
     `;
 
     // Apply styles based on viewMode and minimization state
@@ -190,13 +183,28 @@ export default function MapillaryViewer({
       toggleButton.style.top = '10px';
       toggleButton.style.right = '10px';
       toggleButton.style.zIndex = '102';
-      toggleButton.style.backgroundColor = 'white';
+      toggleButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
       toggleButton.style.border = '1px solid #ccc';
       toggleButton.style.borderRadius = '4px';
       toggleButton.style.padding = '5px';
       toggleButton.style.cursor = 'pointer';
       toggleButton.style.pointerEvents = 'auto';
+      toggleButton.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
       toggleButton.className = 'toggle-button';
+      // Ensure SVG stroke color
+      const toggleSvg = toggleButton.querySelector('svg');
+      if (toggleSvg) {
+        toggleSvg.style.stroke = '#333'; // Dark color for visibility
+      }
+      // Hover effect
+      toggleButton.addEventListener('mouseenter', () => {
+        toggleButton.style.transform = 'scale(1.1)';
+        toggleButton.style.backgroundColor = 'rgba(200, 200, 200, 0.9)';
+      });
+      toggleButton.addEventListener('mouseleave', () => {
+        toggleButton.style.transform = 'scale(1)';
+        toggleButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+      });
       toggleButton.addEventListener('click', () => {
         console.log('MapillaryViewer: Toggle button clicked, setting viewMode to swapped');
         setViewMode('swapped');
@@ -204,7 +212,7 @@ export default function MapillaryViewer({
         setIsMapMinimized(false);
       });
       viewerWrapper.appendChild(toggleButton);
-
+    
       // Minimize button
       const minimizeButton = document.createElement('button');
       minimizeButton.innerHTML = minimizeIcon;
@@ -212,13 +220,28 @@ export default function MapillaryViewer({
       minimizeButton.style.top = '10px';
       minimizeButton.style.right = '40px';
       minimizeButton.style.zIndex = '102';
-      minimizeButton.style.backgroundColor = 'white';
+      minimizeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
       minimizeButton.style.border = '1px solid #ccc';
       minimizeButton.style.borderRadius = '4px';
       minimizeButton.style.padding = '5px';
       minimizeButton.style.cursor = 'pointer';
       minimizeButton.style.pointerEvents = 'auto';
+      minimizeButton.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
       minimizeButton.className = 'minimize-button';
+      // Ensure SVG stroke color
+      const minimizeSvg = minimizeButton.querySelector('svg');
+      if (minimizeSvg) {
+        minimizeSvg.style.stroke = '#333'; // Dark color for visibility
+      }
+      // Hover effect
+      minimizeButton.addEventListener('mouseenter', () => {
+        minimizeButton.style.transform = 'scale(1.1)';
+        minimizeButton.style.backgroundColor = 'rgba(200, 200, 200, 0.9)';
+      });
+      minimizeButton.addEventListener('mouseleave', () => {
+        minimizeButton.style.transform = 'scale(1)';
+        minimizeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+      });
       minimizeButton.addEventListener('click', () => {
         console.log('MapillaryViewer: Minimize viewer button clicked');
         setIsViewerMinimized(true);
@@ -233,13 +256,28 @@ export default function MapillaryViewer({
       toggleButton.style.top = '10px';
       toggleButton.style.right = '10px';
       toggleButton.style.zIndex = '102';
-      toggleButton.style.backgroundColor = 'white';
+      toggleButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
       toggleButton.style.border = '1px solid #ccc';
       toggleButton.style.borderRadius = '4px';
       toggleButton.style.padding = '5px';
       toggleButton.style.cursor = 'pointer';
       toggleButton.style.pointerEvents = 'auto';
+      toggleButton.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
       toggleButton.className = 'toggle-button';
+      // Ensure SVG stroke color
+      const toggleSvg = toggleButton.querySelector('svg');
+      if (toggleSvg) {
+        toggleSvg.style.stroke = '#333'; // Dark color for visibility
+      }
+      // Hover effect
+      toggleButton.addEventListener('mouseenter', () => {
+        toggleButton.style.transform = 'scale(1.1)';
+        toggleButton.style.backgroundColor = 'rgba(200, 200, 200, 0.9)';
+      });
+      toggleButton.addEventListener('mouseleave', () => {
+        toggleButton.style.transform = 'scale(1)';
+        toggleButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+      });
       toggleButton.addEventListener('click', () => {
         console.log('MapillaryViewer: Toggle button clicked, setting viewMode to default');
         setViewMode('default');
@@ -247,7 +285,7 @@ export default function MapillaryViewer({
         setIsMapMinimized(false);
       });
       mapContainer.appendChild(toggleButton);
-
+    
       // Minimize button
       const minimizeButton = document.createElement('button');
       minimizeButton.innerHTML = minimizeIcon;
@@ -255,13 +293,28 @@ export default function MapillaryViewer({
       minimizeButton.style.top = '10px';
       minimizeButton.style.right = '40px';
       minimizeButton.style.zIndex = '102';
-      minimizeButton.style.backgroundColor = 'white';
+      minimizeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
       minimizeButton.style.border = '1px solid #ccc';
       minimizeButton.style.borderRadius = '4px';
       minimizeButton.style.padding = '5px';
       minimizeButton.style.cursor = 'pointer';
       minimizeButton.style.pointerEvents = 'auto';
+      minimizeButton.style.transition = 'transform 0.2s ease, background-color 0.2s ease';
       minimizeButton.className = 'minimize-button';
+      // Ensure SVG stroke color
+      const minimizeSvg = minimizeButton.querySelector('svg');
+      if (minimizeSvg) {
+        minimizeSvg.style.stroke = '#333'; // Dark color for visibility
+      }
+      // Hover effect
+      minimizeButton.addEventListener('mouseenter', () => {
+        minimizeButton.style.transform = 'scale(1.1)';
+        minimizeButton.style.backgroundColor = 'rgba(200, 200, 200, 0.9)';
+      });
+      minimizeButton.addEventListener('mouseleave', () => {
+        minimizeButton.style.transform = 'scale(1)';
+        minimizeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+      });
       minimizeButton.addEventListener('click', () => {
         console.log('MapillaryViewer: Minimize map button clicked');
         setIsMapMinimized(true);
@@ -269,7 +322,6 @@ export default function MapillaryViewer({
       });
       mapContainer.appendChild(minimizeButton);
     }
-
     // Add minimized icons
     if (isViewerMinimized) {
       const viewerIcon = document.createElement('button');
