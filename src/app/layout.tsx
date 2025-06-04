@@ -3,6 +3,7 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
+import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute"; // Import the new component
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "node_modules/react-modal-video/css/modal-video.css";
@@ -11,7 +12,7 @@ import { ThemeProvider } from "next-themes";
 import { LoadingProvider } from "./LoadingContext";
 import ClientNavigationHandler from "./ClientNavigationHandler";
 import ClientGlobalLoaderWrapper from "./ClientGlobalLoaderWrapper";
-import { usePathname } from "next/navigation"; // Import usePathname
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +21,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname(); // Get current pathname
-const hideFooter = pathname === "/chatbot" || pathname === "/map";
-const hideHeader = pathname === "/map";
- // Get current p
+  const pathname = usePathname();
+  const hideFooter = pathname === "/chatbot" || pathname === "/map";
+  const hideHeader = pathname === "/map";
+
+  // Determine if the route requires protection
+  const isAdminRoute = pathname.startsWith("/adminpage");
+  const isBookingRoute = pathname === "/bookings";
+  const isProtected = isAdminRoute || isBookingRoute;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -34,7 +40,13 @@ const hideHeader = pathname === "/map";
             <Toaster richColors />
             <ClientNavigationHandler />
             <ClientGlobalLoaderWrapper />
-            {children}
+            {isProtected ? (
+              <ProtectedRoute requireAdmin={isAdminRoute}>
+                {children}
+              </ProtectedRoute>
+            ) : (
+              children
+            )}
             {!hideFooter && <Footer />}
             <ScrollToTop />
           </ThemeProvider>

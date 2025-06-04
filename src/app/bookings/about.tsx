@@ -280,7 +280,7 @@ const ReservationsPage = () => {
                           {res.departureTime ? formatTime(res.departureTime) : "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.totalPrice || "-"}
+                          {res.totalPrice +' $' || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span className={getStatusStyle(res.bookingStatus)}>

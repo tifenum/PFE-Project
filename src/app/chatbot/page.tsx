@@ -87,7 +87,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hey there! Ready to plan your next adventure? Ask me about flights, hotels, cars, or deals!',
+      content: 'Hey there! Ready to plan your next adventure? Ask me about flights, hotels or cars !',
     },
   ]);
   const [input, setInput] = useState('');

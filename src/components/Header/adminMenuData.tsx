@@ -20,7 +20,7 @@ const adminMenuData: Menu[] = [
     newTab: false,
   },
   {
-  id: 102,
+  id: 103,
   title: "Car rental",
   path: "/adminpage/car-rentals",
   newTab: false,
