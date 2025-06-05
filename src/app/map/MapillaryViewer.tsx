@@ -22,7 +22,7 @@ export default function MapillaryViewer({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const positionMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [viewMode, setViewMode] = useState<string>('default');
-  const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/satellite-v9');
+  const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/outdoors-v12');
   const [actualHeaderHeight, setActualHeaderHeight] = useState(headerHeight);
   const [initialImageId, setInitialImageId] = useState<string>("9914836918642212");
   const [initialSequenceKey, setInitialSequenceKey] = useState<string>("ws0E4KRpYoCr1WySn7xhJV");

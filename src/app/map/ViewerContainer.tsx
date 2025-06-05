@@ -4,7 +4,7 @@ import { Viewer, CameraControls } from 'mapillary-js';
 import { makeContainers, makeSpinnerLoader, makeErrorMessage, moveToWithRetry, coordinateCache } from './mapUtils';
 import mapboxgl from 'mapbox-gl';
 import countryCoordinates from './countryCoordinates';
-
+import './mapillary.css';
 interface ViewerContainerProps {
   mapillaryAccessToken: string;
   headerHeight: number;
@@ -82,7 +82,7 @@ export default function ViewerContainer({
         pinchZoom: true, // Enable pinch-to-zoom on touch devices
         },
         sequence: { enabled: true, visible: true, playing: false }, // Enable sequence navigation arrows
-        zoom: true,
+        zoom: false,
       },
       trackResize: true,
     };
