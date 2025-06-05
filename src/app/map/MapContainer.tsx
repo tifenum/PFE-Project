@@ -228,15 +228,27 @@ export default function MapContainer({
               type: 'circle',
               source: 'images',
               paint: {
-                'circle-radius': 10,
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4,
+                  10, 8,
+                  15, 12
+                ],
                 'circle-color': 'rgba(148, 0, 211, 0.5)',
                 'circle-stroke-color': '#FFFFFF',
-                'circle-stroke-width': 2,
+                'circle-stroke-width': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 1.5,
+                  15, 2
+                ],
               },
               filter: ['==', 'imageId', ''],
             });
           }
-
           // Add hover effect for both initial and search points
           mapRef.current!.on('mouseenter', ['initial-points', 'search-points'], () => {
             mapRef.current!.getCanvas().style.cursor = 'pointer';
