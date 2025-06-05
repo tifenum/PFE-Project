@@ -2,9 +2,11 @@
 import { useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLoading } from './LoadingContext';
+import { usePathname } from 'next/navigation';
 
 const NavigationHandler = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { showLoader, hideLoader } = useLoading();
 
   useLayoutEffect(() => {
@@ -16,8 +18,6 @@ const NavigationHandler = () => {
     const handleRouteChangeComplete = () => deferUpdate(hideLoader);
     const handleRouteChangeError = () => deferUpdate(hideLoader);
 
-    // Next.js App Router doesn't have direct router.events like Pages Router,
-    // but we can use window.history.pushState/replaceState as a proxy for navigation
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
@@ -31,12 +31,12 @@ const NavigationHandler = () => {
       return originalReplaceState.apply(window.history, args);
     };
 
-    // Fallback for client-side navigation
     const handlePopState = () => deferUpdate(showLoader);
     window.addEventListener('popstate', handlePopState);
 
-    // Assume route change completes after a short delay (since no direct event)
-    const timeout = setTimeout(() => deferUpdate(hideLoader), 1000); // Adjust as needed
+    // Set timeout based on route: 1000ms for /map, 500ms for others
+    const timeoutDuration = pathname === '/map' ? 1500 : 500;
+    const timeout = setTimeout(() => deferUpdate(hideLoader), timeoutDuration);
 
     return () => {
       window.history.pushState = originalPushState;
@@ -44,7 +44,7 @@ const NavigationHandler = () => {
       window.removeEventListener('popstate', handlePopState);
       clearTimeout(timeout);
     };
-  }, [router, showLoader, hideLoader]);
+  }, [router, showLoader, hideLoader, pathname]);
 
   return null;
 };
