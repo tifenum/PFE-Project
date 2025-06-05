@@ -2,22 +2,22 @@
 import React, { useEffect } from 'react';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import mapboxgl from 'mapbox-gl';
-import { makeSpinnerLoader, makeErrorMessage, fetchImages, moveToWithRetry } from '../mapUtils';
+import { makeSpinnerLoader, makeErrorMessage, fetchImages, moveToWithRetry, calculateBboxFromRadius } from '../mapUtils';
 import { MapContainerProps } from './types';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
 interface GeocoderProps extends Omit<MapContainerProps, 'mapStyle'> {
   map: mapboxgl.Map | null;
+  sourceCache: React.MutableRefObject<any>;
 }
 
-export default function Geocoder({ mapboxAccessToken, map, container, viewerRef, setImageId }: GeocoderProps) {
+export default function Geocoder({ mapboxAccessToken, map, container, viewerRef, setImageId, positionMarkerRef, sourceCache }: GeocoderProps) {
   useEffect(() => {
     if (!map || !container) {
       console.warn('Geocoder: map or container is null, skipping initialization');
       return;
     }
 
-    // Create a container for the search bar
     const geocoderContainer = document.createElement('div');
     geocoderContainer.id = 'geocoder';
     geocoderContainer.style.position = 'absolute';
@@ -33,7 +33,6 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
     geocoderContainer.style.padding = '5px';
     container.appendChild(geocoderContainer);
 
-    // Initialize Mapbox geocoder with minimal configuration
     const geocoder = new MapboxGeocoder({
       accessToken: mapboxAccessToken,
       mapboxgl: mapboxgl,
@@ -42,10 +41,8 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
       clearOnBlur: true,
     });
 
-    // Add geocoder to container
     geocoderContainer.appendChild(geocoder.onAdd(map));
 
-    // Add minimal CSS to fix suggestion text and style the form
     const style = document.createElement('style');
     style.innerHTML = `
       .mapboxgl-ctrl-geocoder {
@@ -91,28 +88,29 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
     `;
     document.head.appendChild(style);
 
-    // Handle search results
     geocoder.on('result', async (e) => {
       const { bbox, center } = e.result;
-      const coords = bbox ? `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}` : `${center[0] - 0.02},${center[1] - 0.02},${center[0] + 0.02},${center[1] + 0.02}`;
+      const coords = bbox ? `${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}` : calculateBboxFromRadius(center, 10);
       const viewerWrapper = container.querySelector('.viewer-wrapper');
       if (viewerWrapper && !viewerWrapper.querySelector('.spinner-loader')) {
         viewerWrapper.appendChild(makeSpinnerLoader());
       }
       try {
-        const features = await fetchImages(coords, 1);
+        const features = await fetchImages(coords, 50);
         const imageId = features[0]?.properties.imageId || `fallback-${coords}`;
         const newCoords = features[0]?.geometry.coordinates || center;
+        const imagesSource = map.getSource('images') as mapboxgl.GeoJSONSource & { _data?: GeoJSON.FeatureCollection<GeoJSON.Geometry, any> };
+        const currentData = imagesSource && imagesSource._data && Array.isArray(imagesSource._data.features)
+          ? imagesSource._data.features
+          : sourceCache.current?.data?.features || [];
+        
         const newSourceData: GeoJSON.FeatureCollection<GeoJSON.Geometry, { [name: string]: any }> = {
           type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: { imageId, thumbUrl: features[0]?.properties.thumbUrl || "" },
-            geometry: { type: "Point", coordinates: newCoords },
-          }],
+          features: [...currentData, ...features],
         };
         (map.getSource('images') as mapboxgl.GeoJSONSource).setData(newSourceData);
-        map.easeTo({ center: newCoords, zoom: 5 });
+        sourceCache.current = { type: 'geojson', data: newSourceData, cluster: false, clusterMaxZoom: 12, clusterRadius: 30 };
+        map.easeTo({ center: newCoords, zoom: 10 });
         setImageId({ imageId, sequenceKey: features[0]?.properties.sequenceKey || '' });
         if (viewerRef.current && imageId && !imageId.startsWith('fallback-')) {
           await moveToWithRetry(viewerRef.current, imageId);
@@ -133,7 +131,6 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
       }
     });
 
-    // Handle search errors
     geocoder.on('error', () => {
       console.error('Geocoder: Search failed');
       const viewerWrapper = container.querySelector('.viewer-wrapper');
@@ -145,7 +142,6 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
       }
     });
 
-    // Cleanup
     return () => {
       if (container.contains(geocoderContainer)) {
         container.removeChild(geocoderContainer);
@@ -154,7 +150,7 @@ export default function Geocoder({ mapboxAccessToken, map, container, viewerRef,
         document.head.removeChild(style);
       }
     };
-  }, [map, mapboxAccessToken, container, viewerRef, setImageId]);
+  }, [map, mapboxAccessToken, container, viewerRef, setImageId, positionMarkerRef, sourceCache]);
 
   return null;
 }

@@ -7,7 +7,7 @@ const fetchCache = new Map<string, any[]>();
 
 export async function fetchImages(bbox: string, limit: number = 2): Promise<any[]> {
   const startTime = performance.now();
-  console.log('fetchImages: Starting for bbox', bbox);
+  console.log('fetchImages: Starting for bbox', bbox, 'limit', limit);
   if (fetchCache.has(bbox)) {
     console.log('fetchImages: Returning cached features for bbox', bbox);
     return fetchCache.get(bbox)!;
@@ -29,7 +29,12 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
       coordinateCache.set(item.id, coordinates);
       return {
         type: 'Feature',
-        properties: { imageId: item.id, thumbUrl: item.thumbUrl || '', sequenceKey: item.sequenceKey || '' }, // Added sequenceKey
+        properties: {
+          imageId: item.id,
+          thumbUrl: item.thumbUrl || '',
+          sequenceKey: item.sequenceKey || '',
+          sourceType: 'search',
+        },
         geometry: {
           type: 'Point',
           coordinates,
@@ -44,7 +49,6 @@ export async function fetchImages(bbox: string, limit: number = 2): Promise<any[
     return [];
   }
 }
-
 // Rest of the file remains unchanged
 export async function getSource(searchBbox?: string): Promise<any> {
   const globalStartTime = performance.now();
@@ -85,6 +89,7 @@ export async function getSource(searchBbox?: string): Promise<any> {
         thumbUrl: '',
         sequence: countryData?.sequence_key || '',
         countryName: countryData?.name || 'Unknown',
+        sourceType: 'initial', // Add sourceType property
       },
       geometry: {
         type: 'Point',
@@ -110,7 +115,6 @@ export async function getSource(searchBbox?: string): Promise<any> {
   console.log(`getSource total time: ${(performance.now() - globalStartTime).toFixed(2)} ms`);
   return result;
 }
-
 export function makeContainers(container: HTMLDivElement, headerHeight: number) {
   const startTime = performance.now();
   console.time('makeContainers');
@@ -372,4 +376,22 @@ export async function moveToWithRetry(
   console.timeEnd(`moveToWithRetry-${imageId}`);
   console.log(`moveToWithRetry for imageId ${imageId} took ${(performance.now() - startTime).toFixed(2)} ms (failed after retries)`);
   return { success: false, error: 'Unknown error after retries' };
+}
+
+// Add to mapUtils.ts
+export function calculateBboxFromRadius(center: [number, number], radiusKm: number): string {
+  const earthRadius = 6378.1; // Earth's radius in km
+  const lat = center[1];
+  const lon = center[0];
+
+  // Convert radius to degrees
+  const latDelta = (radiusKm / earthRadius) * (180 / Math.PI);
+  const lonDelta = (radiusKm / (earthRadius * Math.cos(lat * Math.PI / 180))) * (180 / Math.PI);
+
+  const minLon = lon - lonDelta;
+  const maxLon = lon + lonDelta;
+  const minLat = lat - latDelta;
+  const maxLat = lat + latDelta;
+
+  return `${minLon},${minLat},${maxLon},${maxLat}`;
 }

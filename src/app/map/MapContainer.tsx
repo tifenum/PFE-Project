@@ -99,7 +99,7 @@ export default function MapContainer({
 
         console.log('MapContainer: map initialized');
 
-        mapRef.current.on('load', () => {
+        mapRef.current!.on('load', () => {
           console.log('MapContainer: Map loaded');
           if (!mapRef.current!.getSource('images')) {
             mapRef.current!.addSource('images', initialSource);
@@ -146,12 +146,13 @@ export default function MapContainer({
             });
           }
 
-          if (!mapRef.current!.getLayer('unclustered-point')) {
+          // Layer for initial points (green)
+          if (!mapRef.current!.getLayer('initial-points')) {
             mapRef.current!.addLayer({
-              id: 'unclustered-point',
+              id: 'initial-points',
               type: 'circle',
               source: 'images',
-              filter: ['!', ['has', 'point_count']],
+              filter: ['==', ['get', 'sourceType'], 'initial'],
               paint: {
                 'circle-radius': [
                   'interpolate',
@@ -169,7 +170,45 @@ export default function MapContainer({
                   10, 0.6,
                   15, 0.8
                 ],
-                'circle-color': '#05CB63',
+                'circle-color': '#05CB63', // Green for initial points
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 1.5,
+                'circle-stroke-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.5,
+                  15, 1
+                ]
+              }
+            });
+          }
+
+          // Layer for search points (red)
+          if (!mapRef.current!.getLayer('search-points')) {
+            mapRef.current!.addLayer({
+              id: 'search-points',
+              type: 'circle',
+              source: 'images',
+              filter: ['==', ['get', 'sourceType'], 'search'],
+              paint: {
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4,
+                  10, 8,
+                  15, 12
+                ],
+                'circle-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.3,
+                  10, 0.6,
+                  15, 0.8
+                ],
+                'circle-color': '#FF0000', // Red for search points
                 'circle-stroke-color': '#FFFFFF',
                 'circle-stroke-width': 1.5,
                 'circle-stroke-opacity': [
@@ -198,11 +237,11 @@ export default function MapContainer({
             });
           }
 
-          // Add hover effect for unclustered points
-          mapRef.current!.on('mouseenter', 'unclustered-point', () => {
+          // Add hover effect for both initial and search points
+          mapRef.current!.on('mouseenter', ['initial-points', 'search-points'], () => {
             mapRef.current!.getCanvas().style.cursor = 'pointer';
           });
-          mapRef.current!.on('mouseleave', 'unclustered-point', () => {
+          mapRef.current!.on('mouseleave', ['initial-points', 'search-points'], () => {
             mapRef.current!.getCanvas().style.cursor = 'grab';
           });
 
@@ -210,7 +249,7 @@ export default function MapContainer({
             console.time('MapClick');
             try {
               const features = mapRef.current!.queryRenderedFeatures(event.point, {
-                layers: ['unclustered-point'],
+                layers: ['initial-points', 'search-points'],
               });
               if (!features.length) {
                 console.log('MapContainer: No features clicked');
@@ -316,6 +355,7 @@ export default function MapContainer({
             viewerRef={viewerRef}
             setImageId={setImageId}
             positionMarkerRef={positionMarkerRef}
+            sourceCache={sourceCache} // Pass sourceCache to Geocoder
           />
           <MapButtons
             map={mapRef.current}

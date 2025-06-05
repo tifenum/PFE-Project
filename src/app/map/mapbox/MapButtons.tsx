@@ -163,7 +163,6 @@ export default function MapButtons({
     buttonContainer.appendChild(zoomOutButton);
 
     const projectionButton = document.createElement('button');
-    // Set initial icon based on projection state
     projectionButton.innerHTML = projection === 'mercator' ? `
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
     ` : `
@@ -221,7 +220,6 @@ export default function MapButtons({
 
     const buttons = [viewButton, zoomInButton, zoomOutButton, projectionButton, locateButton, homeButton];
     buttons.forEach(button => {
-      // Ensure initial SVG visibility
       const svg = button.querySelector('svg');
       if (svg) svg.style.stroke = '#333333';
 
@@ -336,12 +334,12 @@ export default function MapButtons({
             (map.getSource('images') as mapboxgl.GeoJSONSource).setData(sourceData.data);
           }
 
-          if (!map.getLayer('unclustered-point')) {
+          if (!map.getLayer('initial-points')) {
             map.addLayer({
-              id: 'unclustered-point',
+              id: 'initial-points',
               type: 'circle',
               source: 'images',
-              filter: ['!', ['has', 'point_count']],
+              filter: ['==', ['get', 'sourceType'], 'initial'],
               paint: {
                 'circle-radius': [
                   'interpolate',
@@ -360,6 +358,43 @@ export default function MapButtons({
                   15, 0.8
                 ],
                 'circle-color': '#05CB63',
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 1.5,
+                'circle-stroke-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.5,
+                  15, 1
+                ]
+              }
+            });
+          }
+
+          if (!map.getLayer('search-points')) {
+            map.addLayer({
+              id: 'search-points',
+              type: 'circle',
+              source: 'images',
+              filter: ['==', ['get', 'sourceType'], 'search'],
+              paint: {
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 4,
+                  10, 8,
+                  15, 12
+                ],
+                'circle-opacity': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  0, 0.3,
+                  10, 0.6,
+                  15, 0.8
+                ],
+                'circle-color': '#FF0000',
                 'circle-stroke-color': '#FFFFFF',
                 'circle-stroke-width': 1.5,
                 'circle-stroke-opacity': [
@@ -426,7 +461,6 @@ export default function MapButtons({
             });
           }
         }
-        // Update dropdown to highlight new style
         styleDropdown.querySelectorAll('div[style*="border"]').forEach((item: HTMLElement) => {
           item.style.border = 'none';
         });
@@ -454,12 +488,12 @@ export default function MapButtons({
           (map.getSource('images') as mapboxgl.GeoJSONSource).setData(sourceData.data);
         }
 
-        if (!map.getLayer('unclustered-point')) {
+        if (!map.getLayer('initial-points')) {
           map.addLayer({
-            id: 'unclustered-point',
+            id: 'initial-points',
             type: 'circle',
             source: 'images',
-            filter: ['!', ['has', 'point_count']],
+            filter: ['==', ['get', 'sourceType'], 'initial'],
             paint: {
               'circle-radius': [
                 'interpolate',
@@ -478,6 +512,43 @@ export default function MapButtons({
                 15, 0.8
               ],
               'circle-color': '#05CB63',
+              'circle-stroke-color': '#FFFFFF',
+              'circle-stroke-width': 1.5,
+              'circle-stroke-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 0.5,
+                15, 1
+              ]
+            }
+          });
+        }
+
+        if (!map.getLayer('search-points')) {
+          map.addLayer({
+            id: 'search-points',
+            type: 'circle',
+            source: 'images',
+            filter: ['==', ['get', 'sourceType'], 'search'],
+            paint: {
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 4,
+                10, 8,
+                15, 12
+              ],
+              'circle-opacity': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                0, 0.3,
+                10, 0.6,
+                15, 0.8
+              ],
+              'circle-color': '#FF0000',
               'circle-stroke-color': '#FFFFFF',
               'circle-stroke-width': 1.5,
               'circle-stroke-opacity': [
@@ -544,7 +615,6 @@ export default function MapButtons({
           });
         }
       }
-      // Update projection button icon and title based on new projection
       projectionButton.innerHTML = newProjection === 'mercator' ? `
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe-icon lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
       ` : `
@@ -563,7 +633,7 @@ export default function MapButtons({
       locateButton.style.borderColor = '#E0E0E0';
       locateButton.style.cursor = 'not-allowed';
       locateButton.innerHTML = `
-        <svg xmlns="http://www.w3.org/200 artrf/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-icon lucide-loader"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#333333"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-icon lucide-loader"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="#333333"/></svg>
       `;
       navigator.geolocation.getCurrentPosition(
         (position) => {
