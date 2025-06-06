@@ -1,462 +1,350 @@
 "use client";
-import { useState, useEffect } from "react";
-import { fetchAllPendingHotelReservations, updateHotelReservationStatus } from "@/services/hotelService";
-import { toast, Toaster } from "sonner";
+import { useEffect, useState, useMemo } from "react";
+import { fetchFakeHotel, createBooking } from "@/services/hotelService";
+import { jwtDecode } from "jwt-decode";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-const parseHotelName = (name: string) => {
-  if (!name) return '';
-  const cleanedName = name
-    .replace(/\?login=success/g, '')
-    .replace(/%20/g, ' ')
-    .toLowerCase();
-  return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
-};
+interface Room {
+  type: string;
+  price: number;
+  features: string[];
+}
 
-const HotelReservationsPage = () => {
-  const [hotelReservations, setHotelReservations] = useState<any[]>([]);
+interface HotelData {
+  name: string;
+  address: string;
+  rooms: Room[];
+}
+
+interface HotelDetailsClientProps {
+  rawHotelName: string;
+  latitude: string;
+  longitude: string;
+}
+
+export default function HotelDetailsClient({ rawHotelName, latitude, longitude }: HotelDetailsClientProps) {
+  const [hotelData, setHotelData] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [roomToBook, setRoomToBook] = useState<Room | null>(null);
+  const router = useRouter();
 
+  // Parse hotel name: remove ?login=success, replace %20, capitalize first letters
+  const parseHotelName = (name: string) => {
+    if (!name) return "";
+    const cleanedName = decodeURIComponent(name)
+      .replace(/\?login=success/gi, "")
+      .replace(/%20/g, " ")
+      .toLowerCase()
+      .trim();
+    return cleanedName.replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const displayName = parseHotelName(rawHotelName);
+
+  // Generate random hotel image between 1 and 63
+  const getRandomHotelImage = (): string => {
+    const imageNumber = Math.floor(Math.random() * 63) + 1;
+    return `/images/hotel-images/hotel${imageNumber}.jpg`;
+  };
+
+  // Generate stable images for hero and rooms
+  const hotelImages = useMemo(() => {
+    const hero = getRandomHotelImage();
+    // Generate unique images for rooms, avoiding duplicates
+    const roomImages: string[] = [];
+    const usedNumbers = new Set<number>();
+    
+    while (roomImages.length < 10) { // Max 10 rooms to prevent infinite loop
+      const imageNumber = Math.floor(Math.random() * 63) + 1;
+      if (!usedNumbers.has(imageNumber)) {
+        usedNumbers.add(imageNumber);
+        roomImages.push(`/images/hotel-images/hotel${imageNumber}.jpg`);
+      }
+    }
+    
+    return { hero, rooms: roomImages };
+  }, []); // Empty dependency array ensures images are generated once on mount
+
+  // Fetch hotel data
   useEffect(() => {
-    const fetchData = async () => {
+    const token = localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token");
+    if (!token) {
+      toast.error("No auth token, please login.");
+      setLoading(false);
+      return;
+    }
+
+    fetchFakeHotel({ latitude, longitude, hotelName: rawHotelName })
+      .then((data) => {
+        if (data) {
+          setHotelData({
+            ...data,
+            name: parseHotelName(data.name), // Parse name from fetchFakeHotel
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("Failed to load hotel details.");
+      })
+      .finally(() => setLoading(false));
+  }, [latitude, longitude, rawHotelName]);
+
+  if (loading) return <p className="text-center text-gray-600 dark:text-gray-400 animate-pulse">Loading Available Rooms...</p>;
+  if (!hotelData) return <p className="text-center text-red-500">No hotel data found.</p>;
+
+  const openBooking = (room: Room) => setRoomToBook(room);
+  const closeBooking = () => setRoomToBook(null);
+
+  const getUserIdFromToken = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token") : null;
+    if (token) {
       try {
-        setLoading(true);
-        const hotelData = await fetchAllPendingHotelReservations();
-        setHotelReservations(hotelData);
+        const decodedToken = jwtDecode<{ sub: string }>(token);
+        return decodedToken.sub;
       } catch (error) {
-        console.error("Error fetching hotel reservations:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error decoding token", error);
+        return null;
       }
-    };
-    fetchData();
-  }, []);
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Accepted": return "text-green-600 font-semibold";
-      case "Pending": return "text-yellow-500 font-semibold";
-      case "Refused": return "text-red-500 font-semibold";
-      default: return "";
     }
+    return null;
   };
-
-  const handleStatusChange = async (reservationId: string, newStatus: "Accepted" | "Refused") => {
-    try {
-      await updateHotelReservationStatus(reservationId, newStatus);
-      setHotelReservations((prevReservations) =>
-        prevReservations.map((res) =>
-          res.id === reservationId ? { ...res, reservationStatus: newStatus } : res
-        )
-      );
-      if (newStatus === "Accepted") {
-        toast.success("Reservation accepted! 🏨");
-      } else {
-        toast.error("Reservation refused ❌");
-      }
-    } catch (error) {
-      console.error(`Error updating reservation ${reservationId} to ${newStatus}:`, error);
-      toast.error("Failed to update reservation status. Try again 😓");
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  const totalPages = Math.ceil(hotelReservations.length / itemsPerPage);
-  const paginatedHotelReservations = hotelReservations.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
-
-  const renderPagination = (currentPage: number, totalPages: number, setPage: (page: number) => void) => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-    if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
-    return (
-      <div className="flex justify-center mt-6 space-x-2">
-        <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-            currentPage === 1
-              ? "bg-gray-200 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary-dark"
-          }`}
-          onClick={() => setPage(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-        {pageNumbers.map((pageNum) => (
-          <button
-            key={pageNum}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-              currentPage === pageNum
-                ? "bg-primary text-white"
-                : "bg-gray-200 dark:bg-gray-800 text-black dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700"
-            }`}
-            onClick={() => setPage(pageNum)}
-          >
-            {pageNum}
-          </button>
-        ))}
-        <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-            currentPage === totalPages
-              ? "bg-gray-200 dark:bg-gray-800 text-gray-500 cursor-not-allowed"
-              : "bg-primary text-white hover:bg-primary-dark"
-          }`}
-          onClick={() => setPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
-      </div>
-    );
-  };
-
-  if (loading) {
-    return (
-      <section className="py-16 md:py-20 lg:py-28">
-        <div className="container text-center">
-          <div className="flex justify-center items-center">
-            <div className="w-16 h-16 border-4 border-t-[#4A6CF7] border-[#4A6CF7]/30 rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const userId = getUserIdFromToken();
 
   return (
-    <section className="py-16 md:py-20 lg:py-28">
-      <div className="container">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-black dark:text-white">
-            Hotel Reservations
-          </h2>
-          <p className="text-base text-body-color mt-3 max-w-xl mx-auto">
-            View and manage all hotel reservations here.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow">
-            <thead className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Hotel</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Location</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Check-In</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Check-Out</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedHotelReservations.length > 0 ? (
-                paginatedHotelReservations.map((res) => (
-                  <tr key={res.id || `${res.hotelName}-${res.checkInDate}`} className="border-t border-gray-200 dark:border-gray-700">
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{parseHotelName(decodeURIComponent(res.hotelName)) || "-"}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{res.hotelAddress || "-"}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{formatDate(res.checkInDate)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{formatDate(res.checkOutDate)}</td>
-                    <td className="px-6 py-4 text-sm flex gap-2">
-                      {res.reservationStatus === "Pending" ? (
-                        <>
-                          <button
-                            onClick={() => handleStatusChange(res.id, "Accepted")}
-                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200 text-xs"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleStatusChange(res.id, "Refused")}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 text-xs"
-                          >
-                            Refuse
-                          </button>
-                        </>
-                      ) : (
-                        <span className={getStatusStyle(res.reservationStatus)}>
-                          {res.reservationStatus || "-"}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                    No hotel reservations found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          {totalPages > 1 && renderPagination(page, totalPages, setPage)}
-        </div>
-
-        <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100">
-          <svg
-            width="450"
-            height="556"
-            viewBox="0 0 450 556"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="277"
-              cy="63"
-              r="225"
-              fill="url(#paint0_linear_25:217)"
-            />
-            <circle
-              cx="17.9997"
-              cy="182"
-              r="18"
-              fill="url(#paint1_radial_25:217)"
-            />
-            <circle
-              cx="76.9997"
-              cy="288"
-              r="34"
-              fill="url(#paint2_radial_25:217)"
-            />
-            <circle
-              cx="325.486"
-              cy="302.87"
-              r="180"
-              transform="rotate(-37.6852 325.486 302.87)"
-              fill="url(#paint3_linear_25:217)"
-            />
-            <circle
-              opacity="0.8"
-              cx="184.521"
-              cy="315.521"
-              r="132.862"
-              transform="rotate(114.874 184.521 315.521)"
-              stroke="url(#paint4_linear_25:217)"
-            />
-            <circle
-              opacity="0.8"
-              cx="356"
-              cy="290"
-              r="179.5"
-              transform="rotate(-30 356 290)"
-              stroke="url(#paint5_linear_25:217)"
-            />
-            <circle
-              opacity="0.8"
-              cx="191.659"
-              cy="302.659"
-              r="133.362"
-              transform="rotate(133.319 191.659 302.659)"
-              fill="url(#paint6_linear_25:217)"
-            />
-            <defs>
-              <linearGradient
-                id="paint0_linear_25:217"
-                x1="-54.5003"
-                y1="-178"
-                x2="222"
-                y2="288"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <radialGradient
-                id="paint1_radial_25:217"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(17.9997 182) rotate(90) scale(18)"
-              >
-                <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
-              </radialGradient>
-              <radialGradient
-                id="paint2_radial_25:217"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(76.9997 288) rotate(90) scale(34)"
-              >
-                <stop offset="0.145833" stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.08" />
-              </radialGradient>
-              <linearGradient
-                id="paint3_linear_25:217"
-                x1="226.775"
-                y1="-66.1548"
-                x2="292.157"
-                y2="351.421"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint4_linear_25:217"
-                x1="184.521"
-                y1="182.159"
-                x2="184.521"
-                y2="448.882"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="white" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint5_linear_25:217"
-                x1="356"
-                y1="110"
-                x2="356"
-                y2="470"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="white" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint6_linear_25:217"
-                x1="118.524"
-                y1="29.2497"
-                x2="166.965"
-                y2="338.63"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <div className="absolute bottom-0 left-0 z-[-1] opacity-30 lg:opacity-100">
-          <svg
-            width="364"
-            height="201"
-            viewBox="0 0 364 201"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M5.88928 72.3303C33.6599 66.4798 101.397 64.9086 150.178 105.427C211.155 156.076 229.59 162.093 264.333 166.607C299.076 171.12 337.718 183.657 362.889 212.24"
-              stroke="url(#paint0_linear_25:218)"
-            />
-            <path
-              d="M-22.1107 72.3303C5.65989 66.4798 73.3965 64.9086 122.178 105.427C183.155 156.076 201.59 162.093 236.333 166.607C271.076 171.12 309.718 183.657 334.889 212.24"
-              stroke="url(#paint1_linear_25:218)"
-            />
-            <path
-              d="M-53.1107 72.3303C-25.3401 66.4798 42.3965 64.9086 91.1783 105.427C152.155 156.076 170.59 162.093 205.333 166.607C240.076 171.12 278.718 183.657 303.889 212.24"
-              stroke="url(#paint2_linear_25:218)"
-            />
-            <path
-              d="M-98.1618 65.0889C-68.1416 60.0601 4.73364 60.4882 56.0734 102.431C120.248 154.86 139.905 161.419 177.137 166.956C214.37 172.493 255.575 186.165 281.856 215.481"
-              stroke="url(#paint3_linear_25:218)"
-            />
-            <circle
-              opacity="0.8"
-              cx="214.505"
-              cy="60.5054"
-              r="49.7205"
-              transform="rotate(-13.421 214.505 60.5054)"
-              stroke="url(#paint4_linear_25:218)"
-            />
-            <circle cx="220" cy="63" r="43" fill="url(#paint5_radial_25:218)" />
-            <defs>
-              <linearGradient
-                id="paint0_linear_25:218"
-                x1="184.389"
-                y1="69.2405"
-                x2="184.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
-              </linearGradient>
-              <linearGradient
-                id="paint1_linear_25:218"
-                x1="156.389"
-                y1="69.2405"
-                x2="156.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
-              </linearGradient>
-              <linearGradient
-                id="paint2_linear_25:218"
-                x1="125.389"
-                y1="69.2405"
-                x2="125.389"
-                y2="212.24"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
-              </linearGradient>
-              <linearGradient
-                id="paint3_linear_25:218"
-                x1="93.8507"
-                y1="67.2674"
-                x2="89.9278"
-                y2="210.214"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" />
-              </linearGradient>
-              <linearGradient
-                id="paint4_linear_25:218"
-                x1="214.505"
-                y1="10.2849"
-                x2="212.684"
-                y2="99.5816"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <radialGradient
-                id="paint5_radial_25:218"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(220 63) rotate(90) scale(43)"
-              >
-                <stop offset="0.145833" stopColor="white" stopOpacity="0" />
-                <stop offset="1" stopColor="white" stopOpacity="0.08" />
-              </radialGradient>
-            </defs>
-          </svg>
+    <>
+      {/* Hero Section with rounded corners */}
+      <div className="relative mb-12 overflow-hidden rounded-2xl">
+        <img
+          src={hotelImages.hero}
+          alt={`${displayName} Hero`}
+          className="w-full h-64 md:h-96 object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">{displayName}</h1>
+            <p className="text-lg text-gray-200">{hotelData.address}</p>
+          </div>
         </div>
       </div>
-      <Toaster />
-    </section>
+
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">Available Rooms</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {hotelData.rooms.map((room, idx) => (
+            <div
+              key={idx}
+              className="group relative overflow-hidden rounded-xl transition-transform duration-300 hover:scale-105"
+            >
+              <img
+                src={hotelImages.rooms[idx] || "/images/hotel-images/hotel1.jpg"}
+                alt={`${room.type} Image`}
+                className="w-full h-64 object-cover rounded-xl"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/images/hotel-images/hotel1.jpg";
+                }}
+              />
+              <div className="flex flex-col p-6 h-80 bg-gradient-to-t from-gray-100/90 to-transparent dark:from-gray-800/90 dark:to-transparent">
+                <h3 className="text-2xl font-semibold mb-2 text-gray-900 dark:text-white">{room.type}</h3>
+                <p className="mb-3 text-gray-600 dark:text-gray-300">Price: ${room.price} / night</p>
+                <ul className="list-none mb-4 space-y-2 flex-grow">
+                  {[...new Set(room.features)].slice(0, 4).map((f, i) => (
+                    <li key={i} className="flex items-center text-gray-600 dark:text-gray-300">
+                      <svg className="w-4 h-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm3.707 6.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => openBooking(room)}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-auto"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {roomToBook && (
+        <BookingModal room={roomToBook} hotelData={hotelData} onClose={closeBooking} userId={userId} />
+      )}
+    </>
+  );
+}
+
+const BookingModal = ({ room, hotelData, userId, onClose }) => {
+  const router = useRouter();
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [note, setNote] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    if (checkIn && checkOut && checkOut > checkIn) {
+      const inDate = new Date(checkIn);
+      const outDate = new Date(checkOut);
+      const diffMs = outDate.getTime() - inDate.getTime();
+      const nights = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      setTotalPrice(nights * room.price);
+    } else {
+      setTotalPrice(0);
+    }
+  }, [checkIn, checkOut, room.price]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!checkIn || !checkOut) {
+      toast.warning("Yo, pick your check-in and check-out dates!");
+      return;
+    }
+    if (checkIn < today) {
+      toast.error("Check-in can’t be in the past, bro!");
+      return;
+    }
+    if (checkOut <= checkIn) {
+      toast.warning("Check-out’s gotta be after check-in, fam!");
+      return;
+    }
+
+    const bookingData = {
+      userId,
+      hotelName: hotelData.name, // Already parsed in hotelData
+      hotelAddress: hotelData.address,
+      roomType: room.type,
+      roomFeatures: room.features,
+      roomPricePerNight: room.price,
+      checkInDate: checkIn,
+      checkOutDate: checkOut,
+      totalPrice,
+      notes: note,
+    };
+
+    setIsSubmitting(true);
+    try {
+      const savedBooking = await createBooking(bookingData);
+      toast.success("Booking confirmed, dude! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+      onClose();
+    } catch (error) {
+      toast.error("Failed to book the room. Try again, man!");
+      console.error("Booking error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-white dark:bg-gray-900 p-6 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-500 ease-out scale-0 animate-[modalFadeIn_0.5s_ease-out_forwards]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <style jsx>{`
+          @keyframes modalFadeIn {
+            from {
+              transform: scale(0.7);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+        `}</style>
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+          Book {room.type}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          At {hotelData.name}
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Check-in Date
+              </label>
+              <input
+                type="date"
+                min={today}
+                value={checkIn}
+                onChange={(e) => setCheckIn(e.target.value)}
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Check-out Date
+              </label>
+              <input
+                type="date"
+                min={checkIn || today}
+                value={checkOut}
+                onChange={(e) => setCheckOut(e.target.value)}
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Notes
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Special requests..."
+                className="w-full p-2 border rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Room: {room.type}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Price per Night: ${room.price}
+            </p>
+            <p className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-2">
+              Total: ${totalPrice}
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {isSubmitting ? "Booking..." : "Confirm Booking"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 };
-
-export default HotelReservationsPage;
