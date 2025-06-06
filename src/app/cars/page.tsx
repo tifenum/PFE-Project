@@ -93,7 +93,7 @@ const CityAutocomplete = ({
           aria-expanded={isOpen}
           aria-label="Select pickup city"
         >
-          {value ? value.name : "Select Pickup City"}
+          {value ? value.name : "Select Pickup Airport"}
         </button>
         {isOpen && (
           <div className="absolute z-20 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-[#2C303B] max-h-48 overflow-y-auto">

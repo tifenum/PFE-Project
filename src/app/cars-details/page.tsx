@@ -179,7 +179,7 @@ const CarsDetailsContent = () => {
       pickupTime,
       dropoffDate,
       dropoffTime,
-      notes: `Car Type Filter: ${bookingData.carTypeFilter}; Passengers: ${bookingData.passengers}; Transmission: ${bookingData.transmission}; Additional Notes: ${additionalNotes}`,
+      notes: additionalNotes,
       totalPrice,
     };
 
