@@ -1,36 +1,65 @@
-"use client"; 
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation"; 
-import { signup } from "@/services/userService"; 
+import { useRouter } from "next/navigation";
+import { signup } from "@/services/userService";
 import { toast } from "sonner";
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [termsAgreed, setTermsAgreed] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
-  if (!username || !email || !password) {
-    setError("All fields are required.");
-    return;
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const result = await signup(username, email, password);
+    // Clear previous errors
+    setError("");
 
-  if (result.success) {
-    toast.success(result.message); // Will show "User registered successfully. Please check your email to verify."
-    router.push("/signin"); // Redirect to sign-in page
-  } else {
-    setError(result.error);
-    toast.error(result.error);
-  }
-};
+    // Validate inputs
+    if (!username || !email || !password) {
+      setError("All fields are required.");
+      toast.error("All fields are required.");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address.");
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      toast.error("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!termsAgreed) {
+      setError("You must agree to the Terms and Conditions.");
+      toast.error("You must agree to the Terms and Conditions.");
+      return;
+    }
+
+    const result = await signup(username, email, password);
+
+    if (result.success) {
+      toast.success(result.message);
+      router.push("/signin");
+    } else {
+      setError(result.error);
+      toast.error(result.error);
+    }
+  };
 
   return (
     <>
@@ -64,7 +93,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Enter your full name"
                       className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      required
                     />
                   </div>
                   <div className="mb-8">
@@ -81,7 +109,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your Email"
                       className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      required
                     />
                   </div>
                   <div className="mb-8">
@@ -98,7 +125,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your Password"
                       className="border-stroke dark:text-body-color-dark dark:shadow-two w-full rounded-sm border bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:focus:border-primary dark:focus:shadow-none"
-                      required
                     />
                   </div>
                   <div className="mb-8 flex">
@@ -110,11 +136,12 @@ const handleSubmit = async (e: React.FormEvent) => {
                         <input
                           type="checkbox"
                           id="checkboxLabel"
+                          checked={termsAgreed}
+                          onChange={(e) => setTermsAgreed(e.target.checked)}
                           className="sr-only"
-                          required
                         />
                         <div className="box mr-4 mt-1 flex h-5 w-5 items-center justify-center rounded border border-body-color border-opacity-20 dark:border-white dark:border-opacity-10">
-                          <span className="opacity-0">
+                          <span className={termsAgreed ? "opacity-100" : "opacity-0"}>
                             <svg
                               width="11"
                               height="8"
