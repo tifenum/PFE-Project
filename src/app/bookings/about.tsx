@@ -384,7 +384,7 @@ const ReservationsPage = () => {
                           {res.pickupCountry || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.pickupCity}, {res.pickupCountry}
+                          {res.pickupCity}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                           {res.pickupDate ? formatDate(res.pickupDate) : "-"}

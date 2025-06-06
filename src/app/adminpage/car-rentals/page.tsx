@@ -154,7 +154,7 @@ const CarReservationsPage = () => {
           <table className="min-w-full bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-xl shadow">
             <thead className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Car Provider</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Country</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Pickup Location</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Pickup Date</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-black dark:text-white">Drop-off Date</th>
@@ -165,8 +165,8 @@ const CarReservationsPage = () => {
               {paginatedCarReservations.length > 0 ? (
                 paginatedCarReservations.map((res) => (
                   <tr key={res.id || `${res.carProvider}-${res.pickupDate}`} className="border-t border-gray-200 dark:border-gray-700">
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{res.carProvider || "-"}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{`${res.pickupCity}, ${res.pickupCountry}` || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{res.pickupCountry || "-"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{`${res.pickupCity}` || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{formatDate(res.pickupDate)}</td>
                     <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{formatDate(res.dropoffDate)}</td>
                     <td className="px-6 py-4 text-sm flex gap-2">
