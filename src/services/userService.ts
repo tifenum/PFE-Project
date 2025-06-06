@@ -49,10 +49,7 @@ export const logout = async () => {
 export const askAssistant = async (message: string, sessionId: string) => {
   const userId = getUserId();
   const response = await axios.get(`${API_BASE_URL}/users/ask`, {
-    params: { message, sessionId, userId },
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("jwt_token") || sessionStorage.getItem("jwt_token")}`,
-    },
+    params: { message, sessionId, userId }
   });
   return response.data;
 };

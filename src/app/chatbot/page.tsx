@@ -316,42 +316,42 @@ export default function ChatPage() {
                     </div>
                   ) : msg.flightOffer ? (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="w-full">
                         <FlightCard offer={msg.flightOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
                       </div>
                     </div>
                   ) : msg.hotelOffer ? (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="w-full">
                         <HotelCard offer={msg.hotelOffer} bookUrl={msg.bookUrl || ''} index={i} handleBookNow={handleBookNow} />
                       </div>
                     </div>
                   ) : msg.carOffer ? (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="w-full">
                         <CarCard offer={msg.carOffer} index={i} handleBookNow={handleBookNow1} />
                       </div>
                     </div>
                   ) : msg.bookings && msg.bookings.length > 0 ? (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
                         <BookingTable bookings={msg.bookings} message={msg.message} />
                       </div>
                     </div>
                   ) : msg.message || msg.content ? (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
                         <p className="text-base leading-relaxed">{msg.message || msg.content}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-start space-x-3">
-                      <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                      <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                       <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-lg backdrop-blur-sm max-w-[70%] sm:max-w-[100%]">
                         <p className="text-base leading-relaxed">Something went wrong, bro!</p>
                       </div>
@@ -367,7 +367,7 @@ export default function ChatPage() {
                   className="flex justify-start w-full"
                 >
                   <div className="flex items-start space-x-3">
-                    <img src="/images/Assistant/agent.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
+                    <img src="/images/favicon.png" alt="Assistant Avatar" className="w-10 h-10 rounded-full mt-1" />
                     <div className="rounded-2xl bg-white/90 dark:bg-gray-800/90 px-6 py-4 flex items-center space-x-3 backdrop-blur-sm">
                       <div className="flex space-x-1">
                         <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
