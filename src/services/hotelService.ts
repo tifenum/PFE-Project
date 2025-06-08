@@ -134,6 +134,11 @@ export const fetchAllPendingHotelReservations = async () => {
       throw new Error("Failed to fetch all pending hotel reservations");
     }
 
+    // Check if response has content before parsing JSON
+    if (response.status === 204 || !(await response.text()).trim()) {
+      return [];
+    }
+
     return await response.json();
   } catch (error) {
     console.error("Error fetching all pending hotel reservations:", error);

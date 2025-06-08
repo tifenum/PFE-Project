@@ -6,6 +6,7 @@ import { toast, Toaster } from "sonner";
 const HotelReservationsPage = () => {
   const [hotelReservations, setHotelReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false); // New state for status update lock
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -34,6 +35,9 @@ const HotelReservationsPage = () => {
   };
 
   const handleStatusChange = async (reservationId: string, newStatus: "Accepted" | "Refused") => {
+    if (isUpdating) return; // Prevent multiple status updates
+    setIsUpdating(true);
+    const toastId = toast.loading(`Updating reservation to ${newStatus}...`);
     try {
       await updateHotelReservationStatus(reservationId, newStatus);
       setHotelReservations((prevReservations) =>
@@ -42,13 +46,15 @@ const HotelReservationsPage = () => {
         )
       );
       if (newStatus === "Accepted") {
-        toast.success("Reservation accepted!");
+        toast.success("Reservation accepted!", { id: toastId });
       } else {
-        toast.error("Reservation refused");
+        toast.error("Reservation refused", { id: toastId });
       }
     } catch (error) {
       console.error(`Error updating reservation ${reservationId} to ${newStatus}:`, error);
-      toast.error("Failed to update reservation status. Try again");
+      toast.error("Failed to update reservation status. Try again", { id: toastId });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -172,13 +178,23 @@ const HotelReservationsPage = () => {
                         <>
                           <button
                             onClick={() => handleStatusChange(res.id, "Accepted")}
-                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200 text-xs"
+                            className={`px-3 py-1 text-white rounded text-xs transition duration-200 ${
+                              isUpdating
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-green-500 hover:bg-green-600"
+                            }`}
+                            disabled={isUpdating}
                           >
                             Accept
                           </button>
                           <button
                             onClick={() => handleStatusChange(res.id, "Refused")}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200 text-xs"
+                            className={`px-3 py-1 text-white rounded text-xs transition duration-200 ${
+                              isUpdating
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                            }`}
+                            disabled={isUpdating}
                           >
                             Refuse
                           </button>
@@ -445,7 +461,6 @@ const HotelReservationsPage = () => {
           </svg>
         </div>
       </div>
-      <Toaster />
     </section>
   );
 };

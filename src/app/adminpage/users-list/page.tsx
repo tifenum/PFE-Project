@@ -6,6 +6,7 @@ import { toast, Toaster } from "sonner";
 const UsersListPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false); // New state for deletion lock
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -26,13 +27,18 @@ const UsersListPage = () => {
   }, []);
 
   const handleDeleteUser = async (userId: string) => {
+    if (isDeleting) return; // Prevent multiple deletions
+    setIsDeleting(true);
+    const toastId = toast.loading("Deleting user...");
     try {
       await deleteUser(userId);
       setUsers(users.filter((user) => user.id !== userId));
-      toast.success("User deleted successfully!");
+      toast.success("User deleted successfully!", { id: toastId });
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to delete user. Please try again.");
+      toast.error("Failed to delete user. Please try again.", { id: toastId });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -141,7 +147,12 @@ const UsersListPage = () => {
                     <td className="px-6 py-4 text-sm">
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                        className={`px-3 py-1 rounded text-white transition ${
+                          isDeleting
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-red-500 hover:bg-red-600"
+                        }`}
+                        disabled={isDeleting}
                       >
                         Delete
                       </button>
@@ -402,7 +413,6 @@ const UsersListPage = () => {
           </svg>
         </div>
       </div>
-      <Toaster />
     </section>
   );
 };

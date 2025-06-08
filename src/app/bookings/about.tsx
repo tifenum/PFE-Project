@@ -13,6 +13,7 @@ const ReservationsPage = () => {
   const [flightReservations, setFlightReservations] = useState<any[]>([]);
   const [carReservations, setCarReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false); // New state for deletion lock
   const [hotelPage, setHotelPage] = useState(1);
   const [flightPage, setFlightPage] = useState(1);
   const [carPage, setCarPage] = useState(1);
@@ -82,35 +83,50 @@ const ReservationsPage = () => {
   };
 
   const handleDeleteHotelReservation = async (reservationId: string) => {
+    if (isDeleting) return; // Prevent multiple deletions
+    setIsDeleting(true);
+    const toastId = toast.loading("Deleting hotel reservation...");
     try {
       await deleteHotelReservation(reservationId);
       setHotelReservations(hotelReservations.filter(res => res.id !== reservationId));
-      toast.success("Hotel reservation deleted successfully!");
+      toast.success("Hotel reservation deleted successfully!", { id: toastId });
     } catch (error) {
       console.error("Error deleting hotel reservation:", error);
-      toast.error("Failed to delete hotel reservation. Please try again.");
+      toast.error("Failed to delete hotel reservation. Please try again.", { id: toastId });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleDeleteFlightReservation = async (reservationId: string) => {
+    if (isDeleting) return; // Prevent multiple deletions
+    setIsDeleting(true);
+    const toastId = toast.loading("Deleting flight reservation...");
     try {
       await deleteFlightReservation(reservationId);
       setFlightReservations(flightReservations.filter(res => res.id !== reservationId));
-      toast.success("Flight reservation deleted successfully!");
+      toast.success("Flight reservation deleted successfully!", { id: toastId });
     } catch (error) {
       console.error("Error deleting flight reservation:", error);
-      toast.error("Failed to delete flight reservation. Please try again.");
+      toast.error("Failed to delete flight reservation. Please try again.", { id: toastId });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleDeleteCarReservation = async (reservationId: string) => {
+    if (isDeleting) return; // Prevent multiple deletions
+    setIsDeleting(true);
+    const toastId = toast.loading("Deleting car reservation...");
     try {
       await deleteCarReservation(reservationId);
       setCarReservations(carReservations.filter(res => res.id !== reservationId));
-      toast.success("Car reservation deleted successfully!");
+      toast.success("Car reservation deleted successfully!", { id: toastId });
     } catch (error) {
       console.error("Error deleting car reservation:", error);
-      toast.error("Failed to delete car reservation. Please try again.");
+      toast.error("Failed to delete car reservation. Please try again.", { id: toastId });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -280,7 +296,7 @@ const ReservationsPage = () => {
                           {res.departureTime ? formatTime(res.departureTime) : "-"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {res.totalPrice +' $' || "-"}
+                          {res.totalPrice + ' $' || "-"}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <span className={getStatusStyle(res.bookingStatus)}>
@@ -290,7 +306,12 @@ const ReservationsPage = () => {
                         <td className="px-6 py-4 text-sm">
                           <button
                             onClick={() => handleDeleteFlightReservation(res.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                            className={`px-3 py-1 rounded text-white transition ${
+                              isDeleting
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                            }`}
+                            disabled={isDeleting}
                           >
                             Delete
                           </button>
@@ -345,7 +366,12 @@ const ReservationsPage = () => {
                         <td className="px-6 py-4 text-sm">
                           <button
                             onClick={() => handleDeleteHotelReservation(res.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                            className={`px-3 py-1 rounded text-white transition ${
+                              isDeleting
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                            }`}
+                            disabled={isDeleting}
                           >
                             Delete
                           </button>
@@ -400,7 +426,12 @@ const ReservationsPage = () => {
                         <td className="px-6 py-4 text-sm">
                           <button
                             onClick={() => handleDeleteCarReservation(res.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                            className={`px-3 py-1 rounded text-white transition ${
+                              isDeleting
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-red-500 hover:bg-red-600"
+                            }`}
+                            disabled={isDeleting}
                           >
                             Delete
                           </button>
