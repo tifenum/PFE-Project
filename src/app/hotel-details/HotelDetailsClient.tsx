@@ -206,15 +206,15 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     e.preventDefault();
 
     if (!checkIn || !checkOut) {
-      toast.warning("Yo, pick your check-in and check-out dates!");
+      toast.warning("You should pick your check-in and check-out dates!");
       return;
     }
     if (checkIn < today) {
-      toast.error("Check-in can’t be in the past, bro!");
+      toast.error("Check-in can’t be in the past");
       return;
     }
     if (checkOut <= checkIn) {
-      toast.warning("Check-out’s gotta be after check-in, fam!");
+      toast.warning("Check-out’s must be after check-in");
       return;
     }
 
@@ -234,13 +234,13 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
-      toast.success("Booking confirmed, dude! Redirecting...");
+      toast.success("Booking confirmed, Redirecting...");
       setTimeout(() => {
         router.push("/");
       }, 1000);
       onClose();
     } catch (error) {
-      toast.error("Failed to book the room. Try again, man!");
+      toast.error("Failed to book the room. Try again");
       console.error("Booking error:", error);
     } finally {
       setIsSubmitting(false);

@@ -17,7 +17,7 @@ const CarReservationsPage = () => {
         setCarReservations(carData);
       } catch (error) {
         console.error("Error fetching car reservations:", error);
-        toast.error("Failed to load car reservations. Try again 😓");
+        toast.error("Failed to load car reservations. Try again");
       } finally {
         setLoading(false);
       }
@@ -43,13 +43,13 @@ const CarReservationsPage = () => {
         )
       );
       if (newStatus === "Accepted") {
-        toast.success("Reservation accepted! 🚗");
+        toast.success("Reservation accepted!");
       } else {
-        toast.error("Reservation refused ❌");
+        toast.error("Reservation refused");
       }
     } catch (error) {
       console.error(`Error updating reservation ${reservationId} to ${newStatus}:`, error);
-      toast.error("Failed to update reservation status. Try again 😓");
+      toast.error("Failed to update reservation status. Try again");
     }
   };
 

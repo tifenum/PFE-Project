@@ -52,7 +52,7 @@ const [rawHotelName, setRawHotelName] = useState(initialRawName);
     const suffix = "?login=success";
     if (rawHotelName.endsWith(suffix)) {
       // show success toast once
-      toast.success("Login successful! 🎉" ,{ id: "login-success" });;
+      toast.success("Login successful!" ,{ id: "login-success" });;
       // strip suffix
       const cleaned = rawHotelName.slice(0, -suffix.length);
       setRawHotelName(cleaned);
@@ -184,15 +184,15 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     e.preventDefault();
   
     if (!checkIn || !checkOut) {
-      toast.warning("Yo, pick your check-in and check-out dates!");
+      toast.warning("pick your check-in and check-out dates!");
       return;
     }
     if (checkIn < today) {
-      toast.error("Check-in can’t be in the past, bro!");
+      toast.error("Check-in can’t be in the past");
       return;
     }
     if (checkOut <= checkIn) {
-      toast.warning("Check-out’s gotta be after check-in, fam!");
+      toast.warning("Check-out’s must be after check-in");
       return;
     }
   
@@ -212,13 +212,13 @@ const BookingModal = ({ room, hotelData, userId, onClose }) => {
     setIsSubmitting(true);
     try {
       const savedBooking = await createBooking(bookingData);
-      toast.success("Booking confirmed, dude! Redirecting...");
+      toast.success("Booking confirmed, Redirecting...");
       setTimeout(() => {
         router.push('/'); // send them home, bro 🏄‍♂️
       }, 1000); // give them 2 secs to enjoy that toast
       onClose();
     } catch (error) {
-      toast.error("Failed to book the room. Try again, man!");
+      toast.error("Failed to book the room. Try again");
       console.error("Booking error:", error);
     } finally {
       setIsSubmitting(false);

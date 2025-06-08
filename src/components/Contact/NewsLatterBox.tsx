@@ -21,7 +21,7 @@ const NewsLatterBox = () => {
     try {
       const response = await subscribeNewsletter(name, email);
       if (response.success) {
-        toast.success("Alright bro, your email has been sent! Check your inbox for exclusive travel deals.");
+        toast.success("your email has been sent! Check your inbox for exclusive travel deals.");
         setName("");
         setEmail("");
       } else {

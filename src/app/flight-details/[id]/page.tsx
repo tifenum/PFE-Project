@@ -69,7 +69,7 @@ export default function FlightDetails() {
 
   useEffect(() => {
     if (params.get("login") === "success") {
-      toast.success("Login successful! 🎉", { id: "login-success" });
+      toast.success("Login successful!", { id: "login-success" });
       const qs = new URLSearchParams(window.location.search);
       qs.delete("login");
       window.history.replaceState(
@@ -258,7 +258,7 @@ export default function FlightDetails() {
       });
 
       sessionStorage.removeItem("pendingFlight");
-      toast.success("Your flight has been booked 🎉");
+      toast.success("Your flight has been booked");
 
       setTimeout(() => {
         router.push("/");

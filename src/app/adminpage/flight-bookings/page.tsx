@@ -50,13 +50,13 @@ const FlightBookingsPage = () => {
         )
       );
       if (newStatus === "Accepted") {
-        toast.success("Booking accepted! ✈️");
+        toast.success("Booking accepted!");
       } else {
-        toast.error("Booking refused ❌");
+        toast.error("Booking refused");
       }
     } catch (error) {
       console.error(`Error updating booking ${bookingId} to ${newStatus}:`, error);
-      toast.error("Failed to update booking status. Try again 😓");
+      toast.error("Failed to update booking status. Try again");
     }
   };
 

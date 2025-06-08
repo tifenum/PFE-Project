@@ -46,10 +46,10 @@ export const logout = async () => {
 };
 
 // Other functions (askAssistant, signup, etc.) remain unchanged
-export const askAssistant = async (message: string, sessionId: string) => {
+export const askAssistant = async (message: string, sessionId: string, characterId: number = 0) => {
   const userId = getUserId();
   const response = await axios.get(`${API_BASE_URL}/users/ask`, {
-    params: { message, sessionId, userId }
+      params: { message, sessionId, userId, characterId }, // Include characterId
   });
   return response.data;
 };

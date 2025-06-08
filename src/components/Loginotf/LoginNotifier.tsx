@@ -9,7 +9,7 @@ export default function LoginNotifier() {
 
   useEffect(() => {
     if (searchParams.get("login") === "success") {
-      toast.success("Login successful! 🎉", { id: "login-success" });
+      toast.success("Login successful!", { id: "login-success" });
       window.history.replaceState(null, "", "/");
     }
   }, [searchParams]);

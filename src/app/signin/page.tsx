@@ -33,7 +33,7 @@ const SigninPage = () => {
       redirectPath = `${redirectPath}?login=success`;
       router.push(redirectPath);
     } else {
-      toast.error(result.error || "Login failed. Please try again.");
+      toast.error(result.error || "Login failed. Please try again Are You sure your account is verified ?.");
     }
   };
 
