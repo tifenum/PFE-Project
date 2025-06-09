@@ -134,12 +134,16 @@ export const fetchAllPendingHotelReservations = async () => {
       throw new Error("Failed to fetch all pending hotel reservations");
     }
 
-    // Check if response has content before parsing JSON
-    if (response.status === 204 || !(await response.text()).trim()) {
+    // Read the response body once
+    const text = await response.text();
+
+    // Check if the response is empty (e.g., status 204 or no content)
+    if (response.status === 204 || !text.trim()) {
       return [];
     }
 
-    return await response.json();
+    // Parse the text as JSON
+    return JSON.parse(text);
   } catch (error) {
     console.error("Error fetching all pending hotel reservations:", error);
     return [];
